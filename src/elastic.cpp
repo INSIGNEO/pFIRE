@@ -1,7 +1,13 @@
 #include "elastic.hpp"
 
-Elastic(const Image& fixed, const Image& moved, Map& map);
+Elastic::Elastic(const Image& fixed, const Image& moved, const floatvector node_spacing)
+  : m_comm(fixed.comm()), m_imgdims(fixed.ndim()), m_mapdims(m_imgdims+1),
+    m_size(fixed.size()), m_fixed(fixed), m_moved(moved)
 {
+  // TODO: image compatibility checks (maybe write Image.iscompat(Image foo)
+  
+  // make map, need to ensure basis is always the same layout 
+
   // required scratchpad storage:
   //  tmat -> duplicate of map.basis()
   //  stacked vector compatible with tmat
@@ -10,14 +16,29 @@ Elastic(const Image& fixed, const Image& moved, Map& map);
   //  map must have laplacian, basis and a vectors compatible
 }
 
+void Elastic::create_scratch()
+{
+  //create "local" vectors for gradient storage, one per map dim
+  for(integer idim=0; idim < m_mapdims; idim++)
+  {
+    Vec* tmp_vec = new Vec;
+    PetscErrorCode perr = VecDuplicate(*m_fixed.local_vec(), tmp_vec);CHKERRABORT(m_comm, perr);
+    m_vp_iss.emplace_back(tmp_vec);
+  }
+  // create "global" vector for stack compatible with basis matrix
+  // should be compatible with all map bases of this size
+  PetscErrorCode perr = MatCreateVecs(*m_p_map->basis(), m_p_stacked_grads.get(),
+                                      nullptr);CHKERRABORT(m_comm, perr);
+}
+
 void Elastic::do_scatter_to_stacked()
 {
-  for(integer idim=0; idim < m_ndim; idim++)
+  for(integer idim=0; idim < m_mapdims; idim++)
   {
     PetscErrorCode perr = VecScatterBegin(*m_vp_scatterers[idim], *m_vp_grads[idim], *m_p_stacked_grads,
                                           INSERT_VALUES, SCATTER_FORWARD);CHKERRABORT(m_comm, perr);
   }
-  for(integer idim=0; idim < m_ndim; idim++)
+  for(integer idim=0; idim < m_mapdims; idim++)
   {
     PetscErrorCode perr = VecScatterEnd(*m_vp_scatterers[idim], *m_vp_grads[idim], *m_p_stacked_grads,
                                         INSERT_VALUES, SCATTER_FORWARD);CHKERRABORT(m_comm, perr);
