@@ -26,7 +26,7 @@ int main(int argc, char **argv){
 void mainflow(){
 
   intvector imshape = {10,10,10};
-  floatvector nodespacing = {5,5,5};
+  floatvector nodespacing = {6,6,6};
   floatvector nodespacing2 = {3,3,3};
 
   std::unique_ptr<Image> fixed = std::make_unique<Image>(imshape);
@@ -34,7 +34,7 @@ void mainflow(){
 
   Map foo(*fixed, nodespacing);
 
-  VecSet(*foo.m_displacements, 1);
+  VecSet(*foo.m_displacements, 2);
 
   auto foo2 = foo.interpolate(nodespacing2);
 

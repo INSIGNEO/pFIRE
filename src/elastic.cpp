@@ -23,13 +23,8 @@ Elastic::Elastic(const Image& fixed, const Image& moved, const floatvector nodes
   m_p_registered = moved.copy();
 
   // set scratchpad storage, scatterers:
-  allocate_scratch_storage();
+  allocate_persistent_workspace();
   create_scatterers();
-  //  tmat -> duplicate of map.basis()
-  //  stacked vector compatible with tmat
-  //  local work vectors compatible with image
-  //  scatters from locals to stacked above
-  //  map must have laplacian, basis and a vectors compatible
 }
 
 
@@ -47,7 +42,8 @@ void Elastic::autoregister()
 
 void Elastic::innerloop()
 {
-  // setup solution storage (delta a, tmat2, rvec)
+  // setup resolution specific solution storage (delta a, rvec)
+  allocate_ephemeral_workspace();
   // calculate lambda for loop
   for(integer inum=0; inum<m_max_iter; inum++)
   {
@@ -58,10 +54,20 @@ void Elastic::innerloop()
 
 void Elastic::innerstep()
 {
-  // calculate tmat
-  // calculate tmat2
+  // calculate up to date tmat
+  calculate_t_mat();
+
+  // calculate tmat2 and precondition
+  Mat_unique normmat = create_unique_mat();
+  // TODO: can we reuse here?
+  PetscErrorCode perr = MatTransposeMatMult(*m_p_tmat, *m_p_tmat, MAT_INITIAL_MATRIX, PETSC_DEFAULT,
+                                            normmat.get());CHKERRABORT(m_comm, perr);
   // precondition tmat2
-  // calculate tmat2 + lapl2
+  // TODO
+
+  // calculate tmat2 + lambda*lapl2
+  perr = MatAXPY(normmat, lambda, map.laplacian(), DIFFERENT_NONZERO_PATTERN);
+
   // calculate rvec
   // solve for delta a
   // update map
@@ -80,7 +86,7 @@ void Elastic::calculate_node_spacings(){
   }
 }
 
-void Elastic::allocate_scratch_storage()
+void Elastic::allocate_persistent_workspace()
 {
   //create "local" vectors for gradient storage, one per map dim
   for(integer idim=0; idim < m_mapdims; idim++)
@@ -94,6 +100,16 @@ void Elastic::allocate_scratch_storage()
   PetscErrorCode perr = MatCreateVecs(*m_p_map->basis(), m_p_stacked_grads.get(),
                                       nullptr);CHKERRABORT(m_comm, perr);
 }
+
+void Elastic::allocate_ephemeral_workspace(){
+  // allocate rhs vec and solution storage, use existing displacements in map
+  PetscErrorCode perr;
+  m_delta_vec = create_unique_vec();
+  m_rhs_vec = create_unique_vec();
+  perr = VecDuplicate(*m_p_map->m_displacements, m_delta_vec.get());CHKERRABORT(m_comm, perr);
+  perr = VecDuplicate(*m_p_map->m_displacements, m_rhs_vec.get());CHKERRABORT(m_comm, perr);
+}
+
 
 void Elastic::scatter_grads_to_stacked()
 {
@@ -132,7 +148,7 @@ void Elastic::create_scatterers()
   }
 }
 
-void Elastic::create_t_matrix()
+void Elastic::calculate_tmat()
 {
   // Calculate average intensity 0.5(f+m)
   // Constant offset needed later, does not affect gradients
