@@ -25,9 +25,11 @@ public:
 
   explicit Image(std::string filename, MPI_Comm comm = PETSC_COMM_WORLD);
   explicit Image(intvector shape, MPI_Comm comm = PETSC_COMM_WORLD);
-  explicit Image(const Image& image);
 
   Vec_unique gradient(integer dim);
+
+  std::unique_ptr<Image> duplicate() const;
+  std::unique_ptr<Image> copy() const;
 
   // Allow RO access to member variables
   // Note that datavec and dmda remain mutable in this way
@@ -39,9 +41,10 @@ public:
   std::shared_ptr<const Vec> local_vec() const{ return m_localvec;}
   std::shared_ptr<DM> dmda() const{ return m_dmda;}
 
-  friend void create_t_matrix(Image &fixed, Image &moved, Map &map);
-
 protected:
+
+  explicit Image(const Image& image);
+  Image& operator=(const Image& image);
 
   integer m_ndim;
   MPI_Comm m_comm;

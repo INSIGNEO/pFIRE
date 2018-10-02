@@ -3,7 +3,7 @@
 // scalings are src_spacing/tgt_spacing for each dim, offsets are tgt[0,0,0] - src[0,0,0]
 Mat_unique build_basis_matrix(
     MPI_Comm comm, const intvector& src_shape, const intvector& tgt_shape, 
-    const intvector& scalings, const floatvector& offsets, integer tile_dim)
+    const floatvector& scalings, const floatvector& offsets, integer tile_dim)
 {
   // get total nodes per dim, and tot_rows = tgt_size*ndim
   integer src_size = std::accumulate(src_shape.begin(), src_shape.end(), 1,
@@ -72,7 +72,6 @@ Mat_unique build_basis_matrix(
       {
         floating coeff = calculate_basis_coefficient(src_coord.begin(), src_coord.end(),
                                                      src_coord_floor.begin());
-        std::cout << coeff << std::endl;
         if(coeff > 0)
         {
           rowptr++;

@@ -3,6 +3,8 @@ CMakeCache.txt
 cmake_install.cmake
 Makefile
 
+*.swp
+
 # Compiled Object files
 *.slo
 *.lo

@@ -1,15 +1,55 @@
 #include "map.hpp"
 
-Map::Map(const intvector node_spacing, const Image& mask)
+Map::Map(const Image& mask, const floatvector node_spacing)
   : m_comm(mask.comm()), m_ndim(mask.ndim()), m_v_node_spacing(node_spacing),
     m_v_image_shape(mask.shape()), m_v_map_shape(intvector()), m_vv_node_locs(floatvector2d()),
-    m_dmda(mask.dmda())
+    m_displacements(create_unique_vec())
 {
   calculate_node_locs();
   calculate_basis();
   // TODO: mask basis
   // initialize displacement storage
+  alloc_displacements();
 }
+
+Map::Map(const Map& map, const floatvector new_spacing)
+  : m_comm(map.m_comm), m_ndim(map.m_ndim), m_v_node_spacing(new_spacing),
+    m_v_image_shape(map.m_v_image_shape), m_v_map_shape(intvector()), 
+    m_vv_node_locs(floatvector2d()), m_displacements(create_unique_vec())
+{
+  calculate_node_locs();
+  calculate_basis();
+  // TODO: mask basis
+  // initialize displacement storage
+  alloc_displacements();
+}
+
+std::unique_ptr<Map> Map::interpolate(floatvector new_spacing)
+{
+  std::unique_ptr<Map> new_map(new Map(*this, new_spacing));
+
+  floatvector scalings(m_ndim, 0.0);
+  floatvector offsets(m_ndim, 0.0);
+
+  n_ary_transform(std::divides<>(), scalings.begin(), this->m_v_node_spacing.begin(),
+                  this->m_v_node_spacing.end(), new_map->m_v_node_spacing.begin());
+  n_ary_transform(std::minus<>(), offsets.begin(), new_map->m_v_offsets.begin(),
+                  new_map->m_v_offsets.end(), this->m_v_offsets.begin());
+
+  Mat_unique interp = build_basis_matrix(m_comm, m_v_map_shape, new_map->m_v_map_shape,
+                                         scalings, offsets, m_ndim+1);
+
+  PetscErrorCode perr = MatMult(*interp, *m_displacements, *new_map->m_displacements);CHKERRABORT(m_comm, perr);
+
+  return new_map;
+}
+
+
+void Map::alloc_displacements()
+{
+  MatCreateVecs(*m_basis, m_displacements.get(), nullptr);  
+}
+
 
 void Map::calculate_node_locs()
 {

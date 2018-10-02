@@ -14,7 +14,7 @@
 #include "iterator_routines.hpp"
 
 Mat_unique build_basis_matrix(MPI_Comm comm, const intvector& src_shape, const intvector& tgt_shape, 
-                              const intvector& scalings, const floatvector& offsets,
+                              const floatvector& scalings, const floatvector& offsets,
                               integer tile_dim);
 
 template<class Input1, class Input2, class Rtype = typename std::iterator_traits<Input1>::value_type>

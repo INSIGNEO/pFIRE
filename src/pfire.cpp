@@ -9,6 +9,7 @@
 #include "laplacian.hpp"
 #include "image.hpp"
 #include "map.hpp"
+#include "elastic.hpp"
 
 void mainflow();
 
@@ -24,13 +25,19 @@ int main(int argc, char **argv){
 
 void mainflow(){
 
-  intvector imshape = {3,3,3};
-  intvector nodespacing = {2,2,2};
+  intvector imshape = {10,10,10};
+  floatvector nodespacing = {5,5,5};
+  floatvector nodespacing2 = {3,3,3};
 
-  Image testimg(imshape);
+  std::unique_ptr<Image> fixed = std::make_unique<Image>(imshape);
+  std::unique_ptr<Image> moved = fixed->duplicate();
 
-  Map testmap(nodespacing, testimg);
+  Map foo(*fixed, nodespacing);
 
-  MatView(*(testmap.basis()), PETSC_VIEWER_STDOUT_WORLD);
+  VecSet(*foo.m_displacements, 1);
+
+  auto foo2 = foo.interpolate(nodespacing2);
+
+  VecView(*foo2->m_displacements, PETSC_VIEWER_STDOUT_WORLD);
 
 }

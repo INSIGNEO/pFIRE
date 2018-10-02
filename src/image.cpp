@@ -1,5 +1,7 @@
 #include "image.hpp"
 
+//Public Methods
+
 Image::Image(const intvector shape, MPI_Comm comm)
              : m_ndim(shape.size()), m_comm(comm), m_shape(shape) //const on shape causes copy assignment (c++11)
 {
@@ -19,12 +21,30 @@ Image::Image(const intvector shape, MPI_Comm comm)
   initialize_vectors();
 }
 
+std::unique_ptr<Image> Image::duplicate() const{
+  return std::unique_ptr<Image>(new Image(*this));
+}
+
+std::unique_ptr<Image> Image::copy() const{
+  // private copy c'tor prohibits use of std::make_unique, would otherwise do:
+  // std::unique_ptr<Image> new_img = std::make_unique<Image>(*this);
+  std::unique_ptr<Image> new_img(new Image(*this));
+  
+  PetscErrorCode perr = VecCopy(*m_localvec, *new_img->m_localvec);CHKERRABORT(m_comm, perr);
+  perr = VecCopy(*m_globalvec, *new_img->m_globalvec);CHKERRABORT(m_comm, perr);
+
+  return new_img;
+}
+
+//Protected Methods
+
 Image::Image(const Image& image)
   : m_ndim(image.m_ndim), m_comm(image.m_comm), m_shape(image.m_shape),
     m_dmda(image.m_dmda)
 {
   initialize_vectors();
 }
+
 
 void Image::initialize_dmda()
 {
