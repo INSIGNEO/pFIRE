@@ -9,8 +9,9 @@
 #include "types.hpp"
 #include "indexing.hpp"
 
-Mat create_laplacian(MPI_Comm comm, intvector shape, integer startrow, integer endrow);
-Mat create_laplacian_autostride(MPI_Comm comm, intvector shape);
+Mat_unique build_laplacian_matrix(MPI_Comm comm, intvector shape, integer startrow, integer endrow,
+                                  integer ndim);
+Mat_unique build_laplacian_autostride(MPI_Comm comm, intvector shape);
 
 #endif
 

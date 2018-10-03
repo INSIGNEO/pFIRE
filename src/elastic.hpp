@@ -2,6 +2,7 @@
 #define ELASTIC_HPP
 
 #include<algorithm>
+#include<iostream>
 
 #include<petscmat.h>
 
@@ -45,7 +46,7 @@ class Elastic
     Mat_unique m_p_tmat, m_p_normmat;
 
     void innerloop();
-    void innerstep();
+    void innerstep(floating lambda);
 
     void calculate_node_spacings();
     void allocate_persistent_workspace();
@@ -53,6 +54,7 @@ class Elastic
     void create_scatterers();
     
     void scatter_grads_to_stacked();
+    void duplicate_single_grad_to_stacked(size_t idx);
     void calculate_tmat();
 };
 

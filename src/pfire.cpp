@@ -25,19 +25,12 @@ int main(int argc, char **argv){
 
 void mainflow(){
 
-  intvector imshape = {10,10,10};
-  floatvector nodespacing = {6,6,6};
-  floatvector nodespacing2 = {3,3,3};
+  intvector imshape = {30,30,30};
+  floatvector nodespacing = {5,5,5};
 
   std::unique_ptr<Image> fixed = std::make_unique<Image>(imshape);
   std::unique_ptr<Image> moved = fixed->duplicate();
 
-  Map foo(*fixed, nodespacing);
-
-  VecSet(*foo.m_displacements, 2);
-
-  auto foo2 = foo.interpolate(nodespacing2);
-
-  VecView(*foo2->m_displacements, PETSC_VIEWER_STDOUT_WORLD);
-
+  Elastic reg(*fixed, *moved, nodespacing);
+  reg.autoregister();
 }

@@ -5,11 +5,18 @@ Map::Map(const Image& mask, const floatvector node_spacing)
     m_v_image_shape(mask.shape()), m_v_map_shape(intvector()), m_vv_node_locs(floatvector2d()),
     m_displacements(create_unique_vec())
 {
+  std::cout << "Begin map ctr" << std::endl;
   calculate_node_locs();
+  std::cout << "Node locs calculated" << std::endl;
   calculate_basis();
+  std::cout << "Basis calculated" << std::endl;
   // TODO: mask basis
   // initialize displacement storage
   alloc_displacements();
+  std::cout << "Memory allocated" << std::endl;
+  calculate_laplacian();
+  std::cout << "Laplacian calculated" << std::endl;
+  std::cout << "End map ctr" << std::endl;
 }
 
 Map::Map(const Map& map, const floatvector new_spacing)
@@ -22,6 +29,7 @@ Map::Map(const Map& map, const floatvector new_spacing)
   // TODO: mask basis
   // initialize displacement storage
   alloc_displacements();
+  calculate_laplacian();
 }
 
 std::unique_ptr<Map> Map::interpolate(floatvector new_spacing)
@@ -63,7 +71,7 @@ void Map::calculate_node_locs()
     integer num_spc = (integer)std::ceil(centre/m_v_node_spacing[idim]);
     integer num_nod = num_spc*2 + 1;
     floating lo = centre - num_spc*m_v_node_spacing[idim];
-    floatvector nodes(num_nod);
+    floatvector nodes(num_nod, 0.0);
     std::generate(nodes.begin(), nodes.end(),
                   [x = lo, y = m_v_node_spacing[idim]] () mutable { x += y; return x;});
     m_vv_node_locs.push_back(nodes);
@@ -79,3 +87,11 @@ void Map::calculate_basis()
                                m_v_node_spacing, m_v_offsets, m_ndim+1);
 }
 
+void Map::calculate_laplacian()
+{
+  std::cout << "Begin lapl calc" << std::endl;
+  integer startrow, endrow;
+  PetscErrorCode perr = VecGetOwnershipRange(*m_displacements, &startrow, &endrow);CHKERRABORT(m_comm, perr);
+  m_lapl = build_laplacian_matrix(m_comm, m_v_map_shape, startrow, endrow, m_ndim+1);
+  std::cout << "End lapl calc" << std::endl;
+}

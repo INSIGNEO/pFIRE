@@ -25,6 +25,7 @@ Elastic::Elastic(const Image& fixed, const Image& moved, const floatvector nodes
   // set scratchpad storage, scatterers:
   allocate_persistent_workspace();
   create_scatterers();
+  std::cout << "End of constructor" << std::endl;
 }
 
 
@@ -33,10 +34,11 @@ void Elastic::autoregister()
   floatvector2d::const_reverse_iterator it = m_v_nodespacings.crbegin();
   while(it != m_v_nodespacings.rend())
   {
-  innerloop();
-  std::advance(it, 1);
-  m_v_nodespacings.erase(it.base());
-  m_p_map = m_p_map->interpolate(*it);
+    std::cout << "Nodespacing " << (*it)[0] << std::endl;
+    innerloop();
+    std::advance(it, 1);
+    m_v_nodespacings.erase(it.base());
+    m_p_map = m_p_map->interpolate(*it);
   }
 }
 
@@ -45,17 +47,19 @@ void Elastic::innerloop()
   // setup resolution specific solution storage (delta a, rvec)
   allocate_ephemeral_workspace();
   // calculate lambda for loop
+  floating lambda = 1.0;
   for(integer inum=0; inum<m_max_iter; inum++)
   {
-    innerstep();
+    std::cout << "Iteration " << inum << std::endl;
+    innerstep(lambda);
     //check convergence and break
   }
 }
 
-void Elastic::innerstep()
+void Elastic::innerstep(floating lambda)
 {
   // calculate up to date tmat
-  calculate_t_mat();
+  calculate_tmat();
 
   // calculate tmat2 and precondition
   Mat_unique normmat = create_unique_mat();
@@ -66,9 +70,15 @@ void Elastic::innerstep()
   // TODO
 
   // calculate tmat2 + lambda*lapl2
-  perr = MatAXPY(normmat, lambda, map.laplacian(), DIFFERENT_NONZERO_PATTERN);
+  perr = MatAXPY(*normmat, lambda, *m_p_map->laplacian(),
+                 DIFFERENT_NONZERO_PATTERN);CHKERRABORT(m_comm, perr);
 
-  // calculate rvec
+  // calculate rvec, to do this need to reuse stacked vector for [f-m f-m f-m f-m]
+  perr = VecWAXPY(*m_vp_grads[0], -1.0, *m_fixed.local_vec(),
+                  *m_p_registered->local_vec());CHKERRABORT(m_comm, perr);
+  duplicate_single_grad_to_stacked(0);
+  perr = MatMult(*m_p_tmat, *m_p_stacked_grads, *m_rhs_vec);
+
   // solve for delta a
   // update map
   // warp image
@@ -117,13 +127,22 @@ void Elastic::scatter_grads_to_stacked()
   {
     PetscErrorCode perr = VecScatterBegin(*m_vp_scatterers[idim], *m_vp_grads[idim], *m_p_stacked_grads,
                                           INSERT_VALUES, SCATTER_FORWARD);CHKERRABORT(m_comm, perr);
-  }
-  for(integer idim=0; idim < m_mapdims; idim++)
-  {
-    PetscErrorCode perr = VecScatterEnd(*m_vp_scatterers[idim], *m_vp_grads[idim], *m_p_stacked_grads,
+    perr = VecScatterEnd(*m_vp_scatterers[idim], *m_vp_grads[idim], *m_p_stacked_grads,
                                         INSERT_VALUES, SCATTER_FORWARD);CHKERRABORT(m_comm, perr);
   }
 }
+
+void Elastic::duplicate_single_grad_to_stacked(size_t idx)
+{
+  for(integer idim=0; idim < m_mapdims; idim++)
+  {
+    PetscErrorCode perr = VecScatterBegin(*m_vp_scatterers[idim], *m_vp_grads[idx], *m_p_stacked_grads,
+                                          INSERT_VALUES, SCATTER_FORWARD);CHKERRABORT(m_comm, perr);
+    perr = VecScatterEnd(*m_vp_scatterers[idim], *m_vp_grads[idx], *m_p_stacked_grads,
+                                        INSERT_VALUES, SCATTER_FORWARD);CHKERRABORT(m_comm, perr);
+  }
+}
+
 
 void Elastic::create_scatterers()
 {
@@ -138,7 +157,8 @@ void Elastic::create_scatterers()
     IS* tgt_is = new IS;
     perr = ISCreateStride(m_comm, m_size, offset, 1, tgt_is);CHKERRABORT(m_comm, perr);
     m_vp_iss.emplace_back(tgt_is);
-
+  
+    std::cout << src_is << " : " << tgt_is << std::endl;
     // Create scatterer and add to array
     VecScatter* tmp_sctr = new VecScatter;
     perr = VecScatterCreate(*pp_grad, *src_is, *m_p_stacked_grads, *tgt_is, tmp_sctr);CHKERRABORT(m_comm, perr);

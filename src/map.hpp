@@ -8,6 +8,7 @@
 #include "indexing.hpp"
 #include "image.hpp"
 #include "basis.hpp"
+#include "laplacian.hpp"
 
 class Image;
 
@@ -21,6 +22,7 @@ class Map{
 //  ~Map();
 
   Mat* basis() { return m_basis.get();}
+  Mat* laplacian() { return m_lapl.get();}
 
   std::unique_ptr<Map> interpolate(floatvector new_spacing);
 
@@ -34,11 +36,13 @@ class Map{
   intvector m_v_map_shape;
   floatvector2d m_vv_node_locs;
   Mat_unique m_basis;
+  Mat_unique m_lapl;
   Vec_unique m_displacements;
 
   void alloc_displacements();
   void calculate_node_locs();
   void calculate_basis();
+  void calculate_laplacian();
 
 };
 
