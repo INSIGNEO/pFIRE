@@ -1,6 +1,7 @@
 #ifndef MAP_HPP
 #define MAP_HPP
 
+#include<exception>
 #include<numeric>
 #include<iostream>
 
@@ -24,10 +25,14 @@ class Map{
   Mat* basis() { return m_basis.get();}
   Mat* laplacian() { return m_lapl.get();}
 
+  void update(const Vec &delta_vec);
   std::unique_ptr<Map> interpolate(floatvector new_spacing);
+
+  std::unique_ptr<Image> warp(const Image& image);
 
   //private:
 
+  const Image& m_mask;
   MPI_Comm m_comm;
   integer m_ndim;
   floatvector m_v_node_spacing;
@@ -36,6 +41,7 @@ class Map{
   intvector m_v_map_shape;
   floatvector2d m_vv_node_locs;
   Mat_unique m_basis;
+  Mat_unique m_basis_1d;
   Mat_unique m_lapl;
   Vec_unique m_displacements;
 

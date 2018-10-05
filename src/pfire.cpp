@@ -25,8 +25,8 @@ int main(int argc, char **argv){
 
 void mainflow(){
 
-  intvector imshape = {30,30,30};
-  floatvector nodespacing = {5,5,5};
+  intvector imshape = {10,10};
+  floatvector nodespacing = {5,5};
 
   std::unique_ptr<Image> fixed = std::make_unique<Image>(imshape);
   std::unique_ptr<Image> moved = fixed->duplicate();

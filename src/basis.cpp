@@ -65,8 +65,8 @@ Mat_unique build_basis_matrix(
           src_coord_floor[idim] += 1;
         }
       }
-      if(all_true(src_coord_floor.begin(), src_coord_floor.end(), tgt_shape.begin(),
-                  tgt_shape.end(), std::less<>()) 
+      if(all_true_varlen(src_coord_floor.begin(), src_coord_floor.end(), tgt_shape.begin(),
+                         tgt_shape.end(), std::less<>()) 
           && std::all_of(src_coord_floor.begin(), src_coord_floor.end(),
                          [](floating a) -> bool{return a >= 0;}))
       {

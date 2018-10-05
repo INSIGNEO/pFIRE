@@ -53,7 +53,7 @@ void Image::initialize_dmda()
   PetscErrorCode perr;
 
   // Make sure things get gracefully cleaned up
-  m_dmda = std::shared_ptr<DM>(new DM, DMDestroy);
+  m_dmda = create_shared_dm();
   perr = DMDACreate3d(m_comm,
                       DM_BOUNDARY_GHOSTED, DM_BOUNDARY_GHOSTED, DM_BOUNDARY_GHOSTED, //BCs
                       DMDA_STENCIL_STAR, //stencil shape

@@ -5,6 +5,7 @@
 #include<iostream>
 
 #include<petscmat.h>
+#include<petscdmda.h>
 
 #include "types.hpp"
 #include "image.hpp"
@@ -20,7 +21,7 @@ class Elastic
 
 //  protected:
 
-    integer m_max_iter = 50;
+    integer m_max_iter = 1;
 
     // Straightforward initialize-by-copy
     MPI_Comm m_comm;
@@ -42,6 +43,7 @@ class Elastic
 
     Vec_unique m_delta_vec, m_rhs_vec; 
     std::vector<Vec_unique> m_vp_grads;
+    Vec_unique m_gradlocal;
     Vec_unique m_p_stacked_grads;
     Mat_unique m_p_tmat, m_p_normmat;
 

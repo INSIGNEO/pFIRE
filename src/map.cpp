@@ -1,26 +1,20 @@
 #include "map.hpp"
 
 Map::Map(const Image& mask, const floatvector node_spacing)
-  : m_comm(mask.comm()), m_ndim(mask.ndim()), m_v_node_spacing(node_spacing),
+  : m_mask(mask), m_comm(mask.comm()), m_ndim(mask.ndim()), m_v_node_spacing(node_spacing),
     m_v_image_shape(mask.shape()), m_v_map_shape(intvector()), m_vv_node_locs(floatvector2d()),
     m_displacements(create_unique_vec())
 {
-  std::cout << "Begin map ctr" << std::endl;
   calculate_node_locs();
-  std::cout << "Node locs calculated" << std::endl;
   calculate_basis();
-  std::cout << "Basis calculated" << std::endl;
   // TODO: mask basis
   // initialize displacement storage
   alloc_displacements();
-  std::cout << "Memory allocated" << std::endl;
   calculate_laplacian();
-  std::cout << "Laplacian calculated" << std::endl;
-  std::cout << "End map ctr" << std::endl;
 }
 
 Map::Map(const Map& map, const floatvector new_spacing)
-  : m_comm(map.m_comm), m_ndim(map.m_ndim), m_v_node_spacing(new_spacing),
+  : m_comm(map.m_comm), m_mask(map.m_mask), m_ndim(map.m_ndim), m_v_node_spacing(new_spacing),
     m_v_image_shape(map.m_v_image_shape), m_v_map_shape(intvector()), 
     m_vv_node_locs(floatvector2d()), m_displacements(create_unique_vec())
 {
@@ -30,6 +24,11 @@ Map::Map(const Map& map, const floatvector new_spacing)
   // initialize displacement storage
   alloc_displacements();
   calculate_laplacian();
+}
+
+void Map::update(const Vec &delta_vec)
+{
+  PetscErrorCode perr = VecAXPY(*m_displacements, 1, delta_vec);
 }
 
 std::unique_ptr<Map> Map::interpolate(floatvector new_spacing)
@@ -83,15 +82,34 @@ void Map::calculate_node_locs()
 
 void Map::calculate_basis()
 {
+  // Get the full Nd basis
   m_basis = build_basis_matrix(m_comm, m_v_map_shape, m_v_image_shape,
                                m_v_node_spacing, m_v_offsets, m_ndim+1);
+
+  // Now grab a 1d basis as a submatrix. Note can't do this the other way round because Petsc won't
+  // allow reuse of rows/cols in MatCreateSubMatrix
+  // Work out what rows, columns the rank needs to own for compatability with image and
+  // displacement vectors
+  integer rowstart, rowsize, colstart, colsize;
+  PetscErrorCode perr = VecGetOwnershipRange(*m_mask.global_vec(), &rowstart, &rowsize);CHKERRABORT(m_comm, perr);
+  rowsize -= rowstart;
+  throw std::runtime_error("need to get just one map length's worth of columns");
+  perr = MatGetOwnershipRangeColumn(*m_basis, &colstart, &colsize);CHKERRABORT(m_comm, perr);
+  colsize -= colstart;
+  
+  // Express these ranges as index sets 
+  IS_unique rows = create_unique_is();
+  perr = ISCreateStride(m_comm, rowsize, rowstart, 1, rows.get());CHKERRABORT(m_comm, perr);
+  IS_unique cols = create_unique_is();
+  perr = ISCreateStride(m_comm, colsize, colstart, 1, cols.get());CHKERRABORT(m_comm, perr);
+
+  m_basis_1d = create_unique_mat();
+  perr = MatCreateSubMatrix(*m_basis, *rows, *cols, MAT_INITIAL_MATRIX, m_basis_1d.get());
 }
 
 void Map::calculate_laplacian()
 {
-  std::cout << "Begin lapl calc" << std::endl;
   integer startrow, endrow;
   PetscErrorCode perr = VecGetOwnershipRange(*m_displacements, &startrow, &endrow);CHKERRABORT(m_comm, perr);
   m_lapl = build_laplacian_matrix(m_comm, m_v_map_shape, startrow, endrow, m_ndim+1);
-  std::cout << "End lapl calc" << std::endl;
 }

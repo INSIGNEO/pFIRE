@@ -25,18 +25,44 @@ Elastic::Elastic(const Image& fixed, const Image& moved, const floatvector nodes
   // set scratchpad storage, scatterers:
   allocate_persistent_workspace();
   create_scatterers();
-  std::cout << "End of constructor" << std::endl;
 }
 
 
 void Elastic::autoregister()
 {
-  floatvector2d::const_reverse_iterator it = m_v_nodespacings.crbegin();
+  integer loop_cnt = 1;
+  PetscPrintf(m_comm, "Beginning elastic registration\n");
+  if(m_imgdims == 2)
+  {
+    PetscPrintf(m_comm, "Target nodespacing: %.1f, %.1f\n",
+                m_v_final_nodespacing[0], m_v_final_nodespacing[1]);
+  }
+  else
+  {
+    PetscPrintf(m_comm, "Target node spacing: %.1f, %.1f, %.1f\n",
+                m_v_final_nodespacing[0], m_v_final_nodespacing[1], m_v_final_nodespacing[2]);
+  }
+  PetscPrintf(m_comm, "Using %i generations\n\n", m_v_nodespacings.size());
+
+  auto it = m_v_nodespacings.crbegin();
   while(it != m_v_nodespacings.rend())
   {
-    std::cout << "Nodespacing " << (*it)[0] << std::endl;
+    PetscPrintf(m_comm, "Generation %i, ", loop_cnt++);
+    if(m_imgdims == 2)
+    {
+      PetscPrintf(m_comm, "Nodespacing %.1f, %.1f\n", (*it)[0], (*it)[1]);
+    } 
+    else
+    {
+      PetscPrintf(m_comm, "Nodespacing %.1f, %.1f, %1.f\n", (*it)[0], (*it)[1], (*it)[2]);
+    }
+
     innerloop();
     std::advance(it, 1);
+    if(it == m_v_nodespacings.rend())
+    {
+      break;
+    }
     m_v_nodespacings.erase(it.base());
     m_p_map = m_p_map->interpolate(*it);
   }
@@ -44,13 +70,13 @@ void Elastic::autoregister()
 
 void Elastic::innerloop()
 {
-  // setup resolution specific solution storage (delta a, rvec)
+  // setup map resolution specific solution storage (tmat, delta a, rvec)
   allocate_ephemeral_workspace();
   // calculate lambda for loop
   floating lambda = 1.0;
   for(integer inum=0; inum<m_max_iter; inum++)
   {
-    std::cout << "Iteration " << inum << std::endl;
+    PetscPrintf(m_comm, "Iteration %i:\n", inum);
     innerstep(lambda);
     //check convergence and break
   }
@@ -74,21 +100,28 @@ void Elastic::innerstep(floating lambda)
                  DIFFERENT_NONZERO_PATTERN);CHKERRABORT(m_comm, perr);
 
   // calculate rvec, to do this need to reuse stacked vector for [f-m f-m f-m f-m]
-  perr = VecWAXPY(*m_vp_grads[0], -1.0, *m_fixed.local_vec(),
-                  *m_p_registered->local_vec());CHKERRABORT(m_comm, perr);
+  perr = VecWAXPY(*m_vp_grads[0], -1.0, *m_fixed.global_vec(),
+                  *m_p_registered->global_vec());CHKERRABORT(m_comm, perr);
   duplicate_single_grad_to_stacked(0);
-  perr = MatMult(*m_p_tmat, *m_p_stacked_grads, *m_rhs_vec);
-
+  perr = MatMultTranspose(*m_p_tmat, *m_p_stacked_grads, *m_rhs_vec);
+  
   // solve for delta a
+  KSP_unique m_ksp = create_unique_ksp();
+  KSPCreate(m_comm, m_ksp.get());
+  KSPSetOperators(*m_ksp, *normmat, *normmat);
+  KSPSolve(*m_ksp, *m_rhs_vec, *m_delta_vec); 
   // update map
+  m_p_map->update(*m_delta_vec);
   // warp image
+//  m_p_registered = m_p_map->warp(m_moved);
 }
 
-void Elastic::calculate_node_spacings(){
+void Elastic::calculate_node_spacings()
+{
   const intvector& imshape = m_fixed.shape();
   floatvector currspc = m_v_final_nodespacing;
   m_v_nodespacings.push_back(currspc);
-  while(all_true(currspc.begin(), currspc.end(), imshape.begin(), imshape.end(), std::less<>()))
+  while(all_true_varlen(currspc.begin(), currspc.end(), imshape.begin(), imshape.end(), std::less<>()))
   {
     std::transform(currspc.begin(), currspc.end(), currspc.begin(),
                    [](floating a) -> floating{return a*2;});
@@ -102,13 +135,26 @@ void Elastic::allocate_persistent_workspace()
   for(integer idim=0; idim < m_mapdims; idim++)
   {
     Vec* tmp_vec = new Vec;
-    PetscErrorCode perr = VecDuplicate(*m_fixed.local_vec(), tmp_vec);CHKERRABORT(m_comm, perr);
+    PetscErrorCode perr = VecDuplicate(*m_fixed.global_vec(), tmp_vec);CHKERRABORT(m_comm, perr);
     m_vp_grads.emplace_back(tmp_vec);
+    integer gsize, lsize, ostart, oend;
+    VecGetSize(*tmp_vec, &gsize);
+    VecGetLocalSize(*tmp_vec, &lsize);
+    VecGetOwnershipRange(*tmp_vec, &ostart, &oend);
   }
+
+  // create local vector to allow gradient calculation
+  m_gradlocal = create_unique_vec();
+  PetscErrorCode perr = VecDuplicate(*m_fixed.local_vec(), m_gradlocal.get());CHKERRABORT(m_comm, perr);
+
   // create "global" vector for stack compatible with basis matrix
   // should be compatible with all map bases of this size
-  PetscErrorCode perr = MatCreateVecs(*m_p_map->basis(), m_p_stacked_grads.get(),
-                                      nullptr);CHKERRABORT(m_comm, perr);
+  perr = MatCreateVecs(*m_p_map->basis(), nullptr,
+                                      m_p_stacked_grads.get());CHKERRABORT(m_comm, perr);
+  integer gsize, lsize, ostart, oend;
+  VecGetSize(*m_p_stacked_grads, &gsize);
+  VecGetLocalSize(*m_p_stacked_grads, &lsize);
+  VecGetOwnershipRange(*m_p_stacked_grads, &ostart, &oend);
 }
 
 void Elastic::allocate_ephemeral_workspace(){
@@ -118,6 +164,11 @@ void Elastic::allocate_ephemeral_workspace(){
   m_rhs_vec = create_unique_vec();
   perr = VecDuplicate(*m_p_map->m_displacements, m_delta_vec.get());CHKERRABORT(m_comm, perr);
   perr = VecDuplicate(*m_p_map->m_displacements, m_rhs_vec.get());CHKERRABORT(m_comm, perr);
+
+  // setup map resolution specific tmat storage, can use basis layout
+  m_p_tmat = create_unique_mat();
+  perr = MatDuplicate(*m_p_map->m_basis, MAT_DO_NOT_COPY_VALUES, m_p_tmat.get());CHKERRABORT(m_comm, perr);
+
 }
 
 
@@ -146,23 +197,31 @@ void Elastic::duplicate_single_grad_to_stacked(size_t idx)
 
 void Elastic::create_scatterers()
 {
-  integer offset = 0;
+  AO ao_petsctonat; // N.B this is not going to be a leak, we are just borrowing a Petsc managed obj.
+  PetscErrorCode perr = DMDAGetAO(*m_fixed.dmda(), &ao_petsctonat); // Destroying this would break the dmda
+
+  integer offset = 0; // Track offset
   for(auto&& pp_grad : m_vp_grads)
   {
-    //Create IS for target indices in stacked array, add to array for teardown
-    IS* src_is = new IS;
-    PetscErrorCode perr = ISCreateStride(m_comm, m_size, 0, 1, src_is);CHKERRABORT(m_comm, perr);
-    m_vp_iss.emplace_back(src_is);
+    // Get extents of local data in grad array
+    integer startelem, datasize;
+    perr = VecGetOwnershipRange(*pp_grad, &startelem, &datasize);CHKERRABORT(m_comm, perr);
+    datasize -= startelem;
 
-    IS* tgt_is = new IS;
-    perr = ISCreateStride(m_comm, m_size, offset, 1, tgt_is);CHKERRABORT(m_comm, perr);
-    m_vp_iss.emplace_back(tgt_is);
-  
-    std::cout << src_is << " : " << tgt_is << std::endl;
+    // Create IS for source indices in stacked array, keep in vector for memory management
+    m_vp_iss.push_back(create_unique_is());
+    IS* p_src_is = m_vp_iss.back().get(); //grab a temp copy to avoid vector accesses below
+    perr = ISCreateStride(m_comm, datasize, startelem, 1, p_src_is);CHKERRABORT(m_comm, perr);
+    // Convert with AO to map from petsc to natural ordering (do here because tgt_is is offset)
+    perr = AOApplicationToPetscIS(ao_petsctonat, *m_vp_iss.back());CHKERRABORT(m_comm, perr);
+
+    m_vp_iss.push_back(create_unique_is());
+    IS* p_tgt_is = m_vp_iss.back().get(); //grab a temp copy to avoid vector accesses below
+    perr = ISCreateStride(m_comm, datasize, startelem+offset, 1, p_tgt_is);CHKERRABORT(m_comm, perr);
+
     // Create scatterer and add to array
-    VecScatter* tmp_sctr = new VecScatter;
-    perr = VecScatterCreate(*pp_grad, *src_is, *m_p_stacked_grads, *tgt_is, tmp_sctr);CHKERRABORT(m_comm, perr);
-    m_vp_scatterers.emplace_back(tmp_sctr);
+    m_vp_scatterers.push_back(create_unique_vecscatter());
+    perr = VecScatterCreate(*pp_grad, *p_src_is, *m_p_stacked_grads, *p_tgt_is, m_vp_scatterers.back().get());CHKERRABORT(m_comm, perr);
 
     offset += m_size;
   }
@@ -172,16 +231,20 @@ void Elastic::calculate_tmat()
 {
   // Calculate average intensity 0.5(f+m)
   // Constant offset needed later, does not affect gradients
-  PetscErrorCode perr = VecSet(*(m_vp_grads[0]), -1.0);CHKERRABORT(PETSC_COMM_WORLD, perr);
+  PetscErrorCode perr = VecSet(*m_vp_grads[0], -1.0);CHKERRABORT(PETSC_COMM_WORLD, perr);
   //NB Z = aX + bY + cZ has call signature VecAXPBYPCZ(Z, a, b, c, X, Y) because reasons....
-  perr = VecAXPBYPCZ(*(m_vp_grads[0]), 0.5, 0.5, 1,  *(m_fixed.local_vec()),
-                     *(m_moved.local_vec()));CHKERRABORT(PETSC_COMM_WORLD, perr);
+  perr = VecAXPBYPCZ(*m_vp_grads[0], 0.5, 0.5, 1,  *m_fixed.global_vec(),
+                     *m_moved.global_vec());CHKERRABORT(PETSC_COMM_WORLD, perr);
+
+  // scatter this to local for later
+  perr = DMGlobalToLocalBegin(*m_fixed.dmda(), *m_vp_grads[0], INSERT_VALUES, *m_gradlocal);
+  perr = DMGlobalToLocalEnd(*m_fixed.dmda(), *m_vp_grads[0], INSERT_VALUES, *m_gradlocal);
 
   // find average gradients
   for(integer idim=0; idim < m_fixed.ndim(); idim++)
   {
     //likely change this to avoid mallocs/frees
-    m_vp_grads[idim+1] = fd::gradient_to_global_unique(*(m_fixed.dmda()), *m_vp_grads[0], idim);
+    fd::gradient_existing(*(m_fixed.dmda()), *m_gradlocal, *m_vp_grads[idim+1], idim);
   }
 
   // Negate average intensity to get 1 - 0.5(f+m) as needed by algorithm
