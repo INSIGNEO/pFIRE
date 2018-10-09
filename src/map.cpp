@@ -28,7 +28,7 @@ Map::Map(const Map& map, const floatvector new_spacing)
 
 void Map::update(const Vec &delta_vec)
 {
-  PetscErrorCode perr = VecAXPY(*m_displacements, 1, delta_vec);
+  PetscErrorCode perr = VecAXPY(*m_displacements, 1, delta_vec);CHKERRABORT(m_comm, perr);
 }
 
 std::unique_ptr<Map> Map::interpolate(floatvector new_spacing)
@@ -51,12 +51,10 @@ std::unique_ptr<Map> Map::interpolate(floatvector new_spacing)
   return new_map;
 }
 
-
 void Map::alloc_displacements()
 {
-  MatCreateVecs(*m_basis, m_displacements.get(), nullptr);  
+  MatCreateVecs(*m_basis, m_displacements.get(), nullptr);
 }
-
 
 void Map::calculate_node_locs()
 {
@@ -79,6 +77,26 @@ void Map::calculate_node_locs()
   }
 }
 
+std::unique_ptr<Image> Map::warp(const Image& image, WorkSpace& wksp)
+{
+  // TODO: Check image is compatible
+  
+  // interpolate map to image nodes with basis
+  PetscErrorCode perr = MatMult(*m_basis, *m_displacements,
+                                *wksp.m_stacktmp);CHKERRABORT(m_comm, perr);
+  wksp.scatter_stacked_to_grads();
+  
+  // build warp matrix
+  std::vector<Vec*> tmps(0);
+  for (auto const& vptr: wksp.m_globaltmps){ tmps.push_back(vptr.get());}
+  Mat_unique warp = build_warp_matrix(m_comm, m_v_image_shape, tmps); 
+
+  // apply matrix to get new image data
+  std::unique_ptr<Image> new_img = image.duplicate();
+  perr = MatMult(*warp, *image.global_vec(), *new_img->global_vec());CHKERRABORT(m_comm, perr);
+  
+  return new_img;
+}
 
 void Map::calculate_basis()
 {
@@ -90,7 +108,7 @@ void Map::calculate_basis()
   // allow reuse of rows/cols in MatCreateSubMatrix
   // Work out what rows, columns the rank needs to own for compatability with image and
   // displacement vectors
-  integer rowstart, rowsize, colstart, colsize;
+/*  integer rowstart, rowsize, colstart, colsize;
   PetscErrorCode perr = VecGetOwnershipRange(*m_mask.global_vec(), &rowstart, &rowsize);CHKERRABORT(m_comm, perr);
   rowsize -= rowstart;
   throw std::runtime_error("need to get just one map length's worth of columns");
@@ -104,7 +122,7 @@ void Map::calculate_basis()
   perr = ISCreateStride(m_comm, colsize, colstart, 1, cols.get());CHKERRABORT(m_comm, perr);
 
   m_basis_1d = create_unique_mat();
-  perr = MatCreateSubMatrix(*m_basis, *rows, *cols, MAT_INITIAL_MATRIX, m_basis_1d.get());
+  perr = MatCreateSubMatrix(*m_basis, *rows, *cols, MAT_INITIAL_MATRIX, m_basis_1d.get());*/
 }
 
 void Map::calculate_laplacian()

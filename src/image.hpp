@@ -17,8 +17,6 @@
 #include "fd_routines.hpp"
 #include "iterator_routines.hpp"
 
-class Map;
-
 class Image{
 
 public:

@@ -11,6 +11,16 @@
 #include<petscdm.h>
 #include<petscksp.h>
 
+
+// Forward Defs
+//
+class Image;
+class WorkSpace;
+class Map;
+class Elastic;
+
+
+// Useful typedefs
 using integer = PetscInt;
 using intvector =  std::vector<integer>;
 using intvector2d =  std::vector<intvector>;

@@ -10,8 +10,7 @@
 #include "image.hpp"
 #include "basis.hpp"
 #include "laplacian.hpp"
-
-class Image;
+#include "workspace.hpp"
 
 class Map{
 
@@ -22,13 +21,13 @@ class Map{
 
 //  ~Map();
 
-  Mat* basis() { return m_basis.get();}
-  Mat* laplacian() { return m_lapl.get();}
+  Mat* basis() const{ return m_basis.get();}
+  Mat* laplacian() const{ return m_lapl.get();}
 
   void update(const Vec &delta_vec);
   std::unique_ptr<Map> interpolate(floatvector new_spacing);
 
-  std::unique_ptr<Image> warp(const Image& image);
+  std::unique_ptr<Image> warp(const Image& image, WorkSpace& wksp);
 
   //private:
 
@@ -41,7 +40,7 @@ class Map{
   intvector m_v_map_shape;
   floatvector2d m_vv_node_locs;
   Mat_unique m_basis;
-  Mat_unique m_basis_1d;
+//  Mat_unique m_basis_1d;
   Mat_unique m_lapl;
   Vec_unique m_displacements;
 
@@ -49,6 +48,7 @@ class Map{
   void calculate_node_locs();
   void calculate_basis();
   void calculate_laplacian();
+  void calculate_warp_matrix();
 
 };
 
