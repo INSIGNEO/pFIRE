@@ -25,11 +25,10 @@ int main(int argc, char **argv){
 
 void mainflow(){
 
-  intvector imshape = {10,10};
-  floatvector nodespacing = {5,5};
+  floatvector nodespacing = {5,5,5};
 
-  std::unique_ptr<Image> fixed = std::make_unique<Image>(imshape);
-  std::unique_ptr<Image> moved = fixed->duplicate();
+  std::unique_ptr<Image> fixed = Image::create_from_image("ellipse_fixed.png");
+  std::unique_ptr<Image> moved = Image::create_from_image("ellipse_moved.png", fixed.get());
 
   Elastic reg(*fixed, *moved, nodespacing);
   reg.autoregister();

@@ -76,7 +76,17 @@ void Elastic::innerloop()
   {
     PetscPrintf(m_comm, "Iteration %i:\n", inum);
     innerstep(lambda);
-    //check convergence and break
+
+    //check convergence and break if below threshold
+    floating posmax, negmax;
+    PetscErrorCode perr = VecMax(*m_workspace->m_delta, nullptr, &posmax);CHKERRABORT(m_comm, perr);
+    perr = VecMin(*m_workspace->m_delta, nullptr, &negmax);CHKERRABORT(m_comm, perr);
+    floating amax = std::max(std::fabs(posmax), std::fabs(negmax));
+    PetscPrintf(m_comm, "Maximum displacement: %.2f\n", amax);
+    if(amax < m_convergence_thres)
+    {
+      break;
+    }
   }
 }
 
@@ -112,7 +122,7 @@ void Elastic::innerstep(floating lambda)
   // update map
   m_p_map->update(*m_workspace->m_delta);
   // warp image
-  //m_p_registered = m_p_map->warp(m_moved, *m_workspace->m_stacktmp);
+  m_p_registered = m_p_map->warp(m_moved, *m_workspace);
 }
 
 void Elastic::calculate_node_spacings()

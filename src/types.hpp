@@ -11,6 +11,7 @@
 #include<petscdm.h>
 #include<petscksp.h>
 
+#include<OpenImageIO/imagecache.h>
 
 // Forward Defs
 //
@@ -101,5 +102,15 @@ inline KSP_unique create_unique_ksp(){return KSP_unique(new KSP);}
 // typedef and helper for shared_ptr
 using KSP_shared = std::shared_ptr<KSP>;
 inline KSP_shared create_shared_ksp(){return KSP_shared(new KSP, KSPDeleter());}
+
+
+//// ImageCache
+// typedef and helpers for unique_ptr
+struct ImageCacheDeleter{void operator()(OIIO::ImageCache* p) const{OIIO::ImageCache::destroy(p);}};
+using ImageCache_unique = std::unique_ptr<OIIO::ImageCache, ImageCacheDeleter>;
+inline ImageCache_unique create_unique_imagecache()
+{
+  return ImageCache_unique(OIIO::ImageCache::create());
+}
 
 #endif

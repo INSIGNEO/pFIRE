@@ -93,6 +93,13 @@ Mat_unique build_basis_matrix(
       comm, idxn.size()-1, PETSC_DECIDE, m_size, n_size, idxn.data(), idxm.data(),
       mdat.data(), m_basis.get());CHKERRABORT(comm, perr);
 
+  integer matstartrow, matendrow;
+  perr = MatGetOwnershipRange(*m_basis, &matstartrow, &matendrow);
+  PetscSynchronizedPrintf(comm, "Vec rows: %i - %i, Mat rows: %i - %i\n",
+                          startrow, endrow, matstartrow, matendrow);
+  PetscSynchronizedFlush(comm, PETSC_STDOUT);
+
+
   return m_basis;
 }
 
@@ -111,7 +118,6 @@ Mat_unique build_warp_matrix(MPI_Comm comm, const intvector& img_shape,
   // TODO: should really be asserting all displacement vectors are the right shape and layout
   integer startrow, endrow;
   PetscErrorCode perr = VecGetOwnershipRange(*displacements[0], &startrow, &endrow);
-  endrow -= startrow;
 
   // construct CSR format directly
   intvector idxn, idxm;
@@ -127,7 +133,7 @@ Mat_unique build_warp_matrix(MPI_Comm comm, const intvector& img_shape,
   
   std::vector<floating*> raw_arrs(ndim, nullptr);
   // lambda needed here anyway to capture comm
-  auto get_raw_array = [comm](floating* a, const Vec* v) -> void
+  auto get_raw_array = [comm](floating*& a, const Vec* v) -> void
     {PetscErrorCode p = VecGetArray(*v, &a);CHKERRABORT(comm, p);};
   n_ary_for_each(get_raw_array, raw_arrs.begin(), raw_arrs.end(), displacements.begin());
 
@@ -179,7 +185,7 @@ Mat_unique build_warp_matrix(MPI_Comm comm, const intvector& img_shape,
     idxn.push_back(rowptr);
   }
   // lambda needed here  anyway to capture comm
-  auto restore_raw_array = [comm](floating* a, const Vec* v) -> void
+  auto restore_raw_array = [comm](floating*& a, const Vec* v) -> void
     {PetscErrorCode p = VecRestoreArray(*v, &a);CHKERRABORT(comm, p);};
   n_ary_for_each(restore_raw_array, raw_arrs.begin(), raw_arrs.end(), displacements.begin());
 
@@ -187,6 +193,12 @@ Mat_unique build_warp_matrix(MPI_Comm comm, const intvector& img_shape,
   perr = MatCreateMPIAIJWithArrays(
       comm, idxn.size()-1, idxn.size()-1, mat_size, mat_size, idxn.data(), idxm.data(),
       mdat.data(), warp.get());CHKERRABORT(comm, perr);
+
+  integer matstartrow, matendrow;
+  perr = MatGetOwnershipRange(*warp, &matstartrow, &matendrow);
+  PetscSynchronizedPrintf(comm, "Vec rows: %i - %i, Mat rows: %i - %i\n",
+                          startrow, endrow, matstartrow, matendrow);
+  PetscSynchronizedFlush(comm, PETSC_STDOUT);
 
   return warp;
 }

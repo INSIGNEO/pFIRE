@@ -21,8 +21,8 @@ class Image{
 
 public:
 
-  explicit Image(std::string filename, MPI_Comm comm = PETSC_COMM_WORLD);
-  explicit Image(intvector shape, MPI_Comm comm = PETSC_COMM_WORLD);
+  explicit Image(std::string filename, MPI_Comm comm=PETSC_COMM_WORLD);
+  explicit Image(intvector shape, MPI_Comm comm=PETSC_COMM_WORLD);
 
   Vec_unique gradient(integer dim);
 
@@ -38,6 +38,9 @@ public:
   std::shared_ptr<const Vec> global_vec() const{ return m_globalvec;}
   std::shared_ptr<const Vec> local_vec() const{ return m_localvec;}
   std::shared_ptr<DM> dmda() const{ return m_dmda;}
+
+  static std::unique_ptr<Image> create_from_image(std::string path, Image* existing=nullptr,
+                                                  MPI_Comm comm=PETSC_COMM_WORLD);
 
 protected:
 

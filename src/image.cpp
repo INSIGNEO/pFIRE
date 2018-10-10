@@ -36,6 +36,55 @@ std::unique_ptr<Image> Image::copy() const{
   return new_img;
 }
 
+std::unique_ptr<Image> Image::create_from_image(std::string path, Image* existing, MPI_Comm comm)
+{
+  // open file and get metadata on image size
+  ImageCache_unique cache = create_unique_imagecache();
+  OIIO::ImageSpec const* spec = cache->imagespec(OIIO::ustring(path));
+  if(spec == nullptr){
+    throw std::runtime_error("Failed to open image file");
+  }
+  intvector imageshape = {spec->width, spec->height, spec->depth};
+
+  // TODO: multichannel handling
+  
+  // if image passed assert sizes match and duplicate, otherwise create new image given size
+  std::unique_ptr<Image> new_image;
+  if(existing !=  nullptr)
+  {
+    comm = existing->comm();
+    if(!all_true(imageshape.begin(), imageshape.end(), existing->shape().begin(),
+                 existing->shape().end(), std::equal_to<>()))
+    {
+      throw std::runtime_error("New image must have same shape as existing");
+    }
+    new_image = existing->duplicate();
+  }
+  else
+  {
+    new_image = std::make_unique<Image>(imageshape, comm);
+  }
+  
+  // loading local pixel range
+  // first get local process ownership to inform OIIO selection
+  integer xlo, xhi, ylo, yhi, zlo, zhi;
+  PetscErrorCode perr = DMDAGetCorners(*new_image->dmda(), &xlo, &xhi, &ylo, &yhi, &zlo, &zhi);
+  CHKERRABORT(comm, perr);
+  xhi += xlo; yhi += ylo; zhi += zlo;
+
+  // now get global vector as 1d array
+  floating* pixels;
+  perr = VecGetArray(*new_image->global_vec(), &pixels);
+  CHKERRABORT(comm, perr);
+  // fill array directly from OpenImageIO
+  cache->get_pixels(OIIO::ustring(path), 0, 0, xlo, xhi, ylo, yhi, zlo, zhi, 0, 1,
+                    OIIO::TypeDesc::DOUBLE, pixels,
+                    OIIO::AutoStride, OIIO::AutoStride, OIIO::AutoStride);
+  perr = VecRestoreArray(*new_image->global_vec(), &pixels);
+
+  return new_image;
+}
+
 //Protected Methods
 
 Image::Image(const Image& image)

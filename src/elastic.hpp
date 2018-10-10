@@ -22,7 +22,8 @@ class Elastic
 
 //  protected:
 
-    integer m_max_iter = 1;
+    integer m_max_iter = 50;
+    floating m_convergence_thres = 0.1;
 
     // Straightforward initialize-by-copy
     MPI_Comm m_comm;
