@@ -28,7 +28,7 @@ Map::Map(const Map& map, const floatvector new_spacing)
 
 void Map::update(const Vec &delta_vec)
 {
-  PetscErrorCode perr = VecAXPY(*m_displacements, 1, delta_vec);CHKERRABORT(m_comm, perr);
+  PetscErrorCode perr = VecAXPY(*m_displacements, -1, delta_vec);CHKERRABORT(m_comm, perr);
 }
 
 std::unique_ptr<Map> Map::interpolate(floatvector new_spacing)

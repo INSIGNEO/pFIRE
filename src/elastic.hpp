@@ -43,7 +43,8 @@ class Elastic
 
     Mat_unique m_p_normmat;
 
-    void innerloop();
+    void save_debug_frame(integer ocount, integer icount);
+    void innerloop(integer outer_count);
     void innerstep(floating lambda);
 
     void calculate_node_spacings();

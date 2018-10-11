@@ -1,5 +1,13 @@
 #include "image.hpp"
 
+#include<petscdmda.h>
+#include<petscvec.h>
+#include<OpenImageIO/imageio.h>
+
+#include "fd_routines.hpp"
+#include "iterator_routines.hpp"
+#include "map.hpp"
+
 //Public Methods
 
 Image::Image(const intvector shape, MPI_Comm comm)
@@ -15,6 +23,10 @@ Image::Image(const intvector shape, MPI_Comm comm)
     {
       throw std::runtime_error("image shape should be 2D or 3D");
     }
+  }
+  if(m_shape[2] == 1)
+  {
+    m_ndim = 2;
   }
 
   initialize_dmda();
@@ -46,6 +58,8 @@ std::unique_ptr<Image> Image::create_from_image(std::string path, Image* existin
   }
   intvector imageshape = {spec->width, spec->height, spec->depth};
 
+  PetscPrintf(comm, "Image shape: %i x %i x %i\n", imageshape[0], imageshape[1], imageshape[2]);
+
   // TODO: multichannel handling
   
   // if image passed assert sizes match and duplicate, otherwise create new image given size
@@ -68,22 +82,62 @@ std::unique_ptr<Image> Image::create_from_image(std::string path, Image* existin
   // loading local pixel range
   // first get local process ownership to inform OIIO selection
   integer xlo, xhi, ylo, yhi, zlo, zhi;
-  PetscErrorCode perr = DMDAGetCorners(*new_image->dmda(), &xlo, &xhi, &ylo, &yhi, &zlo, &zhi);
+  PetscErrorCode perr = DMDAGetCorners(*new_image->dmda(), &xlo, &ylo, &zlo, &xhi, &yhi, &zhi);
   CHKERRABORT(comm, perr);
   xhi += xlo; yhi += ylo; zhi += zlo;
 
+  perr = VecSet(*new_image->global_vec(), 1.0);
+  CHKERRABORT(comm, perr);
   // now get global vector as 1d array
   floating* pixels;
   perr = VecGetArray(*new_image->global_vec(), &pixels);
   CHKERRABORT(comm, perr);
   // fill array directly from OpenImageIO
-  cache->get_pixels(OIIO::ustring(path), 0, 0, xlo, xhi, ylo, yhi, zlo, zhi, 0, 1,
-                    OIIO::TypeDesc::DOUBLE, pixels,
-                    OIIO::AutoStride, OIIO::AutoStride, OIIO::AutoStride);
-  perr = VecRestoreArray(*new_image->global_vec(), &pixels);
+  bool res = cache->get_pixels(OIIO::ustring(path), 0, 0, xlo, xhi, ylo, yhi, zlo, zhi, 0, 1,
+                          OIIO::TypeDesc::DOUBLE, pixels,
+                          OIIO::AutoStride, OIIO::AutoStride, OIIO::AutoStride);
+  PetscPrintf(comm, "Result: %d\n", res);
+  perr = VecRestoreArray(*new_image->global_vec(), &pixels);CHKERRABORT(comm, perr);
 
   return new_image;
 }
+
+void Image::save_OIIO(std::string filename)
+{
+  Vec_unique imgvec = create_unique_vec();
+  PetscErrorCode perr = DMDACreateNaturalVector(*m_dmda, imgvec.get());CHKERRABORT(m_comm, perr);
+  perr = DMDAGlobalToNaturalBegin(*m_dmda, *m_globalvec, INSERT_VALUES, *imgvec);CHKERRABORT(m_comm, perr);
+  perr = DMDAGlobalToNaturalEnd(*m_dmda, *m_globalvec, INSERT_VALUES, *imgvec);CHKERRABORT(m_comm, perr);
+
+  if(m_comm != MPI_COMM_SELF)
+  {
+    imgvec = scatter_to_zero(*imgvec);
+  }
+
+  integer rank;
+  MPI_Comm_rank(m_comm, &rank);
+  if(rank == 0)
+  {
+    OIIO::ImageOutput *img = OIIO::ImageOutput::create(filename);
+    if(img == nullptr)
+    {
+      throw std::runtime_error("Failed to open image output file");
+    }
+    OIIO::ImageSpec spec(m_shape[0], m_shape[1], 1, OIIO::TypeDesc::UINT16);
+    img->open(filename, spec);
+
+    floating* pixdata;
+    perr = VecGetArray(*imgvec, &pixdata);CHKERRABORT(m_comm, perr);
+    img->write_image(OIIO::TypeDesc::DOUBLE, pixdata);
+    img->close();
+    perr = VecRestoreArray(*imgvec, &pixdata);CHKERRABORT(m_comm, perr);
+
+    OIIO::ImageOutput::destroy(img);
+
+  }
+  MPI_Barrier(m_comm);
+}
+
 
 //Protected Methods
 
@@ -145,5 +199,15 @@ Vec_unique Image::gradient(integer dim)
   return fd::gradient_to_global_unique(*m_dmda, *m_localvec, dim);
 }
 
+Vec_unique Image::scatter_to_zero(Vec &vec)
+{
+  Vec_unique new_vec = create_unique_vec();
+  VecScatter_unique sct = create_unique_vecscatter();
+  VecScatterCreateToZero(vec, sct.get(), new_vec.get());
+  VecScatterBegin(*sct, vec, *new_vec, INSERT_VALUES, SCATTER_FORWARD);
+  VecScatterEnd(*sct, vec, *new_vec, INSERT_VALUES, SCATTER_FORWARD);
+
+  return new_vec;
+}
 
 

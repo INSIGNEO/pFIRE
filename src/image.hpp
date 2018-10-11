@@ -8,14 +8,10 @@
 
 #include<mpi.h>
 
-#include<petscdmda.h>
-#include<petscvec.h>
+
 
 #include "types.hpp"
-#include "map.hpp"
 
-#include "fd_routines.hpp"
-#include "iterator_routines.hpp"
 
 class Image{
 
@@ -42,6 +38,8 @@ public:
   static std::unique_ptr<Image> create_from_image(std::string path, Image* existing=nullptr,
                                                   MPI_Comm comm=PETSC_COMM_WORLD);
 
+  void save_OIIO(std::string filename);
+
 protected:
 
   explicit Image(const Image& image);
@@ -56,6 +54,8 @@ protected:
   void initialize_dmda(); 
   void initialize_vectors(); 
   void update_local_from_global();
+
+  Vec_unique scatter_to_zero(Vec &vec);
 };
 
 #endif

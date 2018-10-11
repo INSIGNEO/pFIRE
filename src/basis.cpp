@@ -93,13 +93,6 @@ Mat_unique build_basis_matrix(
       comm, idxn.size()-1, PETSC_DECIDE, m_size, n_size, idxn.data(), idxm.data(),
       mdat.data(), m_basis.get());CHKERRABORT(comm, perr);
 
-  integer matstartrow, matendrow;
-  perr = MatGetOwnershipRange(*m_basis, &matstartrow, &matendrow);
-  PetscSynchronizedPrintf(comm, "Vec rows: %i - %i, Mat rows: %i - %i\n",
-                          startrow, endrow, matstartrow, matendrow);
-  PetscSynchronizedFlush(comm, PETSC_STDOUT);
-
-
   return m_basis;
 }
 
@@ -193,12 +186,6 @@ Mat_unique build_warp_matrix(MPI_Comm comm, const intvector& img_shape,
   perr = MatCreateMPIAIJWithArrays(
       comm, idxn.size()-1, idxn.size()-1, mat_size, mat_size, idxn.data(), idxm.data(),
       mdat.data(), warp.get());CHKERRABORT(comm, perr);
-
-  integer matstartrow, matendrow;
-  perr = MatGetOwnershipRange(*warp, &matstartrow, &matendrow);
-  PetscSynchronizedPrintf(comm, "Vec rows: %i - %i, Mat rows: %i - %i\n",
-                          startrow, endrow, matstartrow, matendrow);
-  PetscSynchronizedFlush(comm, PETSC_STDOUT);
 
   return warp;
 }

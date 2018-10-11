@@ -1,5 +1,7 @@
 #include "elastic.hpp"
 
+#include "fd_routines.hpp"
+
 Elastic::Elastic(const Image& fixed, const Image& moved, const floatvector nodespacing)
   : m_comm(fixed.comm()), m_imgdims(fixed.ndim()), m_mapdims(m_imgdims+1), m_size(fixed.size()),
     m_iternum(0), m_fixed(fixed), m_moved(moved), m_v_final_nodespacing(nodespacing)
@@ -45,7 +47,7 @@ void Elastic::autoregister()
   auto it = m_v_nodespacings.crbegin();
   while(it != m_v_nodespacings.rend())
   {
-    PetscPrintf(m_comm, "Generation %i, ", loop_cnt++);
+    PetscPrintf(m_comm, "Generation %i, ", loop_cnt);
     if(m_imgdims == 2)
     {
       PetscPrintf(m_comm, "Nodespacing %.1f, %.1f\n", (*it)[0], (*it)[1]);
@@ -55,7 +57,7 @@ void Elastic::autoregister()
       PetscPrintf(m_comm, "Nodespacing %.1f, %.1f, %1.f\n", (*it)[0], (*it)[1], (*it)[2]);
     }
 
-    innerloop();
+    innerloop(loop_cnt);
     std::advance(it, 1);
     if(it == m_v_nodespacings.rend())
     {
@@ -63,10 +65,11 @@ void Elastic::autoregister()
     }
     m_v_nodespacings.erase(it.base());
     m_p_map = m_p_map->interpolate(*it);
+    loop_cnt++;
   }
 }
 
-void Elastic::innerloop()
+void Elastic::innerloop(integer outer_count)
 {
   // setup map resolution specific solution storage (tmat, delta a, rvec)
   m_workspace->reallocate_ephemeral_workspace(*m_p_map);
@@ -76,6 +79,8 @@ void Elastic::innerloop()
   {
     PetscPrintf(m_comm, "Iteration %i:\n", inum);
     innerstep(lambda);
+    
+    save_debug_frame(outer_count, inum);
 
     //check convergence and break if below threshold
     floating posmax, negmax;
@@ -136,6 +141,17 @@ void Elastic::calculate_node_spacings()
                    [](floating a) -> floating{return a*2;});
     m_v_nodespacings.push_back(currspc);
   }
+
+  PetscPrintf(m_comm, "Calculated spacings:\n");
+  for(auto &spcs: m_v_nodespacings)
+  {
+    PetscPrintf(m_comm, "Spacing: ");
+    for(auto &spc: spcs)
+    {
+      PetscPrintf(m_comm, "%i ", spc);
+    }
+    PetscPrintf(m_comm, "\n");
+  }
 }
 
 void Elastic::calculate_tmat()
@@ -145,7 +161,7 @@ void Elastic::calculate_tmat()
   PetscErrorCode perr = VecSet(*m_workspace->m_globaltmps[0], -1.0);CHKERRABORT(PETSC_COMM_WORLD, perr);
   //NB Z = aX + bY + cZ has call signature VecAXPBYPCZ(Z, a, b, c, X, Y) because reasons....
   perr = VecAXPBYPCZ(*m_workspace->m_globaltmps[0], 0.5, 0.5, 1,  *m_fixed.global_vec(),
-                     *m_moved.global_vec());CHKERRABORT(PETSC_COMM_WORLD, perr);
+                     *m_p_registered->global_vec());CHKERRABORT(PETSC_COMM_WORLD, perr);
 
   // scatter this to local for later
   perr = DMGlobalToLocalBegin(*m_fixed.dmda(), *m_workspace->m_globaltmps[0], INSERT_VALUES,
@@ -172,4 +188,13 @@ void Elastic::calculate_tmat()
 
   // 4. left diagonal multiply p_tmat with stacked vector
   perr = MatDiagonalScale(*m_workspace->m_tmat, *m_workspace->m_stacktmp, nullptr);CHKERRABORT(m_comm, perr);
+}
+
+void Elastic::save_debug_frame(integer ocount, integer icount)
+{
+  std::ostringstream fname;
+  fname << "dbg"
+        << std::setfill('0') << std::setw(2) << ocount << "_" 
+        << std::setw(3) << icount << ".png";
+  m_p_registered->save_OIIO(fname.str());
 }
