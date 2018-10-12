@@ -1,16 +1,17 @@
-file(GLOB pFIRESOURCES
+file(GLOB libpFIRESOURCES
   "*.cpp")
 
-list(REMOVE_ITEM pFIRESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/sandbox.cpp")
-message("Removing sandbox.cpp from pFIRE glob")
+list(REMOVE_ITEM libpFIRESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/sandbox.cpp")
+list(REMOVE_ITEM libpFIRESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/pfire.cpp")
 
-add_executable(pfire ${pFIRESOURCES})
+add_library(libpfire ${libpFIRESOURCES})
+target_link_libraries(libpfire ${EXTRA_LIBS})
+
+add_executable(pfire pfire.cpp)
 set_target_properties(pfire PROPERTIES LINKER_LANGUAGE CXX)
-target_link_libraries(pfire ${EXTRA_LIBS})
+target_link_libraries(pfire libpfire)
 
-set (SANDBOXSOURCES
-  sandbox
-  )
 
-add_executable(sandbox ${SANDBOXSOURCES})
-target_link_libraries(sandbox ${EXTRA_LIBS})
+add_executable(sandbox sandbox.cpp)
+set_target_properties(sandbox PROPERTIES LINKER_LANGUAGE CXX)
+target_link_libraries(sandbox libpfire ${EXTRA_LIBS})
