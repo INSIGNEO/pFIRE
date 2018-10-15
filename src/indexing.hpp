@@ -7,9 +7,10 @@
 
 inline intvector unravel(const integer& idx, const intvector& shape)
 {
-  intvector loc(shape.size());
+  size_t end = shape.size();
+  intvector loc(end);
   integer midx = idx;
-  for(integer i=shape.size()-1; i >= 0; i--){
+  for(integer i=end-1; i >= 0; i--){
     loc[i] = midx%shape[i];
     midx /= shape[i];
   }
@@ -28,5 +29,35 @@ inline integer ravel(const intvector& loc, const intvector& shape)
   return idx;
 }
 
+/*
+inline intvector unravel(const integer& idx, const intvector& shape)
+{
+  intvector loc(shape.size());
+  integer midx = idx;
+  for(integer i=0; i < (integer)shape.size(); i++){
+    loc[i] = midx%shape[i];
+    midx /= shape[i];
+  }
+  
+  return loc;
+}
+
+inline integer ravel(const intvector& loc, const intvector& shape)
+{
+  size_t end = loc.size() - 1;
+  integer idx = loc[end];
+  for(integer i=end-1; i >= 0; i--){
+    idx *= shape[i];
+    idx += loc[i];
+  }
+
+  return idx;
+}
+*/
+
+inline floating clamp(floating idx, integer max)
+{
+  return (idx < 0) ? 0 : ((idx >= max) ? max-1 : idx);
+}
 
 #endif

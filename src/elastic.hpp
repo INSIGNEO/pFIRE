@@ -19,6 +19,7 @@ class Elastic
 
     void autoregister();
 
+    std::shared_ptr<Image> registered() const{return m_p_registered;}
 
 //  protected:
 

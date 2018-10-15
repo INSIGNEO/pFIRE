@@ -19,7 +19,7 @@ class WorkSpace
     friend Elastic;
     friend Map;
 
-  protected:
+//  protected:
 
     void allocate_persistent_workspace();
     void create_scatterers();

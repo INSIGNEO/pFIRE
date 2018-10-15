@@ -10,14 +10,13 @@
 #include<petscmat.h>
 
 #include "types.hpp"
-#include "indexing.hpp"
 #include "iterator_routines.hpp"
 
 Mat_unique build_basis_matrix(MPI_Comm comm, const intvector& src_shape, const intvector& tgt_shape, 
                               const floatvector& scalings, const floatvector& offsets,
-                              integer tile_dim);
+                              integer ndim, integer tile_dim);
 
-Mat_unique build_warp_matrix(MPI_Comm comm, const intvector& img_shape,
+Mat_unique build_warp_matrix(MPI_Comm comm, const intvector& img_shape, integer ndim,
                              const std::vector<Vec*>& displacements);
 
 template<class Input1, class Input2, class Rtype = typename std::iterator_traits<Input1>::value_type>

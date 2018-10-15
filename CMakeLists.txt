@@ -33,3 +33,6 @@ include_directories(${OPENIMAGEIO_INCLUDE_DIR})
 set(EXTRA_LIBS ${EXTRA_LIBS} ${OPENIMAGEIO_LIBRARIES})
 
 add_subdirectory(${pFIRE_SOURCE_DIR}/src)
+
+enable_testing()
+add_subdirectory(test)

@@ -44,7 +44,7 @@ std::unique_ptr<Map> Map::interpolate(floatvector new_spacing)
                   new_map->m_v_offsets.end(), this->m_v_offsets.begin());
 
   Mat_unique interp = build_basis_matrix(m_comm, m_v_map_shape, new_map->m_v_map_shape,
-                                         scalings, offsets, m_ndim+1);
+                                         scalings, offsets, m_ndim, m_ndim+1);
 
   PetscErrorCode perr = MatMult(*interp, *m_displacements, *new_map->m_displacements);CHKERRABORT(m_comm, perr);
 
@@ -89,20 +89,35 @@ std::unique_ptr<Image> Map::warp(const Image& image, WorkSpace& wksp)
   // build warp matrix
   std::vector<Vec*> tmps(0);
   for (auto const& vptr: wksp.m_globaltmps){ tmps.push_back(vptr.get());}
-  Mat_unique warp = build_warp_matrix(m_comm, m_v_image_shape, tmps); 
+  Mat_unique warp = build_warp_matrix(m_comm, m_v_image_shape, image.ndim(), tmps); 
 
-  // apply matrix to get new image data
-  std::unique_ptr<Image> new_img = image.duplicate();
-  perr = MatMult(*warp, *image.global_vec(), *new_img->global_vec());CHKERRABORT(m_comm, perr);
+  // now apply matrix to get new image data
+  // first need image in natural ordering
+  Vec_unique src_nat = create_unique_vec();
+  perr = DMDACreateNaturalVector(*image.dmda(), src_nat.get());CHKERRABORT(m_comm, perr); 
+  perr = DMDAGlobalToNaturalBegin(*image.dmda(), *image.global_vec(), INSERT_VALUES,
+                                  *src_nat);CHKERRABORT(m_comm, perr);
+  perr = DMDAGlobalToNaturalEnd(*image.dmda(), *image.global_vec(), INSERT_VALUES,
+                                *src_nat);CHKERRABORT(m_comm, perr);
+  // do mult
+  Vec_unique tgt_nat = create_unique_vec();
+  perr = DMDACreateNaturalVector(*image.dmda(), tgt_nat.get());CHKERRABORT(m_comm, perr); 
+  perr = MatMult(*warp, *src_nat, *tgt_nat);CHKERRABORT(m_comm, perr);
   
-  return new_img;
+  // create new image and insert data in petsc ordering
+  std::unique_ptr<Image> new_image = image.duplicate();
+  perr = DMDANaturalToGlobalBegin(*image.dmda(), *tgt_nat, INSERT_VALUES,
+                                  *new_image->global_vec());CHKERRABORT(m_comm, perr);
+  perr = DMDANaturalToGlobalEnd(*image.dmda(), *tgt_nat, INSERT_VALUES,
+                                *new_image->global_vec());CHKERRABORT(m_comm, perr);
+  return new_image;
 }
 
 void Map::calculate_basis()
 {
   // Get the full Nd basis
   m_basis = build_basis_matrix(m_comm, m_v_map_shape, m_v_image_shape,
-                               m_v_node_spacing, m_v_offsets, m_ndim+1);
+                               m_v_node_spacing, m_v_offsets, m_ndim, m_ndim+1);
 
   // Now grab a 1d basis as a submatrix. Note can't do this the other way round because Petsc won't
   // allow reuse of rows/cols in MatCreateSubMatrix

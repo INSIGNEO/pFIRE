@@ -32,8 +32,9 @@ void mainflow(std::string fixedpath, std::string movedpath){
   std::unique_ptr<Image> fixed = Image::create_from_image(fixedpath);
   std::unique_ptr<Image> moved = Image::create_from_image(movedpath, fixed.get());
 
-  moved->save_OIIO("foo.png");
-
   Elastic reg(*fixed, *moved, nodespacing);
   reg.autoregister();
+
+  reg.registered()->save_OIIO("registered.png");
+  
 }
