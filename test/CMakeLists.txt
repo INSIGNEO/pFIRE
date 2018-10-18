@@ -11,3 +11,8 @@ add_definitions(-DBOOST_TEST_DYN_LINK=1)
 add_executable(test_workspace test_workspace.cpp)
 target_link_libraries(test_workspace libpfire ${Boost_LIBRARIES})
 add_test(NAME Workspace COMMAND test_workspace)
+
+add_definitions(-DBOOST_TEST_DYN_LINK=1)
+add_executable(test_gradients test_gradients.cpp)
+target_link_libraries(test_gradients libpfire ${Boost_LIBRARIES})
+add_test(NAME Gradients COMMAND test_gradients)

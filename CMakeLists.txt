@@ -14,6 +14,17 @@ endif()
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -Weffc++ -O0 -ggdb -march=native -fno-stack-protector")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -O3 -march=native")
 
+option(DEBUG_VERBOSE "Verbose debug outputs")
+if(DEBUG_VERBOSE)
+  add_definitions(-DDEBUG_VERBOSE)
+endif(DEBUG_VERBOSE)
+
+option(DEBUG_OUTPUT_INTERMEDIATES "Save all intermediate frames in registration")
+if(DEBUG_OUTPUT_INTERMEDIATES)
+  add_definitions(-DDEBUG_DUMP_INTERMEDIATES)
+endif(DEBUG_OUTPUT_INTERMEDIATES)
+
+
 # Output programs to a "bin" directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${pFIRE_SOURCE_DIR}/bin)
 

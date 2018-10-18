@@ -1,5 +1,10 @@
 #include "image.hpp"
 
+#include<algorithm>
+#include<memory>
+#include<string>
+#include<vector>
+
 #include<petscdmda.h>
 #include<petscvec.h>
 #include<OpenImageIO/imageio.h>
@@ -10,7 +15,7 @@
 
 //Public Methods
 
-Image::Image(const intvector shape, MPI_Comm comm)
+Image::Image(const intvector &shape, MPI_Comm comm)
              : m_ndim(shape.size()), m_comm(comm), m_shape(shape) //const on shape causes copy assignment (c++11)
 {
   if(m_shape.size() != 3)
@@ -102,6 +107,41 @@ std::unique_ptr<Image> Image::create_from_image(std::string path, Image* existin
   return new_image;
 }
 
+// Return scale factor
+floating Image::normalize()
+{
+  floating norm;
+  PetscErrorCode perr = VecSum(*m_globalvec, &norm);CHKERRABORT(m_comm, perr);
+  norm = this->size()/norm;
+  perr = VecScale(*m_globalvec, norm);CHKERRABORT(m_comm, perr); 
+  return norm;
+}
+/*
+void Image::set_mask(std::shared_ptr<Mask> mask)
+{
+  //TODO iscompat()
+  this->mask = mask;
+}
+
+void Image::masked_normalize()
+{
+  if(m_mask.get() == nullptr)
+  {
+    throw std::runtime_error("mask must be set first")
+  }
+
+  Vec_unique tmp = create_unique_vec();
+  PetscErrorcode perr = VecDuplicate(*m_globalvec, tmp.get());CHKERRABORT(m_comm, perr);
+  perr = VecPointwiseMult(*tmp, *this->mask->global_vec(), *m_globalvec);CHKERRABORT(m_comm, perr);
+
+  floating norm;
+  perr = VecSum(*tmp, &norm);CHKERRABORT(m_comm, perr);
+  norm = this->mask->npoints() / norm;
+  perr = VecScale(*m_globalvec, norm);CHKERRABORT(m_comm, perr);
+
+  return norm;
+}*/
+
 void Image::save_OIIO(std::string filename)
 {
   Vec_unique imgvec = create_unique_vec();
@@ -158,7 +198,7 @@ void Image::initialize_dmda()
   // Make sure things get gracefully cleaned up
   m_dmda = create_shared_dm();
   perr = DMDACreate3d(m_comm,
-                      DM_BOUNDARY_GHOSTED, DM_BOUNDARY_GHOSTED, DM_BOUNDARY_GHOSTED, //BCs
+                      DM_BOUNDARY_MIRROR, DM_BOUNDARY_MIRROR, DM_BOUNDARY_MIRROR, //BCs
                       DMDA_STENCIL_STAR, //stencil shape
                       m_shape[0], m_shape[1], m_shape[2], //global mesh shape
                       PETSC_DECIDE, PETSC_DECIDE, PETSC_DECIDE, //ranks per dim

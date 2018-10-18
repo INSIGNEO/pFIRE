@@ -27,10 +27,13 @@ int main(int argc, char **argv){
 
 void mainflow(std::string fixedpath, std::string movedpath){
 
-  floatvector nodespacing = {5,5};
+  floatvector nodespacing = {3,3};
 
   std::unique_ptr<Image> fixed = Image::create_from_image(fixedpath);
   std::unique_ptr<Image> moved = Image::create_from_image(movedpath, fixed.get());
+
+  fixed->normalize();
+  moved->normalize();
 
   Elastic reg(*fixed, *moved, nodespacing);
   reg.autoregister();

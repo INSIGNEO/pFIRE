@@ -90,6 +90,4 @@ void fd::gradient_existing(const DM &dmda, const Vec &srcvec, Vec &tgtvec, integ
   // Release pointers and allow petsc to cleanup
   perr = DMDAVecRestoreArray(dmda, srcvec, &img_array);CHKERRABORT(PETSC_COMM_WORLD, perr);
   perr = DMDAVecRestoreArray(dmda, tgtvec, &grad_array);CHKERRABORT(PETSC_COMM_WORLD, perr);
-
 }
-

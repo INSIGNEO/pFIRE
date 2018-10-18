@@ -1,5 +1,8 @@
 #include "basis.hpp"
 
+#include<petscmat.h>
+
+#include "iterator_routines.hpp"
 #include "indexing.hpp"
 
 // scalings are src_spacing/tgt_spacing for each dim, offsets are tgt[0,0,0] - src[0,0,0]
@@ -56,7 +59,7 @@ Mat_unique build_basis_matrix(
     floatvector src_coord(ndim, 0.);
     intvector src_coord_floor(ndim, 0);
     // need both exact loc and floored loc
-    n_ary_transform([](floating x, floating a, floating b) -> floating{return (x - b)/a;},
+    n_ary_transform([](floating x, floating a, floating b) -> floating{return a*x + b;},
 		       src_coord.begin(), tgt_coord.begin(), tgt_coord.end(),
                        scalings.begin(), offsets.begin());
     std::transform(src_coord.begin(), src_coord.end(), src_coord_floor.begin(),
@@ -70,8 +73,8 @@ Mat_unique build_basis_matrix(
           src_coord_floor[idim] += 1;
         }
       }
-      if(all_true_varlen(src_coord_floor.begin(), src_coord_floor.end(), tgt_shape_trunc.begin(),
-                         tgt_shape_trunc.end(), std::less<>()) 
+      if(all_true_varlen(src_coord_floor.begin(), src_coord_floor.end(), src_shape_trunc.begin(),
+                         src_shape_trunc.end(), std::less<>()) 
           && std::all_of(src_coord_floor.begin(), src_coord_floor.end(),
                          [](floating a) -> bool{return a >= 0;}))
       {
@@ -145,13 +148,14 @@ Mat_unique build_warp_matrix(MPI_Comm comm, const intvector& img_shape, integer 
   for(integer idx=startrow; idx<endrow; idx++)
   {
     // unravel tgt loc and find equivalent source loc
+    integer locidx = idx - startrow;
     intvector tgt_coord = unravel(idx, img_shape_trunc);
     floatvector src_coord(ndim, 0.);
     intvector src_coord_floor(ndim, 0);
 
     // offset src_coord
     std::transform(tgt_coord.begin(), tgt_coord.end(), raw_arrs.begin(), src_coord.begin(),
-                   [idx](floating x, floating* arr) -> floating{return x + arr[idx];});
+                   [locidx](floating x, floating* arr) -> floating{return x + arr[locidx];});
     // Need to clamp locations to the edges of the image
     std::transform(src_coord.begin(), src_coord.end(), img_shape_trunc.begin(), src_coord.begin(),
                    clamp);
@@ -201,4 +205,3 @@ Mat_unique build_warp_matrix(MPI_Comm comm, const intvector& img_shape, integer 
 
   return warp;
 }
-

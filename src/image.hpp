@@ -1,14 +1,7 @@
 #ifndef IMAGE_HPP
 #define IMAGE_HPP
 
-#include<algorithm>
-#include<memory>
-#include<string>
-#include<vector>
-
 #include<mpi.h>
-
-
 
 #include "types.hpp"
 
@@ -18,7 +11,7 @@ class Image{
 public:
 
   explicit Image(std::string filename, MPI_Comm comm=PETSC_COMM_WORLD);
-  explicit Image(intvector shape, MPI_Comm comm=PETSC_COMM_WORLD);
+  explicit Image(const intvector &shape, MPI_Comm comm=PETSC_COMM_WORLD);
 
   Vec_unique gradient(integer dim);
 
@@ -35,10 +28,17 @@ public:
   std::shared_ptr<const Vec> local_vec() const{ return m_localvec;}
   std::shared_ptr<DM> dmda() const{ return m_dmda;}
 
-  static std::unique_ptr<Image> create_from_image(std::string path, Image* existing=nullptr,
-                                                  MPI_Comm comm=PETSC_COMM_WORLD);
+  floating normalize();
+
+//  void set_mask(std::shared_ptr<Mask>);
+//  void masked_normalize(const Mask& mask);
+
+  void update_local_from_global();
 
   void save_OIIO(std::string filename);
+
+  static std::unique_ptr<Image> create_from_image(std::string path, Image* existing=nullptr,
+                                                  MPI_Comm comm=PETSC_COMM_WORLD);
 
 protected:
 
@@ -50,10 +50,10 @@ protected:
   intvector m_shape;
   Vec_shared m_localvec, m_globalvec;
   std::shared_ptr<DM> m_dmda;
+//  std::shared_ptr<Mask> mask;
 
   void initialize_dmda(); 
   void initialize_vectors(); 
-  void update_local_from_global();
 
   Vec_unique scatter_to_zero(Vec &vec);
 };

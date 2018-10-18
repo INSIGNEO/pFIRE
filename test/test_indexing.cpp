@@ -19,48 +19,52 @@ BOOST_FIXTURE_TEST_SUITE(indexing, im)
 
   BOOST_AUTO_TEST_CASE(test_ravelling)
   {
-    floating data = 1.023;
-
+    integer imlo, imhi;
+    VecGetOwnershipRange(*image.global_vec(), &imlo, &imhi);
     // Access data via dmda and insert value
     {floating ***ptr;
     DMDAVecGetArray(*image.dmda(), *image.global_vec(), &ptr);
-    ptr[3][2][1] = data;
-    DMDAVecRestoreArray(*image.dmda(), *image.global_vec(), &ptr);
+    for(integer idx=imlo; idx<imhi; idx++)
+    {
+      intvector loc = unravel(idx, imgshape);
+      ptr[loc[2]][loc[1]][loc[0]] = idx;
     }
-    
-    // Access data via vector and retrieve from same place.
-    intvector loc = {1,2,3};
-    int idx = ravel(loc, imgshape); 
-    std::printf("idx: %i\n", idx);
-    floating *ptr;
+    DMDAVecRestoreArray(*image.dmda(), *image.global_vec(), &ptr);}
+
+    {floating *ptr;
     VecGetArray(*image.global_vec(), &ptr);
-    BOOST_CHECK(ptr[idx] == data);
-    VecRestoreArray(*image.global_vec(), &ptr);
+    for(integer idx=imlo; idx<imhi; idx++)
+    {
+      BOOST_CHECK(ptr[idx-imlo] == idx);
+    }
+    VecRestoreArray(*image.global_vec(), &ptr);}
 
   }
 
   BOOST_AUTO_TEST_CASE(test_unravelling)
   {
-    floating data = 1.405;
-    integer idx = 231;
-
-    // Access data via vector and retrieve from same place.
-    std::printf("idx: %i\n", idx);
-    floating *ptr;
-    VecGetArray(*image.global_vec(), &ptr);
-    ptr[idx] = data;
-    VecRestoreArray(*image.global_vec(), &ptr);
-
+    integer imlo, imhi;
+    VecGetOwnershipRange(*image.global_vec(), &imlo, &imhi);
     // Access data via dmda and insert value
-    {floating ***ptr;
-    intvector loc = unravel(idx, imgshape);
-    DMDAVecGetArray(*image.dmda(), *image.global_vec(), &ptr);
-    BOOST_CHECK(ptr[loc[2]][loc[1]][loc[0]] == data);
-    DMDAVecRestoreArray(*image.dmda(), *image.global_vec(), &ptr);
+
+    {floating *ptr;
+    VecGetArray(*image.global_vec(), &ptr);
+    for(integer idx=imlo; idx<imhi; idx++)
+    {
+      ptr[idx-imlo] = idx;
     }
+    VecRestoreArray(*image.global_vec(), &ptr);}
+
+    {floating ***ptr;
+    DMDAVecGetArray(*image.dmda(), *image.global_vec(), &ptr);
+    for(integer idx=imlo; idx<imhi; idx++)
+    {
+      intvector loc = unravel(idx, imgshape);
+      BOOST_CHECK(ptr[loc[2]][loc[1]][loc[0]] == idx);
+    }
+    DMDAVecRestoreArray(*image.dmda(), *image.global_vec(), &ptr);}
     
 
   }
-
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -1,5 +1,7 @@
 #include "laplacian.hpp"
 
+#include "indexing.hpp"
+
 Mat_unique build_laplacian_autostride(MPI_Comm comm, intvector shape, integer ndim){
   
   integer matsize = std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<integer>());

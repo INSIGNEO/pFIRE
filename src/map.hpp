@@ -16,8 +16,8 @@ class Map{
 
   public:
 
-  Map(const Image& mask, const floatvector node_spacing);
-  Map(const Map& map, const floatvector node_spacing);
+  Map(const Image& mask, const floatvector& node_spacing);
+  Map(const Map& map, const floatvector& node_spacing);
 
 //  ~Map();
 
@@ -25,14 +25,14 @@ class Map{
   Mat* laplacian() const{ return m_lapl.get();}
 
   void update(const Vec &delta_vec);
-  std::unique_ptr<Map> interpolate(floatvector new_spacing);
+  std::unique_ptr<Map> interpolate(const floatvector& new_spacing);
 
   std::unique_ptr<Image> warp(const Image& image, WorkSpace& wksp);
 
   //private:
 
-  const Image& m_mask;
   MPI_Comm m_comm;
+  const Image& m_mask;
   integer m_ndim;
   floatvector m_v_node_spacing;
   floatvector m_v_offsets;

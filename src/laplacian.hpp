@@ -7,7 +7,6 @@
 #include<petscmat.h>
 
 #include "types.hpp"
-#include "indexing.hpp"
 
 Mat_unique build_laplacian_matrix(MPI_Comm comm, intvector shape, integer startrow, integer endrow,
                                   integer ndim);

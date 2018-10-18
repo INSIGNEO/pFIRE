@@ -7,10 +7,8 @@
 #include<numeric>
 #include<cmath>
 
-#include<petscmat.h>
 
 #include "types.hpp"
-#include "iterator_routines.hpp"
 
 Mat_unique build_basis_matrix(MPI_Comm comm, const intvector& src_shape, const intvector& tgt_shape, 
                               const floatvector& scalings, const floatvector& offsets,

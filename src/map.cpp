@@ -1,6 +1,8 @@
 #include "map.hpp"
 
-Map::Map(const Image& mask, const floatvector node_spacing)
+#include "iterator_routines.hpp"
+
+Map::Map(const Image& mask, const floatvector& node_spacing)
   : m_mask(mask), m_comm(mask.comm()), m_ndim(mask.ndim()), m_v_node_spacing(node_spacing),
     m_v_image_shape(mask.shape()), m_v_map_shape(intvector()), m_vv_node_locs(floatvector2d()),
     m_displacements(create_unique_vec())
@@ -13,8 +15,8 @@ Map::Map(const Image& mask, const floatvector node_spacing)
   calculate_laplacian();
 }
 
-Map::Map(const Map& map, const floatvector new_spacing)
-  : m_comm(map.m_comm), m_mask(map.m_mask), m_ndim(map.m_ndim), m_v_node_spacing(new_spacing),
+Map::Map(const Map& map, const floatvector& node_spacing)
+  : m_comm(map.m_comm), m_mask(map.m_mask), m_ndim(map.m_ndim), m_v_node_spacing(node_spacing),
     m_v_image_shape(map.m_v_image_shape), m_v_map_shape(intvector()), 
     m_vv_node_locs(floatvector2d()), m_displacements(create_unique_vec())
 {
@@ -28,25 +30,31 @@ Map::Map(const Map& map, const floatvector new_spacing)
 
 void Map::update(const Vec &delta_vec)
 {
-  PetscErrorCode perr = VecAXPY(*m_displacements, -1, delta_vec);CHKERRABORT(m_comm, perr);
+  PetscErrorCode perr = VecAXPY(*m_displacements, 1, delta_vec);CHKERRABORT(m_comm, perr);
 }
 
-std::unique_ptr<Map> Map::interpolate(floatvector new_spacing)
+std::unique_ptr<Map> Map::interpolate(const floatvector& new_spacing)
 {
   std::unique_ptr<Map> new_map(new Map(*this, new_spacing));
 
   floatvector scalings(m_ndim, 0.0);
   floatvector offsets(m_ndim, 0.0);
 
-  n_ary_transform(std::divides<>(), scalings.begin(), this->m_v_node_spacing.begin(),
-                  this->m_v_node_spacing.end(), new_map->m_v_node_spacing.begin());
-  n_ary_transform(std::minus<>(), offsets.begin(), new_map->m_v_offsets.begin(),
-                  new_map->m_v_offsets.end(), this->m_v_offsets.begin());
+  n_ary_transform(std::divides<>(), scalings.begin(), new_map->m_v_node_spacing.begin(),
+                  new_map->m_v_node_spacing.end(), this->m_v_node_spacing.begin());
+  n_ary_transform([](floating x, floating y, floating a) -> floating {return (x-y)/a;},
+                     offsets.begin(), new_map->m_v_offsets.begin(), new_map->m_v_offsets.end(),
+                     this->m_v_offsets.begin(), this->m_v_node_spacing.begin());
 
   Mat_unique interp = build_basis_matrix(m_comm, m_v_map_shape, new_map->m_v_map_shape,
                                          scalings, offsets, m_ndim, m_ndim+1);
 
   PetscErrorCode perr = MatMult(*interp, *m_displacements, *new_map->m_displacements);CHKERRABORT(m_comm, perr);
+
+  PetscPrintf(m_comm, "Old:\n");
+  VecView(*m_displacements, PETSC_VIEWER_STDOUT_WORLD);
+  PetscPrintf(m_comm, "\nNew:\n");
+  VecView(*new_map->m_displacements, PETSC_VIEWER_STDOUT_WORLD);
 
   return new_map;
 }
@@ -116,8 +124,16 @@ std::unique_ptr<Image> Map::warp(const Image& image, WorkSpace& wksp)
 void Map::calculate_basis()
 {
   // Get the full Nd basis
+  floatvector scalings(m_ndim, 0.0);
+  floatvector offsets(m_ndim, 0.0);
+
+  std::transform(this->m_v_node_spacing.begin(), this->m_v_node_spacing.end(),
+                 scalings.begin(), [](floating a) -> floating{return 1/a;});
+  n_ary_transform([](floating x, floating a) -> floating {return -x/a;},
+                     offsets.begin(), this->m_v_offsets.begin(), this->m_v_offsets.end(),
+                     this->m_v_node_spacing.begin());
   m_basis = build_basis_matrix(m_comm, m_v_map_shape, m_v_image_shape,
-                               m_v_node_spacing, m_v_offsets, m_ndim, m_ndim+1);
+                               scalings, offsets, m_ndim, m_ndim+1);
 
   // Now grab a 1d basis as a submatrix. Note can't do this the other way round because Petsc won't
   // allow reuse of rows/cols in MatCreateSubMatrix
