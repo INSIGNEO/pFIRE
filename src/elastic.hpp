@@ -42,12 +42,13 @@ class Elastic
     std::unique_ptr<Map> m_p_map;
     std::shared_ptr<WorkSpace> m_workspace;
 
-    Mat_unique m_p_normmat;
+    Mat_unique normmat;
 
     void save_debug_frame(integer ocount, integer icount);
     void innerloop(integer outer_count);
     void innerstep(floating lambda);
 
+    void block_precondition();
     void calculate_node_spacings();
     void calculate_tmat();
 };

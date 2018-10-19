@@ -209,6 +209,97 @@ void Elastic::calculate_tmat()
   perr = MatDiagonalScale(*m_workspace->m_tmat, *m_workspace->m_stacktmp, nullptr);CHKERRABORT(m_comm, perr);
 }
 
+void Elastic::block_precondition()
+{
+  // Normalize luminance block of matrix to spatial blocks using diagonal norm
+  Vec_unique diag = create_unique_vec();
+  PetscErrorCode perr = MatCreateVecs(*normmat, diag.get(), nullptr);CHKERRABORT(m_comm, perr);
+  perr = MatGetDiagonal(*normmat, *diag);CHKERRABORT(m_comm, perr);
+  
+  // index where spatial dims stop and intensity dim starts
+  integer crit_idx = m_p_map->size() * m_p_map->m_ndim;
+
+  // Find rank-local sums for spatial and luminance blocks
+  integer rowstart, rowend;
+  perr = VecGetOwnershipRange(*diag, &rowstart, &rowend);CHKERRABORT(m_comm, perr);
+  floating *ptr;
+  floating norm[2]; // norm[0] is spatial, norm[1] is luminance
+  perr = VecGetArray(*diag, &ptr);CHKERRABORT(m_comm, perr);
+  //case that all elements are in spatial blocks
+  if(crit_idx >= rowend)
+  {
+    for(integer idx = 0; idx < (rowend - rowstart); idx++)
+    {
+      norm[0] += ptr[idx];
+    }
+  }
+  // case that all elements are in luminance blocks
+  else if(crit_idx < rowstart)
+  {
+    for(integer idx = 0; idx < (rowend - rowstart); idx++)
+    {
+      norm[1] += ptr[idx];
+    }
+  }
+  // case that elements are split between the two
+  else
+  {
+    integer spt_end = crit_idx - rowstart;
+    for(integer idx=0; idx < spt_end; idx++)
+    {
+      norm[0] += ptr[idx];
+    }
+    for(integer idx=spt_end; idx < rowend; idx++)
+    {
+      norm[1] += ptr[idx];
+    }
+  }
+  perr = VecRestoreArray(*diag, &ptr);CHKERRABORT(m_comm, perr);
+  
+  // MPI_AllReduce to sum over all processes
+  MPI_Allreduce(MPI_IN_PLACE, norm, 2, MPI_DOUBLE, MPI_SUM, m_comm); 
+
+  // calculate average of norms and scaling factor
+  norm[0] /= crit_idx;
+  norm[1] /= m_p_map->size();
+  floating lum_scale = norm[0]/norm[1];
+
+  // reuse diag vector to hold scaling values
+  perr = VecGetArray(*diag, &ptr);CHKERRABORT(m_comm, perr);
+  // case that all elements are in spatial blocks
+  if(crit_idx >= rowend)
+  {
+    for(integer idx = 0; idx < (rowend - rowstart); idx++)
+    {
+      ptr[idx] = 1;
+    }
+  }
+  // case that all elements are in luminance blocks
+  else if(crit_idx < rowstart)
+  {
+    for(integer idx = 0; idx < (rowend - rowstart); idx++)
+    {
+      ptr[idx] = lum_scale;
+    }
+  }
+  // case that elements are split between the two
+  else
+  {
+    integer spt_end = crit_idx - rowstart;
+    for(integer idx=0; idx < spt_end; idx++)
+    {
+      ptr[idx] = 1;
+    }
+    for(integer idx=spt_end; idx < rowend; idx++)
+    {
+      ptr[idx] = lum_scale;
+    }
+  }
+  perr = VecRestoreArray(*diag, &ptr);CHKERRABORT(m_comm, perr);
+
+  perr = MatDiagonalScale(*normmat, *diag, nullptr);
+}
+
 void Elastic::save_debug_frame(integer ocount, integer icount)
 {
   std::ostringstream fname;

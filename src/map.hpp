@@ -24,6 +24,10 @@ class Map{
   Mat* basis() const{ return m_basis.get();}
   Mat* laplacian() const{ return m_lapl.get();}
 
+  integer size() const
+  { return std::accumulate(m_v_map_shape.cbegin(), m_v_map_shape.cend(), 1, std::multiplies<>());
+  }
+
   void update(const Vec &delta_vec);
   std::unique_ptr<Map> interpolate(const floatvector& new_spacing);
 

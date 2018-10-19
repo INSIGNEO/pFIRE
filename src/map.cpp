@@ -17,7 +17,7 @@ Map::Map(const Image& mask, const floatvector& node_spacing)
 
 Map::Map(const Map& map, const floatvector& node_spacing)
   : m_comm(map.m_comm), m_mask(map.m_mask), m_ndim(map.m_ndim), m_v_node_spacing(node_spacing),
-    m_v_image_shape(map.m_v_image_shape), m_v_map_shape(intvector()), 
+    m_v_image_shape(map.m_v_image_shape), m_v_map_shape(intvector()),
     m_vv_node_locs(floatvector2d()), m_displacements(create_unique_vec())
 {
   calculate_node_locs();
@@ -51,10 +51,12 @@ std::unique_ptr<Map> Map::interpolate(const floatvector& new_spacing)
 
   PetscErrorCode perr = MatMult(*interp, *m_displacements, *new_map->m_displacements);CHKERRABORT(m_comm, perr);
 
+#ifdef VERBOSEDEBUG
   PetscPrintf(m_comm, "Old:\n");
   VecView(*m_displacements, PETSC_VIEWER_STDOUT_WORLD);
   PetscPrintf(m_comm, "\nNew:\n");
   VecView(*new_map->m_displacements, PETSC_VIEWER_STDOUT_WORLD);
+#endif //VERBOSEDEBUG
 
   return new_map;
 }
@@ -88,30 +90,30 @@ void Map::calculate_node_locs()
 std::unique_ptr<Image> Map::warp(const Image& image, WorkSpace& wksp)
 {
   // TODO: Check image is compatible
-  
+
   // interpolate map to image nodes with basis
   PetscErrorCode perr = MatMult(*m_basis, *m_displacements,
                                 *wksp.m_stacktmp);CHKERRABORT(m_comm, perr);
   wksp.scatter_stacked_to_grads();
-  
+
   // build warp matrix
   std::vector<Vec*> tmps(0);
   for (auto const& vptr: wksp.m_globaltmps){ tmps.push_back(vptr.get());}
-  Mat_unique warp = build_warp_matrix(m_comm, m_v_image_shape, image.ndim(), tmps); 
+  Mat_unique warp = build_warp_matrix(m_comm, m_v_image_shape, image.ndim(), tmps);
 
   // now apply matrix to get new image data
   // first need image in natural ordering
   Vec_unique src_nat = create_unique_vec();
-  perr = DMDACreateNaturalVector(*image.dmda(), src_nat.get());CHKERRABORT(m_comm, perr); 
+  perr = DMDACreateNaturalVector(*image.dmda(), src_nat.get());CHKERRABORT(m_comm, perr);
   perr = DMDAGlobalToNaturalBegin(*image.dmda(), *image.global_vec(), INSERT_VALUES,
                                   *src_nat);CHKERRABORT(m_comm, perr);
   perr = DMDAGlobalToNaturalEnd(*image.dmda(), *image.global_vec(), INSERT_VALUES,
                                 *src_nat);CHKERRABORT(m_comm, perr);
   // do mult
   Vec_unique tgt_nat = create_unique_vec();
-  perr = DMDACreateNaturalVector(*image.dmda(), tgt_nat.get());CHKERRABORT(m_comm, perr); 
+  perr = DMDACreateNaturalVector(*image.dmda(), tgt_nat.get());CHKERRABORT(m_comm, perr);
   perr = MatMult(*warp, *src_nat, *tgt_nat);CHKERRABORT(m_comm, perr);
-  
+
   // create new image and insert data in petsc ordering
   std::unique_ptr<Image> new_image = image.duplicate();
   perr = DMDANaturalToGlobalBegin(*image.dmda(), *tgt_nat, INSERT_VALUES,
@@ -145,8 +147,8 @@ void Map::calculate_basis()
   throw std::runtime_error("need to get just one map length's worth of columns");
   perr = MatGetOwnershipRangeColumn(*m_basis, &colstart, &colsize);CHKERRABORT(m_comm, perr);
   colsize -= colstart;
-  
-  // Express these ranges as index sets 
+
+  // Express these ranges as index sets
   IS_unique rows = create_unique_is();
   perr = ISCreateStride(m_comm, rowsize, rowstart, 1, rows.get());CHKERRABORT(m_comm, perr);
   IS_unique cols = create_unique_is();
