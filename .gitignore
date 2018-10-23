@@ -2,6 +2,11 @@ CMakeFiles
 CMakeCache.txt
 cmake_install.cmake
 Makefile
+*.cmake
+Testing
+bin/
+compile_commands.json
+test_data/
 
 *.swp
 
