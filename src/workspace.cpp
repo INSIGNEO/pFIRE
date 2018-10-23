@@ -1,10 +1,14 @@
 #include "workspace.hpp"
 
 WorkSpace::WorkSpace(const Image& image, const Map& map)
-  : m_comm(image.comm()), m_dmda(image.dmda()), m_size(image.size())
+  : m_comm(image.comm()), m_dmda(image.dmda()), m_size(image.size()),
+    m_globaltmps(std::vector<Vec_unique>()), m_iss(std::vector<IS_unique>()),
+    m_scatterers(std::vector<VecScatter_unique>()), m_stacktmp(create_unique_vec()),
+    m_localtmp(create_unique_vec()), m_delta(create_unique_vec()), m_rhs(create_unique_vec()),
+    m_tmat(create_unique_mat())
 {
   //create "local" vectors for gradient storage, one per map dim
-  for(integer idim=0; idim < image.ndim()+1; idim++)
+  for(uinteger idim=0; idim < image.ndim()+1; idim++)
   {
     Vec_unique tmp_vec = create_unique_vec();
     PetscErrorCode perr = VecDuplicate(*image.global_vec(), tmp_vec.get());CHKERRABORT(m_comm, perr);

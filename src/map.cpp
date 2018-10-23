@@ -1,24 +1,18 @@
 #include "map.hpp"
 
+#include "image.hpp"
+#include "workspace.hpp"
+#include "basis.hpp"
+#include "indexing.hpp"
+#include "laplacian.hpp"
+
 #include "iterator_routines.hpp"
 
 Map::Map(const Image& mask, const floatvector& node_spacing)
-  : m_mask(mask), m_comm(mask.comm()), m_ndim(mask.ndim()), m_v_node_spacing(node_spacing),
-    m_v_image_shape(mask.shape()), m_v_map_shape(intvector()), m_vv_node_locs(floatvector2d()),
+  : m_comm(mask.comm()), m_mask(mask), m_ndim(mask.ndim()), m_v_node_spacing(node_spacing),
+    m_v_offsets(floatvector()), m_v_image_shape(mask.shape()), m_v_map_shape(intvector()),
+    m_vv_node_locs(floatvector2d()), m_basis(create_unique_mat()), m_lapl(create_unique_mat()),
     m_displacements(create_unique_vec())
-{
-  calculate_node_locs();
-  calculate_basis();
-  // TODO: mask basis
-  // initialize displacement storage
-  alloc_displacements();
-  calculate_laplacian();
-}
-
-Map::Map(const Map& map, const floatvector& node_spacing)
-  : m_comm(map.m_comm), m_mask(map.m_mask), m_ndim(map.m_ndim), m_v_node_spacing(node_spacing),
-    m_v_image_shape(map.m_v_image_shape), m_v_map_shape(intvector()),
-    m_vv_node_locs(floatvector2d()), m_displacements(create_unique_vec())
 {
   calculate_node_locs();
   calculate_basis();
@@ -35,7 +29,7 @@ void Map::update(const Vec &delta_vec)
 
 std::unique_ptr<Map> Map::interpolate(const floatvector& new_spacing)
 {
-  std::unique_ptr<Map> new_map(new Map(*this, new_spacing));
+  std::unique_ptr<Map> new_map(new Map(this->m_mask, new_spacing));
 
   floatvector scalings(m_ndim, 0.0);
   floatvector offsets(m_ndim, 0.0);
@@ -69,7 +63,7 @@ void Map::alloc_displacements()
 void Map::calculate_node_locs()
 {
   // calculate self size and offset
-  for(integer idim=0; idim < m_ndim; idim++)
+  for(uinteger idim=0; idim < m_ndim; idim++)
   {
     floating centre = m_v_image_shape[idim]/2. - 0.5;
     // want always to have odd number of nodes so find num nodes for each half,

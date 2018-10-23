@@ -6,11 +6,6 @@
 #include<iostream>
 
 #include "types.hpp"
-#include "indexing.hpp"
-#include "image.hpp"
-#include "basis.hpp"
-#include "laplacian.hpp"
-#include "workspace.hpp"
 
 class Map{
 
@@ -37,7 +32,7 @@ class Map{
 
   MPI_Comm m_comm;
   const Image& m_mask;
-  integer m_ndim;
+  uinteger m_ndim;
   floatvector m_v_node_spacing;
   floatvector m_v_offsets;
   intvector m_v_image_shape;

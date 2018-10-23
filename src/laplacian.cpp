@@ -7,9 +7,9 @@ Mat_unique build_laplacian_autostride(MPI_Comm comm, intvector shape, integer nd
   integer matsize = std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<integer>());
   matsize *= ndim;   
   // get domain info to determine rows
-  integer rank, num_ranks, mpi_err;
-  mpi_err = MPI_Comm_rank(comm, &rank);
-  mpi_err = MPI_Comm_size(comm, &num_ranks);
+  integer rank, num_ranks;
+  MPI_Comm_rank(comm, &rank);
+  MPI_Comm_size(comm, &num_ranks);
 
   integer rowsize = matsize / num_ranks;
   integer remainder = matsize % num_ranks;

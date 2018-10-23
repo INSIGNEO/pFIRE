@@ -8,7 +8,7 @@
 // scalings are src_spacing/tgt_spacing for each dim, offsets are tgt[0,0,0] - src[0,0,0]
 Mat_unique build_basis_matrix(
     MPI_Comm comm, const intvector& src_shape, const intvector& tgt_shape, 
-    const floatvector& scalings, const floatvector& offsets, integer ndim, integer tile_dim)
+    const floatvector& scalings, const floatvector& offsets, uinteger ndim, uinteger tile_dim)
 {
   intvector src_shape_trunc(ndim, 0);
   std::copy_n(src_shape.begin(), ndim, src_shape_trunc.begin());
@@ -45,7 +45,7 @@ Mat_unique build_basis_matrix(
   idxn.push_back(rowptr);
 
   integer npoints = 1;
-  for(integer idim=0; idim<ndim; idim++)
+  for(uinteger idim=0; idim<ndim; idim++)
   {
     npoints *= 2;
   }
@@ -67,7 +67,7 @@ Mat_unique build_basis_matrix(
 
 
     for(integer ipoint=0; ipoint<npoints; ipoint++){
-      for(integer idim=0; idim<ndim; idim++){
+      for(uinteger idim=0; idim<ndim; idim++){
         if((1 << idim) & ipoint)
         {
           src_coord_floor[idim] += 1;
@@ -87,7 +87,7 @@ Mat_unique build_basis_matrix(
           mdat.push_back(coeff);
         }
       }
-      for(integer idim=0; idim<ndim; idim++){
+      for(uinteger idim=0; idim<ndim; idim++){
         if((1 << idim) & ipoint)
         {
           src_coord_floor[idim] -= 1;
@@ -104,7 +104,7 @@ Mat_unique build_basis_matrix(
   return m_basis;
 }
 
-Mat_unique build_warp_matrix(MPI_Comm comm, const intvector& img_shape, integer ndim,
+Mat_unique build_warp_matrix(MPI_Comm comm, const intvector& img_shape, uinteger ndim,
                              const std::vector<Vec*>& displacements)
 {
   // get total nodes per dim, and tot_rows = tgt_size*ndim
@@ -134,7 +134,7 @@ Mat_unique build_warp_matrix(MPI_Comm comm, const intvector& img_shape, integer 
   idxn.push_back(rowptr);
 
   integer npoints = 1;
-  for(integer idim=0; idim<ndim; idim++)
+  for(uinteger idim=0; idim<ndim; idim++)
   {
     npoints *= 2;
   }
@@ -158,13 +158,13 @@ Mat_unique build_warp_matrix(MPI_Comm comm, const intvector& img_shape, integer 
                    [locidx](floating x, floating* arr) -> floating{return x + arr[locidx];});
     // Need to clamp locations to the edges of the image
     std::transform(src_coord.begin(), src_coord.end(), img_shape_trunc.begin(), src_coord.begin(),
-                   clamp);
+                   clamp_to_edge);
     // Floor to get nearest pixel
     std::transform(src_coord.begin(), src_coord.end(), src_coord_floor.begin(),
                    [](floating x) -> integer{return static_cast<integer> (std::floor(x));});
 
     for(integer ipoint=0; ipoint<npoints; ipoint++){
-      for(integer idim=0; idim<ndim; idim++){
+      for(uinteger idim=0; idim<ndim; idim++){
         if((1 << idim) & ipoint)
         {
           src_coord_floor[idim] += 1;
@@ -184,7 +184,7 @@ Mat_unique build_warp_matrix(MPI_Comm comm, const intvector& img_shape, integer 
           mdat.push_back(coeff);
         }
       }
-      for(integer idim=0; idim<ndim; idim++){
+      for(uinteger idim=0; idim<ndim; idim++){
         if((1 << idim) & ipoint)
         {
           src_coord_floor[idim] -= 1;

@@ -21,7 +21,7 @@ public:
   // Allow RO access to member variables
   // Note that datavec and dmda remain mutable in this way
   MPI_Comm comm() const {return m_comm;}
-  integer ndim() const {return m_ndim;}
+  uinteger ndim() const {return m_ndim;}
   const intvector& shape() const { return m_shape;}
   integer size() const { return m_shape[0] * m_shape[1] * m_shape[2];}
   std::shared_ptr<const Vec> global_vec() const{ return m_globalvec;}
@@ -45,11 +45,11 @@ protected:
   explicit Image(const Image& image);
   Image& operator=(const Image& image);
 
-  integer m_ndim;
   MPI_Comm m_comm;
+  uinteger m_ndim;
   intvector m_shape;
   Vec_shared m_localvec, m_globalvec;
-  std::shared_ptr<DM> m_dmda;
+  DM_shared m_dmda;
 //  std::shared_ptr<Mask> mask;
 
   void initialize_dmda(); 

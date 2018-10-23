@@ -29,9 +29,4 @@ inline integer ravel(const intvector& loc, const intvector& shape)
   return idx;
 }
 
-inline floating clamp(floating idx, integer max)
-{
-  return (idx < 0) ? 0 : ((idx >= max) ? max-1 : idx);
-}
-
 #endif

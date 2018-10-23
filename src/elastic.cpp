@@ -5,7 +5,10 @@
 
 Elastic::Elastic(const Image& fixed, const Image& moved, const floatvector nodespacing)
   : m_comm(fixed.comm()), m_imgdims(fixed.ndim()), m_mapdims(m_imgdims+1), m_size(fixed.size()),
-    m_iternum(0), m_fixed(fixed), m_moved(moved), m_v_final_nodespacing(nodespacing)
+    m_iternum(0), m_fixed(fixed), m_moved(moved), m_v_nodespacings(floatvector2d()),
+    m_v_final_nodespacing(nodespacing), m_p_registered(std::shared_ptr<Image>(nullptr)),
+    m_p_map(std::unique_ptr<Map>(nullptr)), m_workspace(std::shared_ptr<WorkSpace>(nullptr)),
+    normmat(create_unique_mat())
 {
   // TODO: image compatibility checks (maybe write Image.iscompat(Image foo)
   // TODO: enforce normalization
@@ -34,8 +37,6 @@ Elastic::Elastic(const Image& fixed, const Image& moved, const floatvector nodes
 
   // set scratchpad storage, scatterers:
   m_workspace = std::make_shared<WorkSpace>(fixed, *m_p_map);
-
-
 }
 
 
@@ -107,6 +108,7 @@ void Elastic::innerloop(integer outer_count)
     PetscPrintf(m_comm, "Maximum displacement: %.2f\n", amax);
     if(amax < m_convergence_thres)
     {
+      PetscPrintf(m_comm, "Generation %i converged after %i iterations.\n\n", outer_count, inum);
       break;
     }
   }
@@ -118,7 +120,7 @@ void Elastic::innerstep(floating lambda)
   calculate_tmat();
 
   // calculate tmat2 and precondition
-  Mat_unique normmat = create_unique_mat();
+  normmat = create_unique_mat();
   // TODO: can we reuse here?
   PetscErrorCode perr = MatTransposeMatMult(*m_workspace->m_tmat, *m_workspace->m_tmat,
                                             MAT_INITIAL_MATRIX, PETSC_DEFAULT,
@@ -192,7 +194,7 @@ void Elastic::calculate_tmat()
                             *m_workspace->m_localtmp);CHKERRABORT(m_comm, perr);
 
   // find average gradients
-  for(integer idim=0; idim < m_fixed.ndim(); idim++)
+  for(uinteger idim=0; idim < m_fixed.ndim(); idim++)
   {
     //likely change this to avoid mallocs/frees
     fd::gradient_existing(*(m_fixed.dmda()), *m_workspace->m_localtmp,

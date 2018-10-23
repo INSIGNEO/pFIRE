@@ -16,7 +16,8 @@
 //Public Methods
 
 Image::Image(const intvector &shape, MPI_Comm comm)
-             : m_ndim(shape.size()), m_comm(comm), m_shape(shape) //const on shape causes copy assignment (c++11)
+  : m_comm(comm), m_ndim(shape.size()), m_shape(shape), //const on shape causes copy assignment (c++11)
+    m_localvec(create_unique_vec()), m_globalvec(create_unique_vec()), m_dmda(create_shared_dm())
 {
   if(m_shape.size() != 3)
   {
@@ -101,7 +102,10 @@ std::unique_ptr<Image> Image::create_from_image(std::string path, Image* existin
   bool res = cache->get_pixels(OIIO::ustring(path), 0, 0, xlo, xhi, ylo, yhi, zlo, zhi, 0, 1,
                           OIIO::TypeDesc::DOUBLE, pixels,
                           OIIO::AutoStride, OIIO::AutoStride, OIIO::AutoStride);
-  PetscPrintf(comm, "Result: %d\n", res);
+  if(!res)
+  {
+    throw std::runtime_error("Failed to load image");
+  }
   perr = VecRestoreArray(*new_image->global_vec(), &pixels);CHKERRABORT(comm, perr);
 
   return new_image;
@@ -182,8 +186,8 @@ void Image::save_OIIO(std::string filename)
 //Protected Methods
 
 Image::Image(const Image& image)
-  : m_ndim(image.m_ndim), m_comm(image.m_comm), m_shape(image.m_shape),
-    m_dmda(image.m_dmda)
+  : m_comm(image.m_comm), m_ndim(image.m_ndim), m_shape(image.m_shape),
+    m_localvec(create_shared_vec()), m_globalvec(create_shared_vec()), m_dmda(image.m_dmda)
 {
   initialize_vectors();
 }
