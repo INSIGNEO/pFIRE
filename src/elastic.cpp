@@ -136,10 +136,13 @@ void Elastic::innerstep(floating lambda)
   m_workspace->duplicate_single_grad_to_stacked(0);
   perr = MatMultTranspose(*m_workspace->m_tmat, *m_workspace->m_stacktmp, *m_workspace->m_rhs);
   
+  block_precondition();
   // solve for delta a
   KSP_unique m_ksp = create_unique_ksp();
   KSPCreate(m_comm, m_ksp.get());
   KSPSetOperators(*m_ksp, *normmat, *normmat);
+  KSPSetFromOptions(*m_ksp);
+  KSPSetUp(*m_ksp);
   KSPSolve(*m_ksp, *m_workspace->m_rhs, *m_workspace->m_delta); 
   // update map
   m_p_map->update(*m_workspace->m_delta);
@@ -222,37 +225,20 @@ void Elastic::block_precondition()
   // Find rank-local sums for spatial and luminance blocks
   integer rowstart, rowend;
   perr = VecGetOwnershipRange(*diag, &rowstart, &rowend);CHKERRABORT(m_comm, perr);
-  floating *ptr;
+  integer localsize = rowend - rowstart;
   floating norm[2]; // norm[0] is spatial, norm[1] is luminance
+  integer spt_end = crit_idx - rowstart;
+  spt_end = (spt_end < 0) ? 0 : (spt_end > localsize) ? localsize : spt_end;
+
+  floating *ptr;
   perr = VecGetArray(*diag, &ptr);CHKERRABORT(m_comm, perr);
-  //case that all elements are in spatial blocks
-  if(crit_idx >= rowend)
+  for(integer idx=0; idx < spt_end; idx++)
   {
-    for(integer idx = 0; idx < (rowend - rowstart); idx++)
-    {
-      norm[0] += ptr[idx];
-    }
+    norm[0] += ptr[idx];
   }
-  // case that all elements are in luminance blocks
-  else if(crit_idx < rowstart)
+  for(integer idx=spt_end; idx < localsize; idx++)
   {
-    for(integer idx = 0; idx < (rowend - rowstart); idx++)
-    {
-      norm[1] += ptr[idx];
-    }
-  }
-  // case that elements are split between the two
-  else
-  {
-    integer spt_end = crit_idx - rowstart;
-    for(integer idx=0; idx < spt_end; idx++)
-    {
-      norm[0] += ptr[idx];
-    }
-    for(integer idx=spt_end; idx < rowend; idx++)
-    {
-      norm[1] += ptr[idx];
-    }
+    norm[1] += ptr[idx];
   }
   perr = VecRestoreArray(*diag, &ptr);CHKERRABORT(m_comm, perr);
   
@@ -266,38 +252,17 @@ void Elastic::block_precondition()
 
   // reuse diag vector to hold scaling values
   perr = VecGetArray(*diag, &ptr);CHKERRABORT(m_comm, perr);
-  // case that all elements are in spatial blocks
-  if(crit_idx >= rowend)
+  for(integer idx=0; idx < spt_end; idx++)
   {
-    for(integer idx = 0; idx < (rowend - rowstart); idx++)
-    {
-      ptr[idx] = 1;
-    }
+    ptr[idx] = 1;
   }
-  // case that all elements are in luminance blocks
-  else if(crit_idx < rowstart)
+  for(integer idx=spt_end; idx < localsize; idx++)
   {
-    for(integer idx = 0; idx < (rowend - rowstart); idx++)
-    {
-      ptr[idx] = lum_scale;
-    }
-  }
-  // case that elements are split between the two
-  else
-  {
-    integer spt_end = crit_idx - rowstart;
-    for(integer idx=0; idx < spt_end; idx++)
-    {
-      ptr[idx] = 1;
-    }
-    for(integer idx=spt_end; idx < rowend; idx++)
-    {
-      ptr[idx] = lum_scale;
-    }
+    ptr[idx] = lum_scale;
   }
   perr = VecRestoreArray(*diag, &ptr);CHKERRABORT(m_comm, perr);
 
-  perr = MatDiagonalScale(*normmat, *diag, nullptr);
+  perr = MatDiagonalScale(*normmat, *diag, nullptr);CHKERRABORT(m_comm, perr);
 }
 
 void Elastic::save_debug_frame(integer ocount, integer icount)
