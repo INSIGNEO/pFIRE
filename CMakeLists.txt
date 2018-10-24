@@ -11,7 +11,7 @@ if( NOT CMAKE_BUILD_TYPE )
         FORCE )
 endif()
 
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -Weffc++ -O0 -ggdb -march=native -fno-stack-protector")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -Weffc++ -O0 -ggdb -march=native -fstack-protector-strong")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -O3 -march=native")
 
 option(DEBUG_VERBOSE "Verbose debug outputs")
@@ -39,6 +39,13 @@ find_package(MPI REQUIRED)
 include_directories(${MPI_INCLUDES})
 set(EXTRA_LIBS ${EXTRA_LIBS} ${MPI_LIBRARIES})
 
+find_package(DCMTK)
+include_directories(${DCMTK_INCLUDES})
+set(EXTRA_LIBS ${EXTRA_LIBS} ${DCMTK_LIBRARIES})
+if(DCMTK_FOUND)
+  add_definitions(-DUSE_DCMTK)
+endif(DCMTK_FOUND)
+
 find_package(OpenImageIO REQUIRED)
 include_directories(${OPENIMAGEIO_INCLUDE_DIR})
 set(EXTRA_LIBS ${EXTRA_LIBS} ${OPENIMAGEIO_LIBRARIES})
@@ -47,3 +54,6 @@ add_subdirectory(${pFIRE_SOURCE_DIR}/src)
 
 enable_testing()
 add_subdirectory(test)
+
+include(FeatureSummary)
+feature_summary(WHAT ALL)
