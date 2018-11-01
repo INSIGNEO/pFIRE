@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.7.0)
 project(pFIRE)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED on)
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 
@@ -11,8 +11,8 @@ if( NOT CMAKE_BUILD_TYPE )
         FORCE )
 endif()
 
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -Weffc++ -O0 -ggdb -march=native -fstack-protector-strong")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -O3 -march=native")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -Weffc++ -Wuninitialized -O0 -ggdb -march=native -fstack-protector-strong")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -O3 -march=native -fno-fast-math")
 
 option(DEBUG_VERBOSE "Verbose debug outputs")
 if(DEBUG_VERBOSE)
@@ -46,9 +46,12 @@ if(DCMTK_FOUND)
   add_definitions(-DUSE_DCMTK)
 endif(DCMTK_FOUND)
 
-find_package(OpenImageIO REQUIRED)
+find_package(OpenImageIO)
 include_directories(${OPENIMAGEIO_INCLUDE_DIR})
 set(EXTRA_LIBS ${EXTRA_LIBS} ${OPENIMAGEIO_LIBRARIES})
+if(OPENIMAGEIO_FOUND)
+  add_definitions(-DUSE_OIIO)
+endif(OPENIMAGEIO_FOUND)
 
 add_subdirectory(${pFIRE_SOURCE_DIR}/src)
 

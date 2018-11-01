@@ -19,6 +19,7 @@ class Image;
 class WorkSpace;
 class Map;
 class Elastic;
+class BaseLoader;
 
 
 // Useful typedefs
@@ -27,10 +28,13 @@ using intvector =  std::vector<integer>;
 using intvector2d =  std::vector<intvector>;
 
 using uinteger = unsigned integer;
+using uintvector = std::vector<uinteger>;
 
 using floating = PetscScalar;
 using floatvector =  std::vector<floating>;
 using floatvector2d =  std::vector<floatvector>;
+
+using BaseLoader_unique = std::unique_ptr<BaseLoader>;
 
 //// Self-destructing PETSc objects
 // Can apply identical treatment to many PETSc types

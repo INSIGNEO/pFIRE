@@ -14,10 +14,11 @@ Elastic::Elastic(const Image& fixed, const Image& moved, const floatvector nodes
   // TODO: enforce normalization
   
   // make sure nodespacing is compatible with image
-  if(m_fixed.ndim() != m_v_final_nodespacing.size())
+  if(m_fixed.ndim() > m_v_final_nodespacing.size())
   {
     throw std::runtime_error("number of nodespacings must match number of image dimensions");
   }
+  m_v_final_nodespacing.resize(m_fixed.ndim());
 
   #ifdef VERBOSEDEBUG
   PetscPrintf(m_comm, "Fixed image initial contents:\n");
@@ -141,11 +142,12 @@ void Elastic::innerstep(floating lambda)
   block_precondition();
   // solve for delta a
   KSP_unique m_ksp = create_unique_ksp();
-  KSPCreate(m_comm, m_ksp.get());
-  KSPSetOperators(*m_ksp, *normmat, *normmat);
-  KSPSetFromOptions(*m_ksp);
-  KSPSetUp(*m_ksp);
-  KSPSolve(*m_ksp, *m_workspace->m_rhs, *m_workspace->m_delta); 
+  perr = KSPCreate(m_comm, m_ksp.get());CHKERRABORT(m_comm, perr);
+  perr = KSPSetOperators(*m_ksp, *normmat, *normmat);CHKERRABORT(m_comm, perr);
+  perr = KSPSetUp(*m_ksp);CHKERRABORT(m_comm, perr);
+  perr = KSPSetFromOptions(*m_ksp);CHKERRABORT(m_comm, perr);
+  perr = KSPSetUp(*m_ksp);CHKERRABORT(m_comm, perr);
+  perr = KSPSolve(*m_ksp, *m_workspace->m_rhs, *m_workspace->m_delta);CHKERRABORT(m_comm, perr);
   // update map
   m_p_map->update(*m_workspace->m_delta);
   // warp image
@@ -228,7 +230,7 @@ void Elastic::block_precondition()
   integer rowstart, rowend;
   perr = VecGetOwnershipRange(*diag, &rowstart, &rowend);CHKERRABORT(m_comm, perr);
   integer localsize = rowend - rowstart;
-  floating norm[2]; // norm[0] is spatial, norm[1] is luminance
+  floatvector norm(2, 0.0); // norm[0] is spatial, norm[1] is luminance
   integer spt_end = crit_idx - rowstart;
   spt_end = (spt_end < 0) ? 0 : (spt_end > localsize) ? localsize : spt_end;
 
@@ -243,9 +245,9 @@ void Elastic::block_precondition()
     norm[1] += ptr[idx];
   }
   perr = VecRestoreArray(*diag, &ptr);CHKERRABORT(m_comm, perr);
-  
+
   // MPI_AllReduce to sum over all processes
-  MPI_Allreduce(MPI_IN_PLACE, norm, 2, MPI_DOUBLE, MPI_SUM, m_comm); 
+  MPI_Allreduce(MPI_IN_PLACE, norm.data(), 2, MPI_DOUBLE, MPI_SUM, m_comm); 
 
   // calculate average of norms and scaling factor
   norm[0] /= crit_idx;

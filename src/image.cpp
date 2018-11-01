@@ -13,6 +13,8 @@
 #include "iterator_routines.hpp"
 #include "map.hpp"
 
+#include "baseloader.hpp"
+
 //Public Methods
 
 Image::Image(const intvector &shape, MPI_Comm comm)
@@ -54,26 +56,17 @@ std::unique_ptr<Image> Image::copy() const{
   return new_img;
 }
 
-std::unique_ptr<Image> Image::create_from_image(std::string path, Image* existing, MPI_Comm comm)
+std::unique_ptr<Image> Image::load_file(const std::string &path, const Image* existing, MPI_Comm comm)
 {
-  // open file and get metadata on image size
-  ImageCache_unique cache = create_unique_imagecache();
-  OIIO::ImageSpec const* spec = cache->imagespec(OIIO::ustring(path));
-  if(spec == nullptr){
-    throw std::runtime_error("Failed to open image file");
-  }
-  intvector imageshape = {spec->width, spec->height, spec->depth};
-
-  PetscPrintf(comm, "Image shape: %i x %i x %i\n", imageshape[0], imageshape[1], imageshape[2]);
-
-  // TODO: multichannel handling
   
-  // if image passed assert sizes match and duplicate, otherwise create new image given size
+  BaseLoader_unique loader = BaseLoader::find_loader(path, comm);
+
+   // if image passed assert sizes match and duplicate, otherwise create new image given size
   std::unique_ptr<Image> new_image;
   if(existing !=  nullptr)
   {
     comm = existing->comm();
-    if(!all_true(imageshape.begin(), imageshape.end(), existing->shape().begin(),
+    if(!all_true(loader->shape().begin(), loader->shape().end(), existing->shape().begin(),
                  existing->shape().end(), std::equal_to<>()))
     {
       throw std::runtime_error("New image must have same shape as existing");
@@ -82,35 +75,25 @@ std::unique_ptr<Image> Image::create_from_image(std::string path, Image* existin
   }
   else
   {
-    new_image = std::make_unique<Image>(imageshape, comm);
+    new_image = std::make_unique<Image>(loader->shape(), comm);
   }
-  
-  // loading local pixel range
-  // first get local process ownership to inform OIIO selection
-  integer xlo, xhi, ylo, yhi, zlo, zhi;
-  PetscErrorCode perr = DMDAGetCorners(*new_image->dmda(), &xlo, &ylo, &zlo, &xhi, &yhi, &zhi);
-  CHKERRABORT(comm, perr);
-  xhi += xlo; yhi += ylo; zhi += zlo;
 
-  perr = VecSet(*new_image->global_vec(), 1.0);
+  intvector shape(3, 0), offset(3, 0);
+  PetscErrorCode perr = DMDAGetCorners(*new_image->dmda(), &offset[0], &offset[1], &offset[2],
+                                       &shape[0], &shape[1], &shape[2]);
   CHKERRABORT(comm, perr);
-  // now get global vector as 1d array
-  floating* pixels;
-  perr = VecGetArray(*new_image->global_vec(), &pixels);
+  std::transform(shape.cbegin(), shape.cend(), offset.cbegin(), shape.begin(), std::minus<>());
+
+  floating ***vecptr(nullptr);
+  perr = DMDAVecGetArray(*new_image->dmda(), *new_image->global_vec(), &vecptr);
   CHKERRABORT(comm, perr);
-  // fill array directly from OpenImageIO
-  bool res = cache->get_pixels(OIIO::ustring(path), 0, 0, xlo, xhi, ylo, yhi, zlo, zhi, 0, 1,
-                          OIIO::TypeDesc::DOUBLE, pixels,
-                          OIIO::AutoStride, OIIO::AutoStride, OIIO::AutoStride);
-  if(!res)
-  {
-    throw std::runtime_error("Failed to load image");
-  }
-  perr = VecRestoreArray(*new_image->global_vec(), &pixels);CHKERRABORT(comm, perr);
+  loader->copy_scaled_chunk(vecptr, shape, offset);
+  perr = DMDAVecRestoreArray(*new_image->dmda(), *new_image->global_vec(), &vecptr);
+  CHKERRABORT(comm, perr);
 
   return new_image;
+ 
 }
-
 // Return scale factor
 floating Image::normalize()
 {
@@ -202,7 +185,7 @@ void Image::initialize_dmda()
   // Make sure things get gracefully cleaned up
   m_dmda = create_shared_dm();
   perr = DMDACreate3d(m_comm,
-                      DM_BOUNDARY_MIRROR, DM_BOUNDARY_MIRROR, DM_BOUNDARY_MIRROR, //BCs
+                      DM_BOUNDARY_GHOSTED, DM_BOUNDARY_GHOSTED, DM_BOUNDARY_GHOSTED, //BCs
                       DMDA_STENCIL_STAR, //stencil shape
                       m_shape[0], m_shape[1], m_shape[2], //global mesh shape
                       PETSC_DECIDE, PETSC_DECIDE, PETSC_DECIDE, //ranks per dim

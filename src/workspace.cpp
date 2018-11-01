@@ -34,7 +34,9 @@ void WorkSpace::reallocate_ephemeral_workspace(const Map& map){
   m_delta = create_unique_vec();
   m_rhs = create_unique_vec();
   perr = VecDuplicate(*map.m_displacements, m_delta.get());CHKERRABORT(m_comm, perr);
+  perr = VecSet(*m_delta, 0.);CHKERRABORT(m_comm, perr);
   perr = VecDuplicate(*map.m_displacements, m_rhs.get());CHKERRABORT(m_comm, perr);
+  perr = VecSet(*m_rhs, 0.);CHKERRABORT(m_comm, perr);
 
   // setup map resolution specific tmat storage, can use basis layout
   m_tmat = create_unique_mat();

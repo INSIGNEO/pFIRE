@@ -5,12 +5,10 @@
 
 #include "types.hpp"
 
-
 class Image{
 
 public:
 
-  explicit Image(std::string filename, MPI_Comm comm=PETSC_COMM_WORLD);
   explicit Image(const intvector &shape, MPI_Comm comm=PETSC_COMM_WORLD);
 
   Vec_unique gradient(integer dim);
@@ -35,10 +33,12 @@ public:
 
   void update_local_from_global();
 
+  static std::unique_ptr<Image> load_file(const std::string &filename,
+                                          const Image *existing=nullptr,
+                                          MPI_Comm comm=PETSC_COMM_WORLD);
+
   void save_OIIO(std::string filename);
 
-  static std::unique_ptr<Image> create_from_image(std::string path, Image* existing=nullptr,
-                                                  MPI_Comm comm=PETSC_COMM_WORLD);
 
 protected:
 
