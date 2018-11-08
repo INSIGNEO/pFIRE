@@ -20,7 +20,8 @@ class Map{
   Mat* laplacian() const{ return m_lapl.get();}
 
   integer size() const
-  { return std::accumulate(m_v_map_shape.cbegin(), m_v_map_shape.cend(), 1, std::multiplies<>());
+  { 
+    return std::accumulate(m_v_map_shape.cbegin(), m_v_map_shape.cend(), 1, std::multiplies<>());
   }
 
   void update(const Vec &delta_vec);
@@ -39,7 +40,6 @@ class Map{
   intvector m_v_map_shape;
   floatvector2d m_vv_node_locs;
   Mat_unique m_basis;
-//  Mat_unique m_basis_1d;
   Mat_unique m_lapl;
   Vec_unique m_displacements;
 

@@ -83,7 +83,7 @@ void mainflow(std::string fixedpath, std::string movedpath, floating ns){
   std::unique_ptr<Image> moved;
   try
   {
-    moved = Image::load_file(movedpath);
+    moved = Image::load_file(movedpath, fixed.get());
   }
   catch(std::exception &e)
   {
