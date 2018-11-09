@@ -46,7 +46,7 @@ int main(int argc, char **argv){
 
   register_plugins();
 
-  if(argc != 4)
+  if(argc < 4)
   {
     usage();
     return 0;
@@ -90,6 +90,9 @@ void mainflow(std::string fixedpath, std::string movedpath, floating ns){
     std::cerr << "Error: Failed to load moved image: " << e.what() << std::endl;
     return;
   }
+
+  fixed->save_OIIO("fixed_writeback.png");
+  moved->save_OIIO("moved_writeback.png");
 
   fixed->normalize();
   moved->normalize();
