@@ -82,7 +82,7 @@ std::unique_ptr<Image> Image::load_file(const std::string &path, const Image* ex
   PetscErrorCode perr = DMDAGetCorners(*new_image->dmda(), &offset[0], &offset[1], &offset[2],
                                        &shape[0], &shape[1], &shape[2]);
   CHKERRABORT(comm, perr);
-  std::transform(shape.cbegin(), shape.cend(), offset.cbegin(), shape.begin(), std::minus<>());
+  //std::transform(shape.cbegin(), shape.cend(), offset.cbegin(), shape.begin(), std::minus<>());
 
   floating ***vecptr(nullptr);
   perr = DMDAVecGetArray(*new_image->dmda(), *new_image->global_vec(), &vecptr);
