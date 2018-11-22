@@ -1,20 +1,19 @@
 #include "oiioloader.hpp"
 
-#include<OpenImageIO/imageio.h>
 
 //// ImageCache
 // typedef and helpers for unique_ptr
+
 struct ImageCacheDeleter{void operator()(OIIO::ImageCache* p) const{OIIO::ImageCache::destroy(p);}};
-using ImageCache_unique = std::unique_ptr<OIIO::ImageCache, ImageCacheDeleter>;
-inline ImageCache_unique create_unique_imagecache()
+
+ImageCache_unique create_unique_imagecache()
 {
   return ImageCache_unique(OIIO::ImageCache::create());
 }
 
+const std::string OIIOLoader::loader_name = "OIIO";
 
 ImageCache_unique OIIOLoader::cache(nullptr);
-
-const std::string OIIOLoader::loader_name = "OIIO";
 
 BaseLoader_unique OIIOLoader::Create_Loader(const std::string &path, MPI_Comm comm)
 {

@@ -1,10 +1,13 @@
 #ifndef OIIOLOADER_HPP
 #define OIIOLOADER_HPP
 
+#include<OpenImageIO/imagecache.h>
+
 #include "types.hpp"
 #include "baseloader.hpp"
 
-struct ImageCache_unique;
+struct ImageCacheDeleter;
+using ImageCache_unique = std::unique_ptr<OIIO::ImageCache, ImageCacheDeleter>;
 
 class OIIOLoader: public BaseLoader{
 public:

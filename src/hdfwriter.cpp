@@ -1,6 +1,7 @@
 #include "hdfwriter.hpp"
 
-#include <sstream>
+#include<algorithm>
+#include<sstream>
 
 #include "indexing.hpp"
 #include "image.hpp"
