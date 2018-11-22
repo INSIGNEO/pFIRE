@@ -1,7 +1,8 @@
 #ifndef BASELOADER_HPP
 #define BASELOADER_HPP
 
-#include <functional>
+#include<functional>
+#include<map>
 
 #include "types.hpp"
 

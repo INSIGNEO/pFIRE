@@ -31,25 +31,26 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${pFIRE_SOURCE_DIR}/bin)
 # Ensure we can find FindPETSc and friends
 list(APPEND CMAKE_MODULE_PATH ${pFIRE_SOURCE_DIR}/cmake-modules)
 
-find_package(PETSc REQUIRED)
-include_directories(${PETSC_INCLUDES})
-set(EXTRA_LIBS ${EXTRA_LIBS} ${PETSC_LIBRARIES})
-
 find_package(MPI REQUIRED)
 include_directories(${MPI_INCLUDES})
 set(EXTRA_LIBS ${EXTRA_LIBS} ${MPI_LIBRARIES})
 
+find_package(PETSc REQUIRED)
+include_directories(${PETSC_INCLUDES})
+set(EXTRA_LIBS ${EXTRA_LIBS} ${PETSC_LIBRARIES})
+add_definitions(-DPETSC_CLANGUAGE_CXX=1)
+
 find_package(DCMTK)
+if(DCMTK_FOUND)
 include_directories(${DCMTK_INCLUDES})
 set(EXTRA_LIBS ${EXTRA_LIBS} ${DCMTK_LIBRARIES})
-if(DCMTK_FOUND)
   add_definitions(-DUSE_DCMTK)
 endif(DCMTK_FOUND)
 
 find_package(OpenImageIO)
+if(OPENIMAGEIO_FOUND)
 include_directories(${OPENIMAGEIO_INCLUDE_DIR})
 set(EXTRA_LIBS ${EXTRA_LIBS} ${OPENIMAGEIO_LIBRARIES})
-if(OPENIMAGEIO_FOUND)
   add_definitions(-DUSE_OIIO)
 endif(OPENIMAGEIO_FOUND)
 

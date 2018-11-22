@@ -1,6 +1,7 @@
 #define BOOST_TEST_MODULE indexing
 #include "test_common.hpp"
 
+#include<petscerror.h>
 #include<petscdmda.h>
 
 #include "types.hpp"

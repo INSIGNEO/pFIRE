@@ -2,6 +2,16 @@
 
 #include<OpenImageIO/imageio.h>
 
+//// ImageCache
+// typedef and helpers for unique_ptr
+struct ImageCacheDeleter{void operator()(OIIO::ImageCache* p) const{OIIO::ImageCache::destroy(p);}};
+using ImageCache_unique = std::unique_ptr<OIIO::ImageCache, ImageCacheDeleter>;
+inline ImageCache_unique create_unique_imagecache()
+{
+  return ImageCache_unique(OIIO::ImageCache::create());
+}
+
+
 ImageCache_unique OIIOLoader::cache(nullptr);
 
 const std::string OIIOLoader::loader_name = "OIIO";

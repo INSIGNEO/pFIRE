@@ -42,7 +42,7 @@ void usage()
 }
 
 int main(int argc, char **argv){
-  PetscErrorCode perr = PetscInitialize(&argc, &argv, NULL, NULL);CHKERRABORT(PETSC_COMM_WORLD, perr);
+  PetscErrorCode perr = PetscInitialize(&argc, &argv, NULL, NULL);CHKERRXX(perr);
 
   register_plugins();
 
@@ -99,6 +99,4 @@ void mainflow(std::string fixedpath, std::string movedpath, floating ns){
   Elastic reg(*fixed, *moved, nodespacing);
   reg.autoregister();
 
-  reg.registered()->save_OIIO("registered.png");
-  
 }

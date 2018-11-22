@@ -4,6 +4,8 @@
 #include "types.hpp"
 #include "baseloader.hpp"
 
+struct ImageCache_unique;
+
 class OIIOLoader: public BaseLoader{
 public:
 

@@ -1,5 +1,7 @@
 #include "elastic.hpp"
 
+#include<iomanip>
+
 #include "fd_routines.hpp"
 #include "iterator_routines.hpp"
 
@@ -267,13 +269,4 @@ void Elastic::block_precondition()
   perr = VecRestoreArray(*diag, &ptr);CHKERRABORT(m_comm, perr);
 
   perr = MatDiagonalScale(*normmat, *diag, nullptr);CHKERRABORT(m_comm, perr);
-}
-
-void Elastic::save_debug_frame(integer ocount, integer icount)
-{
-  std::ostringstream fname;
-  fname << "dbg"
-        << std::setfill('0') << std::setw(2) << ocount << "_" 
-        << std::setw(3) << icount << ".png";
-  m_p_registered->save_OIIO(fname.str());
 }
