@@ -45,13 +45,6 @@ std::unique_ptr<Map> Map::interpolate(const floatvector& new_spacing)
 
   PetscErrorCode perr = MatMult(*interp, *m_displacements, *new_map->m_displacements);CHKERRABORT(m_comm, perr);
 
-#ifdef VERBOSEDEBUG
-  PetscPrintf(m_comm, "Old:\n");
-  VecView(*m_displacements, PETSC_VIEWER_STDOUT_WORLD);
-  PetscPrintf(m_comm, "\nNew:\n");
-  VecView(*new_map->m_displacements, PETSC_VIEWER_STDOUT_WORLD);
-#endif //VERBOSEDEBUG
-
   return new_map;
 }
 
@@ -69,7 +62,7 @@ void Map::calculate_node_locs()
     // want always to have odd number of nodes so find num nodes for each half,
     // multiply by two and subtract one to get total nodes
     // N.B number of nodes = 1 + number of spaces, so:
-    integer num_spc = (integer)std::ceil(centre/m_v_node_spacing[idim]);
+    integer num_spc = std::ceil(centre/m_v_node_spacing[idim]);
     integer num_nod = num_spc*2 + 1;
     floating lo = centre - num_spc*m_v_node_spacing[idim];
     floatvector nodes(num_nod, 0.0);
@@ -157,4 +150,26 @@ void Map::calculate_laplacian()
   integer startrow, endrow;
   PetscErrorCode perr = VecGetOwnershipRange(*m_displacements, &startrow, &endrow);CHKERRABORT(m_comm, perr);
   m_lapl = build_laplacian_matrix(m_comm, m_v_map_shape, startrow, endrow, m_ndim+1);
+}
+
+std::pair<integer, integer> Map::get_displacement_ownershiprange() const
+{
+  std::pair<integer, integer> range;
+  
+  PetscErrorCode perr = VecGetOwnershipRange(*m_displacements, &range.first, &range.second);
+  CHKERRABORT(m_comm, perr);
+
+  return range;
+}
+
+const floating* Map::get_raw_data_ro() const
+{
+  const floating* ptr;
+  PetscErrorCode perr = VecGetArrayRead(*m_displacements, &ptr);CHKERRABORT(m_comm, perr);
+  return ptr;
+}
+
+void Map::release_raw_data_ro(const floating*& ptr) const
+{
+  PetscErrorCode perr = VecRestoreArrayRead(*m_displacements, &ptr);CHKERRABORT(m_comm, perr);
 }

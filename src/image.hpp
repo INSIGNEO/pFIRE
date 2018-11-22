@@ -1,9 +1,13 @@
 #ifndef IMAGE_HPP
 #define IMAGE_HPP
 
+#include <type_traits>
+
 #include<mpi.h>
 
 #include "types.hpp"
+
+#include "petscdmda.h"
 
 class Image{
 
@@ -26,7 +30,13 @@ public:
   std::shared_ptr<const Vec> local_vec() const{ return m_localvec;}
   std::shared_ptr<DM> dmda() const{ return m_dmda;}
 
+  const floating* get_raw_data_ro() const;
+  void release_raw_data_ro(const floating*& ptr) const;
+
   floating normalize();
+
+  template<typename inttype> std::vector<inttype> mpi_get_offset() const;
+  template<typename inttype> std::vector<inttype> mpi_get_chunksize() const;
 
 //  void set_mask(std::shared_ptr<Mask>);
 //  void masked_normalize(const Mask& mask);
@@ -38,7 +48,6 @@ public:
                                           MPI_Comm comm=PETSC_COMM_WORLD);
 
   void save_OIIO(std::string filename);
-
 
 protected:
 
@@ -57,5 +66,35 @@ protected:
 
   Vec_unique scatter_to_zero(Vec &vec);
 };
+
+template<typename inttype> 
+std::vector<inttype> Image::mpi_get_chunksize() const
+{
+  // This routine only makes sense to use for integer types
+  static_assert(std::is_integral<inttype>::value, "Integral element type required");
+
+  intvector sizes(3, 0);
+  PetscErrorCode perr = DMDAGetCorners(*m_dmda, nullptr, nullptr, nullptr,
+                                       &sizes[0], &sizes[1], &sizes[2]);CHKERRABORT(m_comm, perr);
+
+  std::vector<inttype> out(sizes.begin(), sizes.end());
+
+  return out;
+}
+
+template<typename inttype>
+std::vector<inttype> Image::mpi_get_offset() const
+{
+  // This routine only makes sense to use for integer types
+  static_assert(std::is_integral<inttype>::value, "Integral element type required");
+
+  intvector offsets(3, 0);
+  PetscErrorCode perr = DMDAGetCorners(*m_dmda, &offsets[0], &offsets[1], &offsets[2],
+                                       nullptr, nullptr, nullptr);CHKERRABORT(m_comm, perr);
+
+  std::vector<inttype> out(offsets.begin(), offsets.end());
+
+  return out;
+} 
 
 #endif

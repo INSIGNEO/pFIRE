@@ -237,4 +237,15 @@ Vec_unique Image::scatter_to_zero(Vec &vec)
   return new_vec;
 }
 
+const floating* Image::get_raw_data_ro() const
+{
+  const floating* ptr;
+  PetscErrorCode perr = VecGetArrayRead(*m_globalvec, &ptr);CHKERRABORT(m_comm, perr);
+  return ptr;
+}
+
+void Image::release_raw_data_ro(const floating*& ptr) const
+{
+  PetscErrorCode perr = VecRestoreArrayRead(*m_globalvec, &ptr);CHKERRABORT(m_comm, perr);
+}
 

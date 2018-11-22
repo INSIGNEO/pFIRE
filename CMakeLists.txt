@@ -39,6 +39,10 @@ find_package(MPI REQUIRED)
 include_directories(${MPI_INCLUDES})
 set(EXTRA_LIBS ${EXTRA_LIBS} ${MPI_LIBRARIES})
 
+find_package(HDF5 REQUIRED)
+include_directories(${HDF5_INCLUDES})
+set(EXTRA_LIBS ${EXTRA_LIBS} ${HDF5_LIBRARIES})
+
 find_package(DCMTK)
 include_directories(${DCMTK_INCLUDES})
 set(EXTRA_LIBS ${EXTRA_LIBS} ${DCMTK_LIBRARIES})

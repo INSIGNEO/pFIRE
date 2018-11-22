@@ -6,7 +6,7 @@
 #include "map.hpp"
 #include "elastic.hpp"
 
-//#include "hdfwriter.hpp"
+#include "hdfwriter.hpp"
 
 void mainflow(std::string, std::string, floating);
 
@@ -74,5 +74,12 @@ void mainflow(std::string fixedpath, std::string movedpath, floating ns){
   reg.autoregister();
 
   reg.registered()->save_OIIO("registered.png");
+
+  HDFWriter wtr("data.h5", fixed->comm());
+
+  std::string reggroup("registered");
+  std::string mapgroup("map");
+  wtr.write_image(*reg.registered(), reggroup);
+  wtr.write_map(*reg.m_p_map, mapgroup);
   
 }
