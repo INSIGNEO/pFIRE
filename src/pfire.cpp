@@ -1,11 +1,4 @@
-#include<petscmat.h>
-#include<petscvec.h>
-#include<petscdmda.h>
-#include<petscviewer.h>
-#include<mpi.h>
-
-#include<iostream>
-#include<string>
+#include "setup.hpp"
 
 #include "types.hpp"
 #include "laplacian.hpp"
@@ -13,28 +6,9 @@
 #include "map.hpp"
 #include "elastic.hpp"
 
-#include "baseloader.hpp"
-
-#ifdef USE_DCMTK
-#include "dcmloader.hpp"
-#endif //USE_DCMTK
-
-#ifdef USE_OIIO
-#include "oiioloader.hpp"
-#endif //USE_OIIO
+//#include "hdfwriter.hpp"
 
 void mainflow(std::string, std::string, floating);
-
-void register_plugins()
-{
-#ifdef USE_DCMTK
-  BaseLoader::register_loader(DCMLoader::loader_name, DCMLoader::Create_Loader);
-#endif //USE_DCMTK
-
-#ifdef USE_OIIO
-  BaseLoader::register_loader(OIIOLoader::loader_name, OIIOLoader::Create_Loader);
-#endif //USE_OIIO
-}
 
 void usage()
 {
@@ -42,9 +16,10 @@ void usage()
 }
 
 int main(int argc, char **argv){
-  PetscErrorCode perr = PetscInitialize(&argc, &argv, NULL, NULL);CHKERRABORT(PETSC_COMM_WORLD, perr);
 
-  register_plugins();
+  std::cout << get_invocation_name(argv[0]) << std::endl;
+
+  pfire_setup(std::vector<std::string>());
 
   if(argc < 4)
   {
@@ -56,16 +31,12 @@ int main(int argc, char **argv){
 
   mainflow(argv[1], argv[2], nodespacing);
 
-  PetscFinalize();
+  pfire_teardown();
 
   return 0;
 }
 
 void mainflow(std::string fixedpath, std::string movedpath, floating ns){
-
-
-  auto foo = BaseLoader::loaders();
-
 
   std::unique_ptr<Image> fixed;
   try
