@@ -62,9 +62,6 @@ void mainflow(std::string fixedpath, std::string movedpath, floating ns){
     return;
   }
 
-  fixed->save_OIIO("fixed_writeback.png");
-  moved->save_OIIO("moved_writeback.png");
-
   fixed->normalize();
   moved->normalize();
 
@@ -72,8 +69,6 @@ void mainflow(std::string fixedpath, std::string movedpath, floating ns){
 
   Elastic reg(*fixed, *moved, nodespacing);
   reg.autoregister();
-
-  reg.registered()->save_OIIO("registered.png");
 
   HDFWriter wtr("data.h5", fixed->comm());
 

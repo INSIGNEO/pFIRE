@@ -7,11 +7,14 @@
 
 #include<petscdmda.h>
 #include<petscvec.h>
-#include<OpenImageIO/imageio.h>
 
 #include "fd_routines.hpp"
 #include "iterator_routines.hpp"
 #include "map.hpp"
+
+#ifdef USE_OIIO
+#include<OpenImageIO/imageio.h>
+#endif //USE_OIIO
 
 #include "baseloader.hpp"
 
@@ -129,6 +132,7 @@ void Image::masked_normalize()
   return norm;
 }*/
 
+#ifdef USE_OIIO
 void Image::save_OIIO(std::string filename)
 {
   Vec_unique imgvec = create_unique_vec();
@@ -164,7 +168,7 @@ void Image::save_OIIO(std::string filename)
   }
   MPI_Barrier(m_comm);
 }
-
+#endif //USE_OIIO
 
 //Protected Methods
 
