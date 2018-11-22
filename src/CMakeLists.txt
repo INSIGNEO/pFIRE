@@ -5,6 +5,7 @@ list(REMOVE_ITEM libpFIRESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/sandbox.cpp")
 list(REMOVE_ITEM libpFIRESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/pfire.cpp")
 
 add_library(libpfire ${libpFIRESOURCES})
+set_target_properties(libpfire PROPERTIES PREFIX "")
 target_link_libraries(libpfire ${EXTRA_LIBS})
 
 add_executable(pfire pfire.cpp)
