@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 3.7.0)
 project(pFIRE)
 
+if("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
+  message(FATAL_ERROR "In-source builds are not permitted. Make a separate folder for"
+          "building:\nmkdir build; cd build; cmake ..\n"
+          "Before that, remove the files already created:\nrm -rf CMakeCache.txt CMakeFiles")
+endif("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED on)
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
@@ -30,6 +36,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${pFIRE_SOURCE_DIR}/bin)
 
 # Ensure we can find FindPETSc and friends
 list(APPEND CMAKE_MODULE_PATH ${pFIRE_SOURCE_DIR}/cmake-modules)
+
+find_package(Boost REQUIRED COMPONENTS filesystem)
+include_directories(${BOOST_INCLUDE_DIRS})
+set(EXTRA_LIBS ${EXTRA_LIBS} ${Boost_LIBRARIES})
 
 find_package(PETSc REQUIRED)
 include_directories(${PETSC_INCLUDES})
