@@ -1,5 +1,7 @@
 #include "setup.hpp"
 
+#include<chrono>
+
 #include "types.hpp"
 #include "laplacian.hpp"
 #include "image.hpp"
@@ -29,7 +31,12 @@ int main(int argc, char **argv){
 
   floating nodespacing = std::stod(argv[3]);
 
+  auto tstart = std::chrono::high_resolution_clock::now();
   mainflow(argv[1], argv[2], nodespacing);
+  auto tend = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> diff = tend - tstart;
+
+  PetscPrintf(PETSC_COMM_WORLD, "Elapsed time: %g s\n", diff.count());
 
   pfire_teardown();
 
