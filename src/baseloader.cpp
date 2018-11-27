@@ -10,7 +10,6 @@ bool BaseLoader::register_loader(const std::string &name, loader_creator loader)
   }
   if (auto it = _loaders->find(name); it == _loaders->cend())
   {
-    std::cout << "Registered loader \"" << name << "\".\n";
     (*_loaders)[name] = loader;
     return true;
   }
