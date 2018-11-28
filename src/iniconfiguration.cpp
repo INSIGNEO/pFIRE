@@ -110,15 +110,15 @@ void IniConfig::read_config_file(const std::string &config_path)
     }
     else
     {
-      unknowns.push_back(it.second.data());
+      unknowns.push_back(key);
     }
   }
 
   if(unknowns.size() > 0)
   {
     std::ostringstream unkss;
-    std::copy(unknowns.begin(), unknowns.end(), std::ostream_iterator<std::string>(unkss, " "));
-    std::cout << "Warning: unknown options " << unkss.str() << std::endl;
+    std::copy(unknowns.begin(), unknowns.end(), std::ostream_iterator<std::string>(unkss, ", "));
+    std::cout << "Warning: unknown options \"" << unkss.str() << "\"\n";
   }
 }
 
