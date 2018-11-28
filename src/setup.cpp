@@ -18,12 +18,6 @@
 
 namespace bf = boost::filesystem;
 
-std::string get_invocation_name(const std::string &argzero)
-{
-  bf::path invpath(argzero);
-  return(invpath.filename().string());
-}
-
 void register_plugins()
 {
 #ifdef USE_DCMTK

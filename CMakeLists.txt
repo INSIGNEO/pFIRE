@@ -50,7 +50,7 @@ include_directories(${PETSC_INCLUDES})
 set(EXTRA_LIBS ${EXTRA_LIBS} ${PETSC_LIBRARIES})
 add_definitions(-DPETSC_CLANGUAGE_CXX=1)
 
-find_package(Boost REQUIRED COMPONENTS filesystem)
+find_package(Boost REQUIRED COMPONENTS filesystem program_options)
 include_directories(${BOOST_INCLUDE_DIRS})
 set(EXTRA_LIBS ${EXTRA_LIBS} ${Boost_LIBRARIES})
 

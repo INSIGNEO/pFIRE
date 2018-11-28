@@ -153,7 +153,7 @@ void ShIRTLoader::copy_scaled_chunk(floating ***data, const intvector &chunksize
       copy_chunk_mask(data, subsize, starts);
       break;
     default: 
-      throw std::runtime_error("Attempted to load from non-shirt file type. This is a bug");
+      throw std::runtime_error("ShirtLoader attempted to load from non-shirt file type. This is a bug");
   }
 }
 
@@ -162,6 +162,11 @@ void ShIRTLoader::copy_chunk_image(floating ***data, const std::vector<int> &sub
 {
   int dcount = std::accumulate(subsize.cbegin(), subsize.cend(), 1, std::multiplies<>());
   std::vector<int> size(_shape.cbegin(), _shape.cend());
+
+  int irank;
+  MPI_Comm_rank(_comm, &irank);
+  PetscSynchronizedPrintf(_comm, "Rank %i: Alloc: %i\n", irank, dcount);
+  PetscSynchronizedFlush(_comm, PETSC_STDOUT);
 
   std::vector<image_data_dtype> databuf(dcount, 0);
 

@@ -1,6 +1,9 @@
-#include "setup.hpp"
+#include <chrono>
 
-#include<chrono>
+#include "setup.hpp"
+#include "configuration.hpp"
+#include "shirtemulation.hpp"
+#include "iniconfiguration.hpp"
 
 #include "types.hpp"
 #include "laplacian.hpp"
@@ -19,21 +22,28 @@ void usage()
 
 int main(int argc, char **argv){
 
-  std::cout << get_invocation_name(argv[0]) << std::endl;
-
   pfire_setup(std::vector<std::string>());
 
-  if(argc < 4)
+  std::string invocation_name = RegistrationConfig::get_invocation_name(argv[0]);
+
+  std::unique_ptr<RegistrationConfig> configobj(nullptr);
+
+  if(ShirtConfig::valid_invocation(invocation_name))
   {
-    usage();
-    return 0;
+    configobj = std::make_unique<ShirtConfig>(argc, argv);
+  }
+  else
+  {
+    configobj = std::make_unique<IniConfig>(argc, argv);
   }
 
-  floating nodespacing = std::stod(argv[3]);
-
   auto tstart = std::chrono::high_resolution_clock::now();
-  mainflow(argv[1], argv[2], nodespacing);
+  mainflow(configobj->grab<std::string>("fixed"),
+           configobj->grab<std::string>("moved"),
+           configobj->grab<integer>("nodespacing"));
+
   auto tend = std::chrono::high_resolution_clock::now();
+
   std::chrono::duration<double> diff = tend - tstart;
 
   PetscPrintf(PETSC_COMM_WORLD, "Elapsed time: %g s\n", diff.count());
