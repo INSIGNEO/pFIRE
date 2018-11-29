@@ -37,6 +37,8 @@ int main(int argc, char **argv){
     configobj = std::make_unique<IniConfig>(argc, argv);
   }
 
+  configobj->validate_config();
+
   auto tstart = std::chrono::high_resolution_clock::now();
   mainflow(configobj->grab<std::string>("fixed"),
            configobj->grab<std::string>("moved"),

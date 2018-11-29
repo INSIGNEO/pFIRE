@@ -36,6 +36,8 @@ class RegistrationConfig
 
   static std::string get_invocation_name(const std::string &argzero); 
 
+  void validate_config();
+
   protected:
 
   RegistrationConfig(const int &argc, char const* const* argv);
@@ -48,9 +50,6 @@ class RegistrationConfig
   static const std::vector<std::string> required_options;
   static const std::vector<std::string> arg_options;
   static const std::vector<std::string> bool_options;
-  
-
-  void validate_config();
 };
 
 #endif //CONFIGURATION_HPP

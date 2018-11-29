@@ -2,6 +2,8 @@
 
 #include<sstream>
 
+#include "infix_iterator.hpp"
+
 const config_map RegistrationConfig::default_config = {
   {"verbose", "false"},
   {"registered", "registered"},
@@ -10,7 +12,6 @@ const config_map RegistrationConfig::default_config = {
 const std::vector<std::string> RegistrationConfig::required_options = {
   "fixed",
   "moved",
-  "mask",
   "nodespacing"};
 
 const std::vector<std::string> RegistrationConfig::arg_options = {
@@ -30,14 +31,21 @@ RegistrationConfig::RegistrationConfig(const int &argc, char const* const* argv)
 
 void RegistrationConfig::validate_config()
 {
+  std::list<std::string> missing;
   for(auto &req_it: RegistrationConfig::required_options)
   {
     if(config.find(req_it) == config.cend())
     {
-      std::ostringstream errmsg;
-      errmsg << "Missing required argument " << req_it;
-      throw std::runtime_error(errmsg.str());
+      missing.push_back(req_it);
     }
+  }
+  if(missing.size() > 0)
+  {
+    std::ostringstream errmsg;
+    errmsg << "Missing required argument(s) \"";
+    std::copy(missing.cbegin(), missing.cend(), infix_ostream_iterator<std::string>(errmsg, ", "));
+    errmsg << "\"";
+    throw std::runtime_error(errmsg.str());
   }
 }
 
