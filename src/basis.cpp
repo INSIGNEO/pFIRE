@@ -23,7 +23,7 @@ Mat_unique build_basis_matrix(
   integer m_size = tile_dim * tgt_size;
   integer n_size = tile_dim * src_size;
 
-  integer rank, num_ranks;
+  int rank, num_ranks;
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &num_ranks);
 
