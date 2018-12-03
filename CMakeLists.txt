@@ -45,6 +45,10 @@ find_package(HDF5 REQUIRED)
 include_directories(${HDF5_INCLUDES})
 set(EXTRA_LIBS ${EXTRA_LIBS} ${HDF5_LIBRARIES})
 
+if(NOT HDF5_IS_PARALLEL)
+  message(FATAL_ERROR "Parallel HDF5 is required.")
+endif(NOT HDF5_IS_PARALLEL)
+
 find_package(PETSc REQUIRED)
 include_directories(${PETSC_INCLUDES})
 set(EXTRA_LIBS ${EXTRA_LIBS} ${PETSC_LIBRARIES})
