@@ -2,6 +2,7 @@
 
 #include<petscmat.h>
 
+#include "debug.hpp"
 #include "iterator_routines.hpp"
 #include "indexing.hpp"
 
@@ -100,6 +101,10 @@ Mat_unique build_basis_matrix(
   PetscErrorCode perr = MatCreateMPIAIJWithArrays(
       comm, idxn.size()-1, PETSC_DECIDE, m_size, n_size, idxn.data(), idxm.data(),
       mdat.data(), m_basis.get());CHKERRABORT(comm, perr);
+
+  #ifdef DEBUG_VERBOSE
+  matrix_dbg_print(comm, *m_basis, "Basis Matrix");
+  #endif //DEBUG_VERBOSE
 
   return m_basis;
 }
