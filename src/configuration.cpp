@@ -24,9 +24,9 @@ const std::vector<std::string> RegistrationConfig::bool_options = {
   "verbose"};
 
 RegistrationConfig::RegistrationConfig(const int &argc, char const* const* argv)
-  : config(default_config), arguments(argv+1, argv+argc)
+  : config(default_config), arguments(argv+1, argv+argc),
+    invocation_name(get_invocation_name(argv[0]))
 {
-  invocation_name = get_invocation_name(argv[0]);
 }
 
 void RegistrationConfig::validate_config()
