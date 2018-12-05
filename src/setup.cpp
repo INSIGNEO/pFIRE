@@ -42,8 +42,27 @@ void pfire_setup(const std::vector<std::string> &petsc_args)
 
   PetscErrorCode perr = PetscInitialize(&n_cstrings, &cstr_ptr, nullptr, nullptr);
   CHKERRABORT(PETSC_COMM_WORLD, perr);
+
+  check_and_warn_odd_comm();
   
   register_plugins();
+}
+
+void check_and_warn_odd_comm()
+{
+  // Check for even number of processors, warn on oddness
+  int comm_size, rank;
+  MPI_Comm_size(PETSC_COMM_WORLD, &comm_size);
+  MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+  if(comm_size%2 == 1 && rank == 0)
+  {
+    std::cout << "!!!! WARNING !!!!\n"
+              << "Using an odd number of processors is not recommended.\n"
+              << "This makes efficient subdivision of the problem much harder and will likely "
+              << "lead to reduced performance.\n"
+              << "Extreme cases may make viable partitioning impossible and cause job failure. "
+              << "You have been warned!\n\n" << std::flush;
+  }
 }
 
 void pfire_teardown(){
