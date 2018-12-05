@@ -54,7 +54,7 @@ void check_and_warn_odd_comm()
   int comm_size, rank;
   MPI_Comm_size(PETSC_COMM_WORLD, &comm_size);
   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-  if(comm_size%2 == 1 && rank == 0)
+  if(comm_size > 2 && comm_size%2 == 1 && rank == 0)
   {
     std::cout << "!!!! WARNING !!!!\n"
               << "Using an odd number of processors is not recommended.\n"

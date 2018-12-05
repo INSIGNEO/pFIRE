@@ -15,9 +15,11 @@ const std::vector<std::string> ShirtConfig::shirt_synonyms {"shirt", "pfire-shir
 std::string ShirtConfig::usage()
 {
   std::ostringstream usagess;
-  usagess << "Usage: "
+  usagess << "pFIRE (Parallel Framework for Image Registration) - ShIRT emulation mode\n\n"
+          << "Usage: "
           << invocation_name << " Register Fixed <filename> Moved <filename> Mask <filename> "
-          << "NodeSpacing <nodespacing> [Map <filename>] [Registered <filename>]";
+          << "NodeSpacing <nodespacing> [Map <filename>] [Registered <filename>]\n\n"
+          << "N.B For normal pfire mode rename/invoke as `pfire`\n";
 
   return usagess.str();
 }

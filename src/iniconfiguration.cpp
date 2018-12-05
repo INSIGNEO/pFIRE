@@ -19,7 +19,8 @@ namespace pt = boost::property_tree;
 std::string IniConfig::usage()
 {
   std::ostringstream usagess;
-  usagess << "Usage: " << invocation_name << " <config_file> [-h,--help]\n\n"
+  usagess << "pFIRE (Parallel Framework for Image Registration)\n\n"
+          << "Usage: " << invocation_name << " <config_file> [-h,--help]\n\n"
           << "Options:\n"
           << "  config_file\t\tconfiguration file to read options from";
 
@@ -63,7 +64,7 @@ void IniConfig::parse_arguments()
     std::exit(0);
   }
 
-  if(vm.count("help"))
+  if(vm.count("help") || !vm.count("config-file"))
   {
     //TODO improve to iterate over options
     std::cout << usage() << std::endl
