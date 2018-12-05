@@ -81,6 +81,7 @@ void WorkSpace::create_scatterers()
 {
   AO ao_petsctonat; // N.B this is not going to be a leak, we are just borrowing a Petsc managed obj.
   PetscErrorCode perr = DMDAGetAO(*m_dmda, &ao_petsctonat); // Destroying this would break the dmda
+  CHKERRABORT(m_comm, perr);
 
   integer offset = 0; // Track offset
   for(auto&& pp_grad : m_globaltmps)

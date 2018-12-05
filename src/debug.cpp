@@ -19,7 +19,7 @@ void matrix_dbg_print(const MPI_Comm &comm, const Mat &mat, const std::string &n
   if(rank == 0)
   {
     std::cout << "Matrix debug info \"" << name << "\":\n" 
-              << "Row range\tmemory\tnz_allocated\tnz_used"
+              << "\tRow range\tmemory\tn_alloc\tn_used\n"
               << std::flush;
   }
 
@@ -27,8 +27,8 @@ void matrix_dbg_print(const MPI_Comm &comm, const Mat &mat, const std::string &n
   {
     if(ridx == rank)
     {
-      std::cout << std::setfill(' ')
-                << "Rank " << rank << ": " << row_lo << " - " << row_hi << "\t "
+      std::cout << std::setfill(' ') << std::setprecision(2)
+                << "Rank " << rank << ": " << row_lo << " - " << row_hi << "\t"
                 << info.memory << "\t" << info.nz_allocated << "\t"
                 << info.nz_used << "\n" << std::flush;
     }

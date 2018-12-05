@@ -23,6 +23,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -O3 -march=native 
 option(DEBUG_VERBOSE "Verbose debug outputs")
 if(DEBUG_VERBOSE)
   add_definitions(-DDEBUG_VERBOSE)
+  message(STATUS "Enabled verbose debugging messages")
 endif(DEBUG_VERBOSE)
 
 option(DEBUG_OUTPUT_INTERMEDIATES "Save all intermediate frames in registration")

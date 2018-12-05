@@ -10,6 +10,7 @@
 #include "image.hpp"
 #include "map.hpp"
 #include "elastic.hpp"
+#include "utils.hpp"
 
 #include "hdfwriter.hpp"
 
@@ -81,10 +82,13 @@ void mainflow(std::string fixedpath, std::string movedpath, floating ns){
     return;
   }
 
+  floatvector nodespacing(fixed->ndim(), ns);
+
+  explain_memory(fixed->shape(), Map::calculate_map_shape(fixed->shape(), nodespacing));
+
   fixed->normalize();
   moved->normalize();
 
-  floatvector nodespacing(fixed->ndim(), ns);
 
   Elastic reg(*fixed, *moved, nodespacing);
   reg.autoregister();
