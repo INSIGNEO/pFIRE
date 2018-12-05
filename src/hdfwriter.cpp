@@ -3,6 +3,7 @@
 #include<algorithm>
 #include<sstream>
 
+#include "infix_iterator.hpp"
 #include "indexing.hpp"
 #include "image.hpp"
 #include "map.hpp"
@@ -112,12 +113,17 @@ void HDFWriter::write_map(const Map& map, const std::string& groupname)
     hid_t dset_h = H5Dcreate(_file_h, dsetname.c_str(), H5T_NATIVE_DOUBLE, fspace_h,
                              H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
-    hsize_t lowloc = map.size()*idx;
+/*    hsize_t lowloc = map.size()*idx;
     hsize_t highloc = map.size()*(idx+1)-1;
     lowloc = own_range.first < (integer)lowloc ? lowloc : own_range.first;
-    highloc = own_range.second > (integer)highloc ? highloc : own_range.second;
+    highloc = own_range.second > (integer)highloc ? highloc : own_range.second;*/
 
-    std::vector<hsize_t> offset(map.ndim(), 0);
+    auto corners = map.get_dmda_local_extents();
+    std::vector<hsize_t> offset(corners.first.cbegin(), corners.first.cend());
+    std::vector<hsize_t> chunksize(corners.second.cbegin(), corners.second.cend());
+    Vec_unique dimdata = map.get_dim_data_dmda_blocked(0);
+
+/*    std::vector<hsize_t> offset(map.ndim(), 0);
     std::vector<hsize_t> chunksize(map.ndim(), 0);
     if (lowloc < highloc)
     {
@@ -127,15 +133,28 @@ void HDFWriter::write_map(const Map& map, const std::string& groupname)
       std::transform(chunksize.cbegin(), chunksize.cend(), offset.cbegin(), chunksize.begin(),
                      [](hsize_t x, hsize_t y) -> hsize_t{return 1 + x - y;});
     }
+    */
+    std::ostringstream ofs;
+    std::copy(offset.cbegin(), offset.cend(), infix_ostream_iterator<integer>(ofs, ", "));
+    std::ostringstream cks;
+    std::copy(chunksize.cbegin(), chunksize.cend(), infix_ostream_iterator<integer>(cks, ", "));
+    int rank;
+    MPI_Comm_rank(_comm, &rank);
+
+    PetscSynchronizedPrintf(_comm, "Rank %i: offset: %s, chunksize: %s\n",
+                            rank, ofs.str().c_str(), cks.str().c_str());
+    PetscSynchronizedFlush(_comm, PETSC_STDOUT);
 
     H5Sselect_hyperslab(fspace_h, H5S_SELECT_SET, offset.data(), nullptr, chunksize.data(), nullptr);
+//    or H5Sselect_none(fspace_h);
 
     hid_t dspace_h = H5Screate_simple(map.ndim(), chunksize.data(), nullptr);
 
-    const floating *mapdata = map.get_raw_data_ro();
-    const floating *mapstart = &mapdata[lowloc - own_range.first];
-    H5Dwrite(dset_h, H5T_NATIVE_DOUBLE, dspace_h, fspace_h, plist_h, mapstart);
-    map.release_raw_data_ro(mapdata);
+    const floating *mapdata;
+    PetscErrorCode perr = VecGetArrayRead(*dimdata, &mapdata);
+    CHKERRABORT(_comm, perr);
+    H5Dwrite(dset_h, H5T_NATIVE_DOUBLE, dspace_h, fspace_h, plist_h, mapdata);
+    perr = VecRestoreArrayRead (*dimdata, &mapdata);
 
     H5Dclose(dset_h);
     H5Sclose(fspace_h);

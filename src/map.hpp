@@ -4,6 +4,7 @@
 #include<exception>
 #include<numeric>
 #include<iostream>
+#include<utility>
 
 #include "types.hpp"
 
@@ -22,10 +23,10 @@ class Map{
 
   const MPI_Comm& comm() const{ return m_comm;}
   uinteger ndim() const{ return m_ndim;}
-  const intvector& shape() const{ return m_v_map_shape;}
+  const intvector& shape() const{ return map_shape;}
   integer size() const
   { 
-    return std::accumulate(m_v_map_shape.cbegin(), m_v_map_shape.cend(), 1, std::multiplies<>());
+    return std::accumulate(map_shape.cbegin(), map_shape.cend(), 1, std::multiplies<>());
   }
 
   std::pair<integer, integer> get_displacement_ownershiprange() const;
@@ -38,6 +39,11 @@ class Map{
 
   std::unique_ptr<Image> warp(const Image& image, WorkSpace& wksp);
 
+  std::pair<intvector, intvector> get_dmda_local_extents() const;
+  Vec_unique get_dim_data_dmda_blocked(integer dim) const;
+
+  static intvector calculate_map_shape(intvector const &image_shape, floatvector const &nodespacing);
+
   //private:
 
   MPI_Comm m_comm;
@@ -46,13 +52,15 @@ class Map{
   floatvector m_v_node_spacing;
   floatvector m_v_offsets;
   intvector m_v_image_shape;
-  intvector m_v_map_shape;
+  intvector map_shape;
   floatvector2d m_vv_node_locs;
   Mat_unique m_basis;
   Mat_unique m_lapl;
   Vec_unique m_displacements;
+  mutable DM_unique map_dmda;
 
   void alloc_displacements();
+  void initialize_dmda() const;
   void calculate_node_locs();
   void calculate_basis();
   void calculate_laplacian();
