@@ -37,11 +37,6 @@ void WorkSpace::reallocate_ephemeral_workspace(const Map& map){
   perr = VecSet(*m_delta, 0.);CHKERRABORT(m_comm, perr);
   perr = VecDuplicate(*map.m_displacements, m_rhs.get());CHKERRABORT(m_comm, perr);
   perr = VecSet(*m_rhs, 0.);CHKERRABORT(m_comm, perr);
-
-  // setup map resolution specific tmat storage, can use basis layout
-  m_tmat = create_unique_mat();
-  perr = MatDuplicate(*map.m_basis, MAT_DO_NOT_COPY_VALUES, m_tmat.get());CHKERRABORT(m_comm, perr);
-
 }
 
 void WorkSpace::scatter_stacked_to_grads()

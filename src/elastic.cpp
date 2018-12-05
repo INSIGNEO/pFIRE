@@ -129,7 +129,7 @@ void Elastic::innerstep(floating lambda)
                                             MAT_INITIAL_MATRIX, PETSC_DEFAULT,
                                             normmat.get());CHKERRABORT(m_comm, perr);
   // precondition tmat2
-  // TODO
+  block_precondition();
 
   // calculate tmat2 + lambda*lapl2
   perr = MatAXPY(*normmat, lambda, *m_p_map->laplacian(),
@@ -140,8 +140,10 @@ void Elastic::innerstep(floating lambda)
                  *m_fixed.global_vec());CHKERRABORT(m_comm, perr);
   m_workspace->duplicate_single_grad_to_stacked(0);
   perr = MatMultTranspose(*m_workspace->m_tmat, *m_workspace->m_stacktmp, *m_workspace->m_rhs);
+
+  // Force free tmat as no longer needed
+  m_workspace->m_tmat = create_unique_mat();
   
-  block_precondition();
   // solve for delta a
   KSP_unique m_ksp = create_unique_ksp();
   perr = KSPCreate(m_comm, m_ksp.get());CHKERRABORT(m_comm, perr);
@@ -211,8 +213,10 @@ void Elastic::calculate_tmat()
   // scatter grads into stacked vector
   m_workspace->scatter_grads_to_stacked();
 
-  // 3. copy basis into p_tmat, can do trivially because we already duplicated in setup
-  perr = MatCopy(*m_p_map->basis(), *m_workspace->m_tmat, SAME_NONZERO_PATTERN);CHKERRABORT(m_comm, perr);
+  // 3. copy basis into p_tmat
+  m_workspace->m_tmat = create_unique_mat();
+  perr = MatDuplicate(*m_p_map->basis(), MAT_COPY_VALUES, m_workspace->m_tmat.get());
+  CHKERRABORT(m_comm, perr);
 
   // 4. left diagonal multiply p_tmat with stacked vector
   perr = MatDiagonalScale(*m_workspace->m_tmat, *m_workspace->m_stacktmp, nullptr);CHKERRABORT(m_comm, perr);
