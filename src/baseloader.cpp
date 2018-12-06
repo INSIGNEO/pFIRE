@@ -1,12 +1,13 @@
 #include "baseloader.hpp"
 
-std::unique_ptr<BaseLoader::loader_map> BaseLoader::_loaders = std::make_unique<BaseLoader::loader_map>();
+std::unique_ptr<BaseLoader::loader_map> BaseLoader::_loaders =
+    std::make_unique<BaseLoader::loader_map>();
 
 bool BaseLoader::register_loader(const std::string &name, loader_creator loader)
 {
-  if(!BaseLoader::_loaders)
+  if (!BaseLoader::_loaders)
   {
-    _loaders = std::make_unique<std::map<std::string, BaseLoader::loader_creator> >(); 
+    _loaders = std::make_unique<std::map<std::string, BaseLoader::loader_creator>>();
   }
   if (auto it = _loaders->find(name); it == _loaders->cend())
   {
@@ -20,8 +21,8 @@ bool BaseLoader::register_loader(const std::string &name, loader_creator loader)
 
 BaseLoader_unique BaseLoader::find_loader(const std::string &path, MPI_Comm comm)
 {
-  //Do it EAFP style...
-  for(const auto &it: *_loaders)
+  // Do it EAFP style...
+  for (const auto &it : *_loaders)
   {
     try
     {

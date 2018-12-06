@@ -1,7 +1,7 @@
 #ifndef PETSC_HELPERS_HPP
 #define PETSC_HELPERS_HPP
 
-#include<petscvec.h>
+#include <petscvec.h>
 
 #include "types.hpp"
 

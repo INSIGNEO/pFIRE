@@ -1,14 +1,14 @@
 #ifndef CONFIGURATION_HPP
 #define CONFIGURATION_HPP
 
-#include<iostream>
-#include<iterator>
-#include<map>
-#include<string>
-#include<string_view>
-#include<vector>
+#include <iostream>
+#include <iterator>
+#include <map>
+#include <string>
+#include <string_view>
+#include <vector>
 
-#include<boost/filesystem.hpp>
+#include <boost/filesystem.hpp>
 
 namespace bf = boost::filesystem;
 
@@ -16,31 +16,26 @@ namespace bf = boost::filesystem;
 
 using config_map = std::map<std::string, std::string>;
 
-class RegistrationConfig
-{
-  public:
-  
-  template<typename T>
-  typename std::enable_if<std::is_integral<T>::value, T>::type
-  grab(const std::string key) const
+class RegistrationConfig {
+public:
+  template <typename T>
+  typename std::enable_if<std::is_integral<T>::value, T>::type grab(const std::string key) const
   {
     return std::stoll(config.at(key));
   }
 
-  template<typename T>
-  typename std::enable_if<std::is_same<T, std::string>::value, T>::type
-  grab(std::string key) const
+  template <typename T>
+  typename std::enable_if<std::is_same<T, std::string>::value, T>::type grab(std::string key) const
   {
     return config.at(key);
   }
 
-  static std::string get_invocation_name(const std::string &argzero); 
+  static std::string get_invocation_name(const std::string& argzero);
 
   void validate_config();
 
-  protected:
-
-  RegistrationConfig(const int &argc, char const* const* argv);
+protected:
+  RegistrationConfig(const int& argc, char const* const* argv);
 
   config_map config;
   std::vector<std::string> arguments;
@@ -52,4 +47,4 @@ class RegistrationConfig
   static const std::vector<std::string> bool_options;
 };
 
-#endif //CONFIGURATION_HPP
+#endif // CONFIGURATION_HPP

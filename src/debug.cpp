@@ -1,7 +1,7 @@
 #include "debug.hpp"
 
-#include<iomanip>
-#include<iostream>
+#include <iomanip>
+#include <iostream>
 
 void matrix_dbg_print(const MPI_Comm &comm, const Mat &mat, const std::string &name)
 {
@@ -15,22 +15,21 @@ void matrix_dbg_print(const MPI_Comm &comm, const Mat &mat, const std::string &n
   MatInfo info;
   MatGetInfo(mat, MAT_LOCAL, &info);
 
-  
-  if(rank == 0)
+  if (rank == 0)
   {
-    std::cout << "Matrix debug info \"" << name << "\":\n" 
+    std::cout << "Matrix debug info \"" << name << "\":\n"
               << "\tRow range\tmemory\tn_alloc\tn_used\n"
               << std::flush;
   }
 
-  for(int ridx = 0; ridx < size; ridx++)
+  for (int ridx = 0; ridx < size; ridx++)
   {
-    if(ridx == rank)
+    if (ridx == rank)
     {
-      std::cout << std::setfill(' ') << std::setprecision(2)
-                << "Rank " << rank << ": " << row_lo << " - " << row_hi << "\t"
-                << info.memory << "\t" << info.nz_allocated << "\t"
-                << info.nz_used << "\n" << std::flush;
+      std::cout << std::setfill(' ') << std::setprecision(2) << "Rank " << rank << ": " << row_lo
+                << " - " << row_hi << "\t" << info.memory << "\t" << info.nz_allocated << "\t"
+                << info.nz_used << "\n"
+                << std::flush;
     }
     MPI_Barrier(comm);
   }

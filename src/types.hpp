@@ -1,15 +1,15 @@
 #ifndef TYPEDEFS_HPP
 #define TYPEDEFS_HPP
 
-#include<memory>
-#include<vector>
-#include<iostream>
+#include <iostream>
+#include <memory>
+#include <vector>
 
-#include<petscsys.h>
-#include<petscvec.h>
-#include<petscmat.h>
-#include<petscdm.h>
-#include<petscksp.h>
+#include <petscdm.h>
+#include <petscksp.h>
+#include <petscmat.h>
+#include <petscsys.h>
+#include <petscvec.h>
 
 // Forward Defs
 //
@@ -19,18 +19,17 @@ class Map;
 class Elastic;
 class BaseLoader;
 
-
 // Useful typedefs
 using integer = PetscInt;
-using intvector =  std::vector<integer>;
-using intvector2d =  std::vector<intvector>;
+using intvector = std::vector<integer>;
+using intvector2d = std::vector<intvector>;
 
 using uinteger = unsigned integer;
 using uintvector = std::vector<uinteger>;
 
 using floating = PetscScalar;
-using floatvector =  std::vector<floating>;
-using floatvector2d =  std::vector<floatvector>;
+using floatvector = std::vector<floating>;
+using floatvector2d = std::vector<floatvector>;
 
 using BaseLoader_unique = std::unique_ptr<BaseLoader>;
 
@@ -39,11 +38,11 @@ using BaseLoader_unique = std::unique_ptr<BaseLoader>;
 
 //// Vec
 // typedef and helpers for unique_ptr
-struct VecDeleter
-{
+struct VecDeleter {
   void operator()(Vec* v) const
   {
-    VecDestroy(v); delete v;
+    VecDestroy(v);
+    delete v;
   }
 };
 
@@ -62,17 +61,15 @@ inline Vec_shared create_shared_vec()
   Vec_shared v = Vec_shared(new Vec, VecDeleter());
   *v = nullptr;
   return v;
-
 }
-
 
 //// Mat
 // typedef and helpers for unique_ptr
-struct MatDeleter
-{
+struct MatDeleter {
   void operator()(Mat* v) const
   {
-    MatDestroy(v); delete v;
+    MatDestroy(v);
+    delete v;
   }
 };
 
@@ -93,14 +90,13 @@ inline Mat_shared create_shared_mat()
   return v;
 }
 
-
 //// DM
 // typedef and helpers for unique_ptr
-struct DMDeleter
-{
+struct DMDeleter {
   void operator()(DM* v) const
   {
-    DMDestroy(v); delete v;
+    DMDestroy(v);
+    delete v;
   }
 };
 
@@ -121,14 +117,13 @@ inline DM_shared create_shared_dm()
   return v;
 }
 
-
 //// IS
 // typedef and helpers for unique_ptr
-struct ISDeleter
-{
+struct ISDeleter {
   void operator()(IS* v) const
   {
-    ISDestroy(v); delete v;
+    ISDestroy(v);
+    delete v;
   }
 };
 
@@ -149,14 +144,13 @@ inline IS_shared create_shared_is()
   return v;
 }
 
-
 //// VecScatter
 // typedef and helpers for unique_ptr
-struct VecScatterDeleter
-{
+struct VecScatterDeleter {
   void operator()(VecScatter* v) const
   {
-    VecScatterDestroy(v); delete v;
+    VecScatterDestroy(v);
+    delete v;
   }
 };
 
@@ -177,14 +171,13 @@ inline VecScatter_shared create_shared_vecscatter()
   return v;
 }
 
-
 //// KSP
 // typedef and helpers for unique_ptr
-struct KSPDeleter
-{
+struct KSPDeleter {
   void operator()(KSP* v) const
   {
-    KSPDestroy(v); delete v;
+    KSPDestroy(v);
+    delete v;
   }
 };
 
@@ -204,6 +197,5 @@ inline KSP_shared create_shared_ksp()
   *v = nullptr;
   return v;
 }
-
 
 #endif
