@@ -10,21 +10,11 @@
 
 const std::vector<std::string> HDFWriter::_components({"x", "y", "z"});
 
-HDFWriter::HDFWriter(const std::string& filename, const MPI_Comm& comm, bool truncate_existing)
-    : _comm(comm), _filename(filename), _file_h(-1)
+HDFWriter::HDFWriter(std::string filename, const MPI_Comm& comm)
+    : _comm(comm), h5_filename(std::move(filename)), _file_h(-1)
 {
-  hid_t plist_h = H5Pcreate(H5P_FILE_ACCESS);
-  H5Pset_fapl_mpio(plist_h, _comm, MPI_INFO_NULL);
-  // Open file with parallel properties as set in ctr
-  if (truncate_existing)
-  {
-    _file_h = create_or_truncate(filename, plist_h);
-  }
-  else
-  {
-    _file_h = create_or_open(filename, plist_h);
-  }
-  H5Pclose(plist_h);
+  // Will open h5 file or throw
+  create_or_truncate_h5();
 }
 
 HDFWriter::~HDFWriter()
@@ -34,7 +24,14 @@ HDFWriter::~HDFWriter()
 
 void HDFWriter::write_image(const Image& image, const std::string& groupname)
 {
+  // Sanity check communicators
   MPI_Comm comm = image.comm();
+  if (comm != _comm)
+  {
+    std::ostringstream errss;
+    errss << "Communicator mismatch between HDFWriter and provided image";
+    throw std::runtime_error(errss.str());
+  }
 
   int rank;
   MPI_Comm_rank(comm, &rank);
@@ -75,7 +72,14 @@ void HDFWriter::write_image(const Image& image, const std::string& groupname)
 
 void HDFWriter::write_map(const Map& map, const std::string& groupname)
 {
+  // Sanity check communicators
   MPI_Comm comm = map.comm();
+  if (comm != _comm)
+  {
+    std::ostringstream errss;
+    errss << "Communicator mismatch between HDFWriter and provided image";
+    throw std::runtime_error(errss.str());
+  }
 
   int rank;
   MPI_Comm_rank(comm, &rank);
@@ -112,27 +116,11 @@ void HDFWriter::write_map(const Map& map, const std::string& groupname)
         _file_h, dsetname.c_str(), H5T_NATIVE_DOUBLE, fspace_h, H5P_DEFAULT, H5P_DEFAULT,
         H5P_DEFAULT);
 
-    /*    hsize_t lowloc = map.size()*idx;
-        hsize_t highloc = map.size()*(idx+1)-1;
-        lowloc = own_range.first < (integer)lowloc ? lowloc : own_range.first;
-        highloc = own_range.second > (integer)highloc ? highloc : own_range.second;*/
-
     auto corners = map.get_dmda_local_extents();
     std::vector<hsize_t> offset(corners.first.cbegin(), corners.first.cend());
     std::vector<hsize_t> chunksize(corners.second.cbegin(), corners.second.cend());
     Vec_unique dimdata = map.get_dim_data_dmda_blocked(0);
 
-    /*    std::vector<hsize_t> offset(map.ndim(), 0);
-        std::vector<hsize_t> chunksize(map.ndim(), 0);
-        if (lowloc < highloc)
-        {
-          offset = unravel(lowloc, mapshape);
-          chunksize = unravel(highloc, mapshape);
-
-          std::transform(chunksize.cbegin(), chunksize.cend(), offset.cbegin(), chunksize.begin(),
-                         [](hsize_t x, hsize_t y) -> hsize_t{return 1 + x - y;});
-        }
-        */
     std::ostringstream ofs;
     std::copy(offset.cbegin(), offset.cend(), infix_ostream_iterator<integer>(ofs, ", "));
     std::ostringstream cks;
@@ -146,7 +134,6 @@ void HDFWriter::write_map(const Map& map, const std::string& groupname)
 
     H5Sselect_hyperslab(
         fspace_h, H5S_SELECT_SET, offset.data(), nullptr, chunksize.data(), nullptr);
-    //    or H5Sselect_none(fspace_h);
 
     hid_t dspace_h = H5Screate_simple(map.ndim(), chunksize.data(), nullptr);
 
@@ -164,8 +151,18 @@ void HDFWriter::write_map(const Map& map, const std::string& groupname)
   H5Pclose(plist_h);
 }
 
-hid_t HDFWriter::create_or_open(std::string filename, hid_t file_props)
+void HDFWriter::create_or_truncate_h5()
 {
+  if (_file_h >= 0)
+  {
+    std::ostringstream err;
+    err << "Attempted to reinitialize already open file, this is a pFIRE bug...";
+    throw std::runtime_error(err.str());
+  }
+  // Open file with parallel properties
+  hid_t file_props = H5Pcreate(H5P_FILE_ACCESS);
+  H5Pset_fapl_mpio(file_props, _comm, MPI_INFO_NULL);
+
   // First supress HDF5 error printing
   herr_t (*old_err)(void*);
   void* old_err_data;
@@ -173,39 +170,15 @@ hid_t HDFWriter::create_or_open(std::string filename, hid_t file_props)
   H5Eset_auto1(nullptr, nullptr);
 
   // Open if available, will get file_h > 0 if successful
-  hid_t file_h = H5Fopen(filename.c_str(), H5F_ACC_RDWR, file_props);
-  if (file_h < 0)
-  {
-    file_h = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, file_props);
-  }
-  if (file_h < 0)
+  _file_h = H5Fcreate(h5_filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, file_props);
+  if (_file_h < 0)
   {
     std::ostringstream err;
-    err << "Failed to open output file " << filename << ".";
+    err << "Failed to open output file " << h5_filename << ".";
     throw std::runtime_error(err.str());
   }
+  // Reset HDF5 error handling
   H5Eset_auto1(old_err, old_err_data);
 
-  return file_h;
-}
-
-hid_t HDFWriter::create_or_truncate(std::string filename, hid_t file_props)
-{
-  // First supress HDF5 error printing
-  herr_t (*old_err)(void*);
-  void* old_err_data;
-  H5Eget_auto1(&old_err, &old_err_data);
-  H5Eset_auto1(nullptr, nullptr);
-
-  // Open if available, will get file_h > 0 if successful
-  hid_t file_h = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, file_props);
-  if (file_h < 0)
-  {
-    std::ostringstream err;
-    err << "Failed to open output file " << filename << ".";
-    throw std::runtime_error(err.str());
-  }
-  H5Eset_auto1(old_err, old_err_data);
-
-  return file_h;
+  H5Pclose(file_props);
 }

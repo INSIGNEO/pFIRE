@@ -115,7 +115,7 @@ void Map::calculate_node_locs()
     floatvector nodes(map_shape[idim], 0.0);
     std::generate(nodes.begin(), nodes.end(), [x = lo, y = m_v_node_spacing[idim]]() mutable {
       x += y;
-      return x;
+      return x-y;
     });
     m_vv_node_locs.push_back(nodes);
     m_v_offsets.push_back(lo);
@@ -294,4 +294,12 @@ void Map::release_raw_data_ro(const floating*& ptr) const
 {
   PetscErrorCode perr = VecRestoreArrayRead(*m_displacements, &ptr);
   CHKERRABORT(m_comm, perr);
+}
+
+floatvector Map::low_corner() const
+{
+  floatvector corner(3, 0.);
+  std::transform(m_vv_node_locs.cbegin(), m_vv_node_locs.cend(), corner.begin(),
+                 [](const floatvector &v){return v.front();});
+  return corner;
 }

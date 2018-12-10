@@ -12,7 +12,7 @@
 #include "types.hpp"
 #include "utils.hpp"
 
-#include "hdfwriter.hpp"
+#include "xdmfwriter.hpp"
 
 void mainflow(std::string, std::string, floating);
 
@@ -93,7 +93,7 @@ void mainflow(std::string fixedpath, std::string movedpath, floating ns)
   Elastic reg(*fixed, *moved, nodespacing);
   reg.autoregister();
 
-  HDFWriter wtr("data.h5", fixed->comm());
+  XDMFWriter wtr("data.xdmf", fixed->comm());
 
   std::string reggroup("registered");
   std::string mapgroup("map");

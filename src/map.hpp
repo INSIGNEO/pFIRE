@@ -27,7 +27,6 @@ public:
   {
     return m_vv_node_locs;
   }
-
   const MPI_Comm& comm() const
   {
     return m_comm;
@@ -40,11 +39,20 @@ public:
   {
     return map_shape;
   }
+  const intvector& image_shape() const
+  {
+    return m_v_image_shape;
+  }
+  const floatvector& spacing() const
+  {
+    return m_v_node_spacing;
+  }
   integer size() const
   {
     return std::accumulate(map_shape.cbegin(), map_shape.cend(), 1, std::multiplies<>());
   }
 
+  floatvector low_corner() const;
   std::pair<integer, integer> get_displacement_ownershiprange() const;
 
   const floating* get_raw_data_ro() const;
