@@ -3,33 +3,30 @@
 
 #include <string>
 
-#include <mpi.h>
 #include <hdf5.h>
+#include <mpi.h>
 
 #include "types.hpp"
 
-class HDFWriter{
-
+class HDFWriter {
 public:
-
-  HDFWriter(const std::string& filename, const MPI_Comm& comm, bool truncate_existing=true);
+  HDFWriter(std::string filename, const MPI_Comm& comm);
   ~HDFWriter();
 
   void write_image(const Image& image, const std::string& groupname);
 
   void write_map(const Map& map, const std::string& groupname);
 
-private:
-
-  hid_t create_or_open(std::string filename, hid_t file_props);
-  hid_t create_or_truncate(std::string filename, hid_t file_props);
-
+protected:
   MPI_Comm _comm;
-  std::string _filename;
+  std::string h5_filename;
+
+  static const std::vector<std::string> _components;
+
+private:
   hid_t _file_h;
 
-  static const std::vector<std::string> _components; 
-
+  void create_or_truncate_h5();
 };
 
-#endif
+#endif // HDFWRITER_HPP

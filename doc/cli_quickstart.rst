@@ -1,6 +1,6 @@
-=========================
-pFIRE Executable Tutorial
-=========================
+=============
+Running pFIRE
+=============
 
 Interaction with pFIRE on the command line is achieved through the `pfire` executable. There are
 various subcommands available to allow interaction with images, maps, masks and various

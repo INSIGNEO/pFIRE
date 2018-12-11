@@ -1,8 +1,8 @@
 #ifndef SETUP_HPP
 #define SETUP_HPP
 
-#include<vector>
-#include<string>
+#include <string>
+#include <vector>
 
 std::string get_invocation_name(const std::string &argzero);
 
@@ -12,4 +12,4 @@ void check_and_warn_odd_comm();
 
 void pfire_teardown();
 
-#endif //SETUP_HPP
+#endif // SETUP_HPP

@@ -1,16 +1,16 @@
 #include "iniconfiguration.hpp"
 
-#include<cstdlib>
-#include<iostream>
-#include<iterator>
-#include<sstream>
-#include<string>
-#include<vector>
+#include <cstdlib>
+#include <iostream>
+#include <iterator>
+#include <sstream>
+#include <string>
+#include <vector>
 
-#include<boost/algorithm/string/case_conv.hpp>
-#include<boost/program_options.hpp>
-#include<boost/property_tree/ptree.hpp>
-#include<boost/property_tree/ini_parser.hpp>
+#include <boost/algorithm/string/case_conv.hpp>
+#include <boost/program_options.hpp>
+#include <boost/property_tree/ini_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
 
 namespace ba = boost::algorithm;
 namespace po = boost::program_options;
@@ -27,8 +27,7 @@ std::string IniConfig::usage()
   return usagess.str();
 }
 
-IniConfig::IniConfig(int const &argc, char const* const* argv)
-  : RegistrationConfig(argc, argv)
+IniConfig::IniConfig(int const &argc, char const *const *argv) : RegistrationConfig(argc, argv)
 {
   // parent constructor provides arguments list so just need to parse
   parse_arguments();
@@ -37,12 +36,10 @@ IniConfig::IniConfig(int const &argc, char const* const* argv)
 void IniConfig::parse_arguments()
 {
   po::options_description cmdline_visible;
-  cmdline_visible.add_options()
-    ("help,h",  "print this message");
+  cmdline_visible.add_options()("help,h", "print this message");
 
   po::options_description cmdline_hidden("Hidden positional options");
-  cmdline_hidden.add_options()
-    ("config-file", po::value<std::string>(), "configuration ini file");
+  cmdline_hidden.add_options()("config-file", po::value<std::string>(), "configuration ini file");
 
   po::positional_options_description positional;
   positional.add("config-file", 1);
@@ -53,10 +50,10 @@ void IniConfig::parse_arguments()
   po::variables_map vm;
   try
   {
-    po::store(po::command_line_parser(arguments).options(cmdline).positional(positional).run(),
-              vm);
+    po::store(
+        po::command_line_parser(arguments).options(cmdline).positional(positional).run(), vm);
   }
-  catch(const po::error &err)
+  catch (const po::error &err)
   {
     std::cerr << "Error: " << err.what() << "\n\n"
               << usage() << std::endl
@@ -64,11 +61,10 @@ void IniConfig::parse_arguments()
     std::exit(0);
   }
 
-  if(vm.count("help") || !vm.count("config-file"))
+  if (vm.count("help") || !vm.count("config-file"))
   {
-    //TODO improve to iterate over options
-    std::cout << usage() << std::endl
-              << cmdline_visible << std::endl;
+    // TODO improve to iterate over options
+    std::cout << usage() << std::endl << cmdline_visible << std::endl;
     std::exit(0);
   }
 
@@ -76,7 +72,7 @@ void IniConfig::parse_arguments()
   {
     po::notify(vm);
   }
-  catch(const po::error &err)
+  catch (const po::error &err)
   {
     std::cout << err.what() << std::endl;
   }
@@ -91,21 +87,21 @@ void IniConfig::read_config_file(const std::string &config_path)
   {
     pt::read_ini(config_path, config_data);
   }
-  catch(const pt::ini_parser_error &err)
+  catch (const pt::ini_parser_error &err)
   {
     std::cerr << "Failed to read config file " << err.what() << std::endl;
     std::exit(0);
   }
 
   std::list<std::string> unknowns;
-  for(const auto &it : config_data)
+  for (const auto &it : config_data)
   {
     std::string key = ba::to_lower_copy(it.first);
-    if(std::find(arg_options.cbegin(), arg_options.cend(), key) != arg_options.cend())
+    if (std::find(arg_options.cbegin(), arg_options.cend(), key) != arg_options.cend())
     {
       config[key] = it.second.data();
     }
-    else if(std::find(bool_options.cbegin(), bool_options.cend(), key) != bool_options.cend())
+    else if (std::find(bool_options.cbegin(), bool_options.cend(), key) != bool_options.cend())
     {
       config[key] = it.second.data();
     }
@@ -115,7 +111,7 @@ void IniConfig::read_config_file(const std::string &config_path)
     }
   }
 
-  if(unknowns.size() > 0)
+  if (unknowns.size() > 0)
   {
     std::ostringstream unkss;
     std::copy(unknowns.begin(), unknowns.end(), std::ostream_iterator<std::string>(unkss, ", "));
@@ -127,5 +123,3 @@ bool IniConfig::valid_invocation(std::string &inv)
 {
   return true;
 }
-
-
