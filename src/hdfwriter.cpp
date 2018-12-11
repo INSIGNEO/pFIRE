@@ -119,7 +119,7 @@ void HDFWriter::write_map(const Map& map, const std::string& groupname)
     auto corners = map.get_dmda_local_extents();
     std::vector<hsize_t> offset(corners.first.cbegin(), corners.first.cend());
     std::vector<hsize_t> chunksize(corners.second.cbegin(), corners.second.cend());
-    Vec_unique dimdata = map.get_dim_data_dmda_blocked(0);
+    Vec_unique dimdata = map.get_dim_data_dmda_blocked(idx);
 
     std::ostringstream ofs;
     std::copy(offset.cbegin(), offset.cend(), infix_ostream_iterator<integer>(ofs, ", "));
