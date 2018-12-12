@@ -19,9 +19,22 @@ Map::Map(const Image& mask, const floatvector& node_spacing)
   calculate_node_locs();
   calculate_basis();
   // TODO: mask basis
+  apply_mask_to_basis();
   // initialize displacement storage
   alloc_displacements();
   calculate_laplacian();
+}
+
+void Map::apply_mask_to_basis()
+{
+  // Need to apply mask to both image and map "side" of basis
+  // Mask applies directly to image side of basis
+  apply_image_mask();
+
+  // Work out from basis what nodes are relevant, mask out others
+
+  calculate_map_mask();
+  apply_map_mask();
 }
 
 void Map::update(const Vec& delta_vec)

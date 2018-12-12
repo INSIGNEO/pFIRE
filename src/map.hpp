@@ -84,6 +84,7 @@ public:
   Vec_unique m_displacements;
   mutable DM_unique map_dmda;
 
+  void apply_mask_to_basis();
   void alloc_displacements();
   void initialize_dmda() const;
   void calculate_node_locs();
