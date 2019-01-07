@@ -19,11 +19,14 @@ Elastic::Elastic(
   // TODO: enforce normalization
 
   // make sure nodespacing is compatible with image
-  if (m_fixed.ndim() > m_v_final_nodespacing.size())
+  if (m_fixed.ndim() != m_v_final_nodespacing.size())
   {
     throw std::runtime_error("number of nodespacings must match number of image dimensions");
   }
-  m_v_final_nodespacing.resize(m_fixed.ndim());
+  if (m_v_final_nodespacing.size() == 2)
+  {
+    m_v_final_nodespacing.push_back(1);
+  }
 
 #ifdef VERBOSEDEBUG
   PetscPrintf(m_comm, "Fixed image initial contents:\n");

@@ -203,15 +203,16 @@ Vec_unique Map::get_dim_data_dmda_blocked(integer dim) const
   CHKERRABORT(m_comm, perr);
   datasize -= startelem;
 
-  // Target range is then just owned part of new data vec
+  // Target range is then just owned part of new data vec in appropriate ordering
   IS_unique tgt_is(create_unique_is());
   perr = ISCreateStride(m_comm, datasize, startelem, 1, tgt_is.get());
   CHKERRABORT(m_comm, perr);
+  perr = AOPetscToApplicationIS(ao_petsctonat, *tgt_is);
+  CHKERRABORT(m_comm, perr);
 
-  // Source range is equivalent range in appropriate ordering
+  // Source range is equivalent range offset to dimension 
   IS_unique src_is(create_unique_is());
   perr = ISCreateStride(m_comm, datasize, startelem + (dim * this->size()), 1, src_is.get());
-  perr = AOApplicationToPetscIS(ao_petsctonat, *src_is);
   CHKERRABORT(m_comm, perr);
 
   // Now create the scatter

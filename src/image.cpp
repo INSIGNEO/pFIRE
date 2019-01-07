@@ -11,6 +11,7 @@
 #include "fd_routines.hpp"
 #include "iterator_routines.hpp"
 #include "map.hpp"
+#include "indexing.hpp"
 
 #ifdef USE_OIIO
 #include <OpenImageIO/imageio.h>
@@ -276,4 +277,44 @@ void Image::release_raw_data_ro(const floating*& ptr) const
 {
   PetscErrorCode perr = VecRestoreArrayRead(*m_globalvec, &ptr);
   CHKERRABORT(m_comm, perr);
+}
+
+Vec_unique Image::get_raw_data_row_major() const
+{
+  Vec_unique localpart = create_unique_vec();
+  PetscErrorCode perr = VecGetLocalVector(*m_localvec, *localpart);
+  CHKERRABORT(m_comm, perr);
+
+  Vec_unique rmlocalpart = create_unique_vec();
+  perr = VecDuplicate(*localpart, rmlocalpart.get());
+  CHKERRABORT(m_comm, perr);
+
+  intvector locs(3, 0);
+  intvector widths(3, 0);
+  perr = DMDAGetCorners(*m_dmda, &locs[0], &locs[1], &locs[2], &widths[0], &widths[1], &widths[2]);
+  CHKERRABORT(m_comm, perr);
+
+  integer localsize = std::accumulate(widths.begin(), widths.end(), 1, std::multiplies<>());
+  intvector cmidxn(localsize);
+  std::iota(cmidxn.begin(), cmidxn.end(), 0);
+
+  std::transform(cmidxn.begin(), cmidxn.end(), cmidxn.begin(),
+                 [widths](integer idx) -> integer {return idx_cmaj_to_rmaj(idx, widths);});
+
+  IS_unique src_is = create_unique_is(); 
+  perr = ISCreateStride(MPI_COMM_SELF, localsize, 0, 1, src_is.get());
+  CHKERRABORT(m_comm, perr);
+  IS_unique tgt_is = create_unique_is();
+  perr = ISCreateGeneral(MPI_COMM_SELF, localsize, cmidxn.data(), PETSC_USE_POINTER, tgt_is.get());
+  CHKERRABORT(m_comm, perr);
+  VecScatter_unique sct = create_unique_vecscatter();
+  perr = VecScatterCreate(*localpart, *src_is, *rmlocalpart, *tgt_is, sct.get());
+  CHKERRABORT(m_comm, perr);
+
+  perr = VecScatterBegin(*sct, *localpart, *rmlocalpart, INSERT_VALUES, SCATTER_FORWARD);
+  CHKERRABORT(m_comm, perr);
+  perr = VecScatterEnd(*sct, *localpart, *rmlocalpart, INSERT_VALUES, SCATTER_FORWARD);
+  CHKERRABORT(m_comm, perr);
+
+  return rmlocalpart;
 }

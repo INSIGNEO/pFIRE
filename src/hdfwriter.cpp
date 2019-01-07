@@ -86,8 +86,8 @@ void HDFWriter::write_map(const Map& map, const std::string& groupname)
 
   // No need to set max size as want it to be same as given size.
   std::vector<hsize_t> mapshape(map.shape().cbegin(), map.shape().cend());
-  mapshape.resize(map.ndim());
-  std::reverse(mapshape.begin(), mapshape.end());
+//  mapshape.resize(map.ndim());
+//  std::reverse(mapshape.begin(), mapshape.end());
 
   // Set up for collective writes
   hid_t plist_h = H5Pcreate(H5P_DATASET_XFER);
