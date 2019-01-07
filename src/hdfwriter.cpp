@@ -38,8 +38,6 @@ void HDFWriter::write_image(const Image& image, const std::string& groupname)
 
   // No need to set max size as want it to be same as given size.
   std::vector<hsize_t> imshape(image.shape().cbegin(), image.shape().cend());
-  imshape.resize(image.ndim());
-  std::reverse(imshape.begin(), imshape.end());
   hid_t fspace_h = H5Screate_simple(image.ndim(), imshape.data(), nullptr);
 
   hid_t dset_h = H5Dcreate(
@@ -47,11 +45,7 @@ void HDFWriter::write_image(const Image& image, const std::string& groupname)
       H5P_DEFAULT);
 
   std::vector<hsize_t> offset = image.mpi_get_offset<hsize_t>();
-  offset.resize(image.ndim());
-  std::reverse(offset.begin(), offset.end());
   std::vector<hsize_t> chunksize = image.mpi_get_chunksize<hsize_t>();
-  chunksize.resize(image.ndim());
-  std::reverse(chunksize.begin(), chunksize.end());
 
   H5Sselect_hyperslab(fspace_h, H5S_SELECT_SET, offset.data(), nullptr, chunksize.data(), nullptr);
 
@@ -60,9 +54,13 @@ void HDFWriter::write_image(const Image& image, const std::string& groupname)
 
   hid_t dspace_h = H5Screate_simple(image.ndim(), chunksize.data(), nullptr);
 
-  const floating* imgdata = image.get_raw_data_ro();
+  Vec_unique rm_data = image.get_raw_data_row_major();
+  const floating* imgdata;
+  PetscErrorCode perr = VecGetArrayRead(*rm_data, &imgdata); 
+  CHKERRABORT(_comm, perr);
   H5Dwrite(dset_h, H5T_NATIVE_DOUBLE, dspace_h, fspace_h, plist_h, imgdata);
-  image.release_raw_data_ro(imgdata);
+  perr = VecRestoreArrayRead(*rm_data, &imgdata);
+  CHKERRABORT(_comm, perr);
 
   H5Dclose(dset_h);
   H5Sclose(fspace_h);
