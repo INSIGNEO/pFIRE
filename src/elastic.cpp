@@ -6,12 +6,14 @@
 #include "fd_routines.hpp"
 #include "iterator_routines.hpp"
 
-Elastic::Elastic(const Image& fixed, const Image& moved, const floatvector nodespacing)
-    : m_comm(fixed.comm()), m_imgdims(fixed.ndim()), m_mapdims(m_imgdims + 1),
-      m_size(fixed.size()), m_iternum(0), m_fixed(fixed), m_moved(moved),
-      m_v_nodespacings(floatvector2d()), m_v_final_nodespacing(nodespacing),
-      m_p_registered(std::shared_ptr<Image>(nullptr)), m_p_map(std::unique_ptr<Map>(nullptr)),
-      m_workspace(std::shared_ptr<WorkSpace>(nullptr)), normmat(create_unique_mat())
+Elastic::Elastic(
+    const Image& fixed, const Image& moved, const floatvector nodespacing,
+    const ConfigurationBase& configuration)
+  : m_comm(fixed.comm()), configuration(configuration), m_imgdims(fixed.ndim()),
+    m_mapdims(m_imgdims + 1), m_size(fixed.size()), m_iternum(0), m_fixed(fixed), m_moved(moved),
+    m_v_nodespacings(floatvector2d()), m_v_final_nodespacing(nodespacing),
+    m_p_registered(std::shared_ptr<Image>(nullptr)), m_p_map(std::unique_ptr<Map>(nullptr)),
+    m_workspace(std::shared_ptr<WorkSpace>(nullptr)), normmat(create_unique_mat())
 {
   // TODO: image compatibility checks (maybe write Image.iscompat(Image foo)
   // TODO: enforce normalization
@@ -89,21 +91,23 @@ void Elastic::autoregister()
 
 void Elastic::innerloop(integer outer_count)
 {
-// setup map resolution specific solution storage (tmat, delta a, rvec)
-// calculate lambda for loop
-#ifdef DEBUG_DUMP_INTERMEDIATES
-  save_debug_frame(outer_count, 0);
-#endif // DEBUG_DUMP_INTERMEDIATES
+  // setup map resolution specific solution storage (tmat, delta a, rvec)
+  // calculate lambda for loop
+  if (configuration.grab<bool>("debug_frames"))
+  {
+    save_debug_frame(configuration.grab<std::string>("debug_frames_prefix"), outer_count, 0);
+  }
 
   floating lambda = 20.0;
   for (integer inum = 1; inum <= m_max_iter; inum++)
   {
     PetscPrintf(m_comm, "Iteration %i:\n", inum);
-    innerstep(lambda);
+    innerstep(lambda, inum);
 
-#ifdef DEBUG_DUMP_INTERMEDIATES
-    save_debug_frame(outer_count, inum);
-#endif // DEBUG_DUMP_INTERMEDIATES
+    if (configuration.grab<bool>("debug_frames"))
+    {
+      save_debug_frame(configuration.grab<std::string>("debug_frames_prefix"), outer_count, inum);
+    }
 
     // check convergence and break if below threshold
     floating posmax, negmax;
@@ -121,10 +125,10 @@ void Elastic::innerloop(integer outer_count)
   }
 }
 
-void Elastic::innerstep(floating lambda)
+void Elastic::innerstep(floating lambda, integer inum)
 {
   // calculate up to date tmat
-  calculate_tmat();
+  calculate_tmat(inum);
 
   // calculate tmat2 and precondition
   normmat = create_unique_mat();
@@ -199,7 +203,7 @@ void Elastic::calculate_node_spacings()
   }
 }
 
-void Elastic::calculate_tmat()
+void Elastic::calculate_tmat(integer iternum)
 {
   // Calculate average intensity 0.5(f+m)
   // Constant offset needed later, does not affect gradients
@@ -307,4 +311,16 @@ void Elastic::block_precondition()
 
   perr = MatDiagonalScale(*normmat, *diag, nullptr);
   CHKERRABORT(m_comm, perr);
+}
+
+void Elastic::save_debug_frame(std::string prefix, integer outer_count, integer inner_count)
+{
+  std::ostringstream outname;
+  outname << prefix << "_" << outer_count << "_" << inner_count;
+
+  std::cout << outname.str() << std::endl;
+
+  // XDMFWriter wtr(outname.str(), m_comm);
+
+  // wtr.write_image(*m_p_registered, "registered");
 }

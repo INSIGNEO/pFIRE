@@ -27,7 +27,7 @@ std::string IniConfig::usage()
   return usagess.str();
 }
 
-IniConfig::IniConfig(int const &argc, char const *const *argv) : RegistrationConfig(argc, argv)
+IniConfig::IniConfig(int const &argc, char const *const *argv) : ConfigurationBase(argc, argv)
 {
   // parent constructor provides arguments list so just need to parse
   parse_arguments();

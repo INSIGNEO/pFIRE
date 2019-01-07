@@ -1,6 +1,6 @@
 #include <chrono>
 
-#include "configuration.hpp"
+#include "baseconfiguration.hpp"
 #include "iniconfiguration.hpp"
 #include "setup.hpp"
 #include "shirtemulation.hpp"
@@ -14,7 +14,7 @@
 
 #include "xdmfwriter.hpp"
 
-void mainflow(std::string, std::string, floating);
+void mainflow(std::shared_ptr<ConfigurationBase> config);
 
 void usage()
 {
@@ -25,25 +25,23 @@ int main(int argc, char **argv)
 {
   pfire_setup(std::vector<std::string>());
 
-  std::string invocation_name = RegistrationConfig::get_invocation_name(argv[0]);
+  std::string invocation_name = ConfigurationBase::get_invocation_name(argv[0]);
 
-  std::unique_ptr<RegistrationConfig> configobj(nullptr);
+  std::shared_ptr<ConfigurationBase> configobj(nullptr);
 
   if (ShirtConfig::valid_invocation(invocation_name))
   {
-    configobj = std::make_unique<ShirtConfig>(argc, argv);
+    configobj = std::make_shared<ShirtConfig>(argc, argv);
   }
   else
   {
-    configobj = std::make_unique<IniConfig>(argc, argv);
+    configobj = std::make_shared<IniConfig>(argc, argv);
   }
 
   configobj->validate_config();
 
   auto tstart = std::chrono::high_resolution_clock::now();
-  mainflow(
-      configobj->grab<std::string>("fixed"), configobj->grab<std::string>("moved"),
-      configobj->grab<integer>("nodespacing"));
+  mainflow(configobj);
 
   auto tend = std::chrono::high_resolution_clock::now();
 
@@ -56,12 +54,12 @@ int main(int argc, char **argv)
   return 0;
 }
 
-void mainflow(std::string fixedpath, std::string movedpath, floating ns)
+void mainflow(std::shared_ptr<ConfigurationBase> config)
 {
   std::unique_ptr<Image> fixed;
   try
   {
-    fixed = Image::load_file(fixedpath);
+    fixed = Image::load_file(config->grab<std::string>("fixed"));
   }
   catch (std::exception &e)
   {
@@ -75,7 +73,7 @@ void mainflow(std::string fixedpath, std::string movedpath, floating ns)
   std::unique_ptr<Image> moved;
   try
   {
-    moved = Image::load_file(movedpath, fixed.get());
+    moved = Image::load_file(config->grab<std::string>("moved"), fixed.get());
   }
   catch (std::exception &e)
   {
@@ -83,14 +81,14 @@ void mainflow(std::string fixedpath, std::string movedpath, floating ns)
     return;
   }
 
-  floatvector nodespacing(fixed->ndim(), ns);
+  floatvector nodespacing(fixed->ndim(), config->grab<integer>("nodespacing"));
 
-  explain_memory(fixed->shape(), Map::calculate_map_shape(fixed->shape(), nodespacing));
+  //explain_memory(fixed->shape(), Map::calculate_map_shape(fixed->shape(), nodespacing));
 
   fixed->normalize();
   moved->normalize();
 
-  Elastic reg(*fixed, *moved, nodespacing);
+  Elastic reg(*fixed, *moved, nodespacing, *config);
   reg.autoregister();
 
   XDMFWriter wtr("data.xdmf", fixed->comm());

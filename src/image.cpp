@@ -18,13 +18,17 @@
 
 #include "baseloader.hpp"
 
+integer Image::instance_id_counter = 0;
+
 // Public Methods
 
 Image::Image(const intvector& shape, MPI_Comm comm)
-    : m_comm(comm), m_ndim(shape.size()),
-      m_shape(shape), // const on shape causes copy assignment (c++11)
-      m_localvec(create_unique_vec()), m_globalvec(create_unique_vec()), m_dmda(create_shared_dm())
+  : m_comm(comm), m_ndim(shape.size()),
+    m_shape(shape), // const on shape causes copy assignment (c++11)
+    m_localvec(create_unique_vec()), m_globalvec(create_unique_vec()), m_dmda(create_shared_dm()),
+    instance_id(instance_id_counter++)
 {
+  std::cout << "instance id: " << instance_id << std::endl;
   if (m_shape.size() != 3)
   {
     if (m_shape.size() == 2)
@@ -184,8 +188,9 @@ void Image::save_OIIO(std::string filename)
 // Protected Methods
 
 Image::Image(const Image& image)
-    : m_comm(image.m_comm), m_ndim(image.m_ndim), m_shape(image.m_shape),
-      m_localvec(create_shared_vec()), m_globalvec(create_shared_vec()), m_dmda(image.m_dmda)
+  : m_comm(image.m_comm), m_ndim(image.m_ndim), m_shape(image.m_shape),
+    m_localvec(create_shared_vec()), m_globalvec(create_shared_vec()), m_dmda(image.m_dmda),
+    instance_id(instance_id_counter++)
 {
   initialize_vectors();
 }

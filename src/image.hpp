@@ -85,6 +85,10 @@ protected:
   void initialize_vectors();
 
   Vec_unique scatter_to_zero(Vec& vec);
+
+  integer instance_id;
+
+  static integer instance_id_counter;
 };
 
 template <typename inttype>

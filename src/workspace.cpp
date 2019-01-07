@@ -5,7 +5,7 @@ WorkSpace::WorkSpace(const Image& image, const Map& map)
       m_globaltmps(std::vector<Vec_unique>()), m_iss(std::vector<IS_unique>()),
       m_scatterers(std::vector<VecScatter_unique>()), m_stacktmp(create_unique_vec()),
       m_localtmp(create_unique_vec()), m_delta(create_unique_vec()), m_rhs(create_unique_vec()),
-      m_tmat(create_unique_mat())
+      m_tmat(create_unique_mat()), ephemeral_count(0)
 {
   // create "local" vectors for gradient storage, one per map dim
   for (uinteger idim = 0; idim < image.ndim() + 1; idim++)
@@ -35,6 +35,7 @@ WorkSpace::WorkSpace(const Image& image, const Map& map)
 
 void WorkSpace::reallocate_ephemeral_workspace(const Map& map)
 {
+  ephemeral_count++;
   // allocate rhs vec and solution storage, use existing displacements in map
   PetscErrorCode perr;
   m_delta = create_unique_vec();

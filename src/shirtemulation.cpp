@@ -24,7 +24,7 @@ std::string ShirtConfig::usage()
   return usagess.str();
 }
 
-ShirtConfig::ShirtConfig(const int& argc, char const* const* argv) : RegistrationConfig(argc, argv)
+ShirtConfig::ShirtConfig(const int& argc, char const* const* argv) : ConfigurationBase(argc, argv)
 {
   // parent constructor provides arguments list so just need to parse
   parse_arguments();

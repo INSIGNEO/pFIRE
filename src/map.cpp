@@ -173,7 +173,6 @@ std::pair<intvector, intvector> Map::get_dmda_local_extents() const
 
   intvector locs(3, 0);
   intvector widths(3, 0);
-
   PetscErrorCode perr =
       DMDAGetCorners(*map_dmda, &locs[0], &locs[1], &locs[2], &widths[0], &widths[1], &widths[2]);
   CHKERRABORT(m_comm, perr);

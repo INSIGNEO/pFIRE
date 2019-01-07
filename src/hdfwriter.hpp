@@ -14,7 +14,6 @@ public:
   ~HDFWriter();
 
   void write_image(const Image& image, const std::string& groupname);
-
   void write_map(const Map& map, const std::string& groupname);
 
 protected:
