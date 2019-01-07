@@ -12,6 +12,7 @@ WorkSpace::WorkSpace(const Image& image, const Map& map)
   {
     Vec_unique tmp_vec = create_unique_vec();
     PetscErrorCode perr = VecDuplicate(*image.global_vec(), tmp_vec.get());
+    debug_creation(*tmp_vec, std::string("grads_") + std::to_string(static_cast<int>(idim)));
     CHKERRABORT(m_comm, perr);
     m_globaltmps.push_back(std::move(tmp_vec));
   }
@@ -25,6 +26,7 @@ WorkSpace::WorkSpace(const Image& image, const Map& map)
   // should be compatible with all map bases of this size
   m_stacktmp = create_unique_vec();
   perr = MatCreateVecs(*map.basis(), nullptr, m_stacktmp.get());
+  debug_creation(*m_stacktmp, "workspace vector");
   CHKERRABORT(m_comm, perr);
 
   create_scatterers();
@@ -39,10 +41,12 @@ void WorkSpace::reallocate_ephemeral_workspace(const Map& map)
   m_rhs = create_unique_vec();
   perr = VecDuplicate(*map.m_displacements, m_delta.get());
   CHKERRABORT(m_comm, perr);
+  debug_creation(*m_delta, std::string("solution_storage_") + std::to_string(ephemeral_count));
   perr = VecSet(*m_delta, 0.);
   CHKERRABORT(m_comm, perr);
   perr = VecDuplicate(*map.m_displacements, m_rhs.get());
   CHKERRABORT(m_comm, perr);
+  debug_creation(*m_delta, std::string("rhs_storage_") + std::to_string(ephemeral_count));
   perr = VecSet(*m_rhs, 0.);
   CHKERRABORT(m_comm, perr);
 }

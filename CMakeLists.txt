@@ -26,6 +26,12 @@ if(DEBUG_VERBOSE)
   message(STATUS "Enabled verbose debugging messages")
 endif(DEBUG_VERBOSE)
 
+option(DEBUG_PETSC "Debug PETSc object creation and deletion")
+if(DEBUG_PETSC)
+  add_definitions(-DDEBUG_PETSC_OBJECTS)
+  message(STATUS "Enabled debugging of PETSc object lifetimes")
+endif(DEBUG_PETSC)
+
 option(DEBUG_OUTPUT_INTERMEDIATES "Save all intermediate frames in registration")
 if(DEBUG_OUTPUT_INTERMEDIATES)
   add_definitions(-DDEBUG_DUMP_INTERMEDIATES)

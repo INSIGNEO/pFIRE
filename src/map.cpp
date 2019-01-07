@@ -144,6 +144,7 @@ std::unique_ptr<Image> Map::warp(const Image& image, WorkSpace& wksp)
   Vec_unique src_nat = create_unique_vec();
   perr = DMDACreateNaturalVector(*image.dmda(), src_nat.get());
   CHKERRABORT(m_comm, perr);
+  debug_creation(*src_nat, "Vec_source_natural");
   perr = DMDAGlobalToNaturalBegin(*image.dmda(), *image.global_vec(), INSERT_VALUES, *src_nat);
   CHKERRABORT(m_comm, perr);
   perr = DMDAGlobalToNaturalEnd(*image.dmda(), *image.global_vec(), INSERT_VALUES, *src_nat);
@@ -152,6 +153,7 @@ std::unique_ptr<Image> Map::warp(const Image& image, WorkSpace& wksp)
   Vec_unique tgt_nat = create_unique_vec();
   perr = DMDACreateNaturalVector(*image.dmda(), tgt_nat.get());
   CHKERRABORT(m_comm, perr);
+  debug_creation(*tgt_nat, "Vec_target_natural");
   perr = MatMult(*warp, *src_nat, *tgt_nat);
   CHKERRABORT(m_comm, perr);
 
@@ -269,6 +271,7 @@ void Map::calculate_laplacian()
 
   Mat_unique lapl = build_laplacian_matrix(m_comm, map_shape, startrow, endrow, m_ndim + 1);
   perr = MatTransposeMatMult(*lapl, *lapl, MAT_INITIAL_MATRIX, PETSC_DEFAULT, m_lapl.get());
+  debug_creation(*m_lapl, "Mat_l_squared");
   CHKERRABORT(m_comm, perr);
 }
 

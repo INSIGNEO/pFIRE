@@ -2,6 +2,7 @@
 
 #include <iomanip>
 
+#include "petsc_debug.hpp"
 #include "fd_routines.hpp"
 #include "iterator_routines.hpp"
 
@@ -132,6 +133,7 @@ void Elastic::innerstep(floating lambda)
       *m_workspace->m_tmat, *m_workspace->m_tmat, MAT_INITIAL_MATRIX, PETSC_DEFAULT,
       normmat.get());
   CHKERRABORT(m_comm, perr);
+  debug_creation(*normmat, std::string("Mat_normal") + std::to_string(inum));
   // precondition tmat2
   block_precondition();
 
@@ -237,6 +239,7 @@ void Elastic::calculate_tmat()
   // 3. copy basis into p_tmat
   m_workspace->m_tmat = create_unique_mat();
   perr = MatDuplicate(*m_p_map->basis(), MAT_COPY_VALUES, m_workspace->m_tmat.get());
+  debug_creation(*m_workspace->m_tmat, std::string("Mat_tmat_") + std::to_string(iternum));
   CHKERRABORT(m_comm, perr);
 
   // 4. left diagonal multiply p_tmat with stacked vector
@@ -250,6 +253,7 @@ void Elastic::block_precondition()
   Vec_unique diag = create_unique_vec();
   PetscErrorCode perr = MatCreateVecs(*normmat, diag.get(), nullptr);
   CHKERRABORT(m_comm, perr);
+  debug_creation(*diag, "Vec_block_normalise");
   perr = MatGetDiagonal(*normmat, *diag);
   CHKERRABORT(m_comm, perr);
 

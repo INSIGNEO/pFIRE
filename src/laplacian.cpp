@@ -1,6 +1,7 @@
 #include "laplacian.hpp"
 
 #include "indexing.hpp"
+#include "petsc_debug.hpp"
 
 Mat_unique build_laplacian_autostride(MPI_Comm comm, intvector shape, integer ndim)
 {
@@ -77,6 +78,7 @@ Mat_unique build_laplacian_matrix(
   PetscErrorCode perr = MatCreateMPIAIJWithArrays(
       comm, idxn.size() - 1, PETSC_DECIDE, matsize, matsize, idxn.data(), idxm.data(), mdat.data(),
       lapl_mat.get());
+  debug_creation(*lapl_mat, "laplacian");
   CHKERRABORT(comm, perr);
   return lapl_mat;
 }

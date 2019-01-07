@@ -11,6 +11,8 @@
 #include <petscsys.h>
 #include <petscvec.h>
 
+#include "petsc_debug.hpp"
+
 // Forward Defs
 //
 class Image;
@@ -41,6 +43,7 @@ using BaseLoader_unique = std::unique_ptr<BaseLoader>;
 struct VecDeleter {
   void operator()(Vec* v) const
   {
+    debug_deletion(*v);
     VecDestroy(v);
     delete v;
   }
@@ -68,6 +71,7 @@ inline Vec_shared create_shared_vec()
 struct MatDeleter {
   void operator()(Mat* v) const
   {
+    debug_deletion(*v);
     MatDestroy(v);
     delete v;
   }

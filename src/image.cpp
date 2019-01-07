@@ -219,8 +219,10 @@ void Image::initialize_vectors()
   m_globalvec = create_shared_vec();
   perr = DMCreateGlobalVector(*m_dmda, m_globalvec.get());
   CHKERRABORT(m_comm, perr);
+  debug_creation(*m_globalvec, std::string("image_global_") + std::to_string(instance_id));
   perr = DMCreateLocalVector(*m_dmda, m_localvec.get());
   CHKERRABORT(m_comm, perr);
+  debug_creation(*m_localvec, std::string("image_local_") + std::to_string(instance_id));
 }
 
 void Image::update_local_from_global()
