@@ -1,0 +1,5 @@
+#include "gitstate.hpp"
+
+const std::String kGitTag = "@git_tag@";
+const std::string kGitSHA = "@git_sha@";
+const std::string kGitDirty = "@git_dirty@";
