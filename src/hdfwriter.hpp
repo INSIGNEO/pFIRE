@@ -7,8 +7,9 @@
 #include <mpi.h>
 
 #include "types.hpp"
+#include "basewriter.hpp"
 
-class HDFWriter {
+class HDFWriter: public BaseWriter {
 public:
   HDFWriter(std::string filename, const MPI_Comm& comm);
   ~HDFWriter();
@@ -17,10 +18,7 @@ public:
   void write_map(const Map& map, const std::string& groupname);
 
 protected:
-  MPI_Comm _comm;
   std::string h5_filename;
-
-  static const std::vector<std::string> _components;
 
 private:
   hid_t _file_h;

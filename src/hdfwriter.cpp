@@ -8,10 +8,8 @@
 #include "infix_iterator.hpp"
 #include "map.hpp"
 
-const std::vector<std::string> HDFWriter::_components({"x", "y", "z"});
-
 HDFWriter::HDFWriter(std::string filename, const MPI_Comm& comm)
-    : _comm(comm), h5_filename(std::move(filename)), _file_h(-1)
+    : BaseWriter(filename, comm), h5_filename(std::move(filename)), _file_h(-1)
 {
   // Will open h5 file or throw
   create_or_truncate_h5();
