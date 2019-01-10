@@ -38,8 +38,8 @@ if(DEBUG_OUTPUT_INTERMEDIATES)
 endif(DEBUG_OUTPUT_INTERMEDIATES)
 
 include(cmake-modules/GitState.cmake)
-WriteGitStateFile("${pFIRE_SOURCE_DIR}")
-WriteGitVersionSrc("${pFIRE_SOURCE_DIR}/src/gitstate.cpp")
+#WriteGitStateFile("${pFIRE_SOURCE_DIR}")
+#WriteGitVersionSrc("${pFIRE_SOURCE_DIR}/src/gitstate.cpp")
 
 # Output programs to a "bin" directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${pFIRE_SOURCE_DIR}/bin)

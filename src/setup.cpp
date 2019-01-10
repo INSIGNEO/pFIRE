@@ -4,9 +4,11 @@
 
 #include <boost/filesystem.hpp>
 
+#include "types.hpp"
+#include "banner.hpp"
+#include "gitstate.hpp"
 #include "baseloader.hpp"
 #include "shirtloader.hpp"
-#include "types.hpp"
 
 #ifdef USE_OIIO
 #include "oiioloader.hpp"
@@ -33,6 +35,7 @@ void register_plugins()
 
 void pfire_setup(const std::vector<std::string>& petsc_args)
 {
+
   std::vector<char*> cstrings;
   cstrings.resize(petsc_args.size());
   std::transform(
@@ -43,6 +46,14 @@ void pfire_setup(const std::vector<std::string>& petsc_args)
 
   PetscErrorCode perr = PetscInitialize(&n_cstrings, &cstr_ptr, nullptr, nullptr);
   CHKERRABORT(PETSC_COMM_WORLD, perr);
+
+  int rank;
+  MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+
+  if(rank == 0)
+  {
+    print_welcome_message();
+  }
 
   check_and_warn_odd_comm();
 
@@ -70,4 +81,32 @@ void check_and_warn_odd_comm()
 void pfire_teardown()
 {
   PetscFinalize();
+}
+
+
+void print_welcome_message()
+{
+
+  std::ostringstream welcomess;
+  welcomess << kbanner_text_upper;
+
+  if(kGitTag.empty())
+  {
+    welcomess << "Development version";
+  }
+  else
+  {
+    welcomess << "Release " << kGitTag; 
+  }
+
+  welcomess << " (commit:" << kGitSHA;
+  if (kGitDirty)
+  {
+    welcomess << "-dirty";
+  }
+  welcomess << ")";
+
+  welcomess << kbanner_text_lower;
+
+  std::cout << welcomess.str();
 }

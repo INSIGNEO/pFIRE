@@ -1,8 +1,10 @@
 #ifndef GITSTATE_HPP
 #define GITSTATE_HPP
 
-extern const std::String kGitTag;
+#include <string>
+
+extern const std::string kGitTag;
 extern const std::string kGitSHA;
-extern const std::string kGitDirty;
+extern const bool kGitDirty;
 
 #endif //GITSTATE_HPP

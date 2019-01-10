@@ -28,7 +28,6 @@ int main(int argc, char **argv)
   std::string invocation_name = ConfigurationBase::get_invocation_name(argv[0]);
 
   std::shared_ptr<ConfigurationBase> configobj(nullptr);
-
   if (ShirtConfig::valid_invocation(invocation_name))
   {
     configobj = std::make_shared<ShirtConfig>(argc, argv);
