@@ -13,10 +13,6 @@
 #include "map.hpp"
 #include "indexing.hpp"
 
-#ifdef USE_OIIO
-#include <OpenImageIO/imageio.h>
-#endif // USE_OIIO
-
 #include "baseloader.hpp"
 
 integer Image::instance_id_counter = 0;
@@ -143,48 +139,6 @@ void Image::masked_normalize()
   return norm;
 }*/
 
-#ifdef USE_OIIO
-void Image::save_OIIO(std::string filename)
-{
-  Vec_unique imgvec = create_unique_vec();
-  PetscErrorCode perr = DMDACreateNaturalVector(*m_dmda, imgvec.get());
-  CHKERRABORT(m_comm, perr);
-  perr = DMDAGlobalToNaturalBegin(*m_dmda, *m_globalvec, INSERT_VALUES, *imgvec);
-  CHKERRABORT(m_comm, perr);
-  perr = DMDAGlobalToNaturalEnd(*m_dmda, *m_globalvec, INSERT_VALUES, *imgvec);
-  CHKERRABORT(m_comm, perr);
-
-  if (m_comm != MPI_COMM_SELF)
-  {
-    imgvec = scatter_to_zero(*imgvec);
-  }
-
-  integer rank;
-  MPI_Comm_rank(m_comm, &rank);
-  if (rank == 0)
-  {
-    OIIO::ImageOutput* img = OIIO::ImageOutput::create(filename);
-    if (img == nullptr)
-    {
-      throw std::runtime_error("Failed to open image output file");
-    }
-    OIIO::ImageSpec spec(m_shape[0], m_shape[1], 1, OIIO::TypeDesc::UINT16);
-    img->open(filename, spec);
-
-    floating* pixdata;
-    perr = VecGetArray(*imgvec, &pixdata);
-    CHKERRABORT(m_comm, perr);
-    img->write_image(OIIO::TypeDesc::DOUBLE, pixdata);
-    img->close();
-    perr = VecRestoreArray(*imgvec, &pixdata);
-    CHKERRABORT(m_comm, perr);
-
-    OIIO::ImageOutput::destroy(img);
-  }
-  MPI_Barrier(m_comm);
-}
-#endif // USE_OIIO
-
 // Protected Methods
 
 Image::Image(const Image& image)
@@ -253,7 +207,7 @@ Vec_unique Image::gradient(integer dim)
   return fd::gradient_to_global_unique(*m_dmda, *m_localvec, dim);
 }
 
-Vec_unique Image::scatter_to_zero(Vec& vec)
+Vec_unique Image::scatter_to_zero(Vec& vec) const
 {
   Vec_unique new_vec = create_unique_vec();
   VecScatter_unique sct = create_unique_vecscatter();

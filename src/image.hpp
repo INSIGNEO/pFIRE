@@ -69,7 +69,7 @@ public:
       const std::string& filename, const Image* existing = nullptr,
       MPI_Comm comm = PETSC_COMM_WORLD);
 
-  void save_OIIO(std::string filename);
+  Vec_unique scatter_to_zero(Vec& vec) const;
 
 protected:
   explicit Image(const Image& image);
@@ -85,7 +85,6 @@ protected:
   void initialize_dmda();
   void initialize_vectors();
 
-  Vec_unique scatter_to_zero(Vec& vec);
 
   integer instance_id;
 
