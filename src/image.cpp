@@ -29,7 +29,6 @@ Image::Image(const intvector& shape, MPI_Comm comm)
     m_localvec(create_unique_vec()), m_globalvec(create_unique_vec()), m_dmda(create_shared_dm()),
     instance_id(instance_id_counter++)
 {
-  std::cout << "instance id: " << instance_id << std::endl;
   if (m_shape.size() != 3)
   {
     if (m_shape.size() == 2)

@@ -166,8 +166,6 @@ void ShIRTLoader::copy_chunk_image(
 
   int irank;
   MPI_Comm_rank(_comm, &irank);
-  PetscSynchronizedPrintf(_comm, "Rank %i: Alloc: %i\n", irank, dcount);
-  PetscSynchronizedFlush(_comm, PETSC_STDOUT);
 
   std::vector<image_data_dtype> databuf(dcount, 0);
 

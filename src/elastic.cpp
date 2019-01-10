@@ -1,10 +1,12 @@
 #include "elastic.hpp"
 
 #include <iomanip>
+#include <sstream>
 
-#include "petsc_debug.hpp"
+#include "infix_iterator.hpp"
 #include "fd_routines.hpp"
 #include "iterator_routines.hpp"
+#include "petsc_debug.hpp"
 
 Elastic::Elastic(
     const Image& fixed, const Image& moved, const floatvector nodespacing,
@@ -28,13 +30,6 @@ Elastic::Elastic(
     m_v_final_nodespacing.push_back(1);
   }
 
-#ifdef VERBOSEDEBUG
-  PetscPrintf(m_comm, "Fixed image initial contents:\n");
-  VecView(*m_fixed.global_vec(), PETSC_VIEWER_STDOUT_(m_comm));
-  PetscPrintf(m_comm, "Moved image initial contents:\n");
-  VecView(*m_fixed.global_vec(), PETSC_VIEWER_STDOUT_(m_comm));
-#endif
-
   // not in initializer to avoid copy until we know images are compatible and we can proceed
   m_p_registered = moved.copy();
 
@@ -52,32 +47,22 @@ void Elastic::autoregister()
 {
   integer loop_count = 1;
   PetscPrintf(m_comm, "Beginning elastic registration\n");
-  if (m_imgdims == 2)
-  {
-    PetscPrintf(
-        m_comm, "Target nodespacing: %.1f, %.1f\n", m_v_final_nodespacing[0],
-        m_v_final_nodespacing[1]);
-  }
-  else
-  {
-    PetscPrintf(
-        m_comm, "Target node spacing: %.1f, %.1f, %.1f\n", m_v_final_nodespacing[0],
-        m_v_final_nodespacing[1], m_v_final_nodespacing[2]);
-  }
+  std::ostringstream nsmsg;
+  nsmsg << "Target nodespacing: ";
+  std::copy_n(
+      m_v_final_nodespacing.cbegin(), m_imgdims, infix_ostream_iterator<integer>(nsmsg, " "));
+  nsmsg << std::endl;
+  PetscPrintf(m_comm, nsmsg.str().c_str());
   PetscPrintf(m_comm, "Using %i generations\n\n", m_v_nodespacings.size());
 
   auto it = m_v_nodespacings.crbegin();
   while (it != m_v_nodespacings.rend())
   {
-    PetscPrintf(m_comm, "Generation %i, ", loop_count);
-    if (m_imgdims == 2)
-    {
-      PetscPrintf(m_comm, "Nodespacing %.1f, %.1f\n", (*it)[0], (*it)[1]);
-    }
-    else
-    {
-      PetscPrintf(m_comm, "Nodespacing %.1f, %.1f, %1.f\n", (*it)[0], (*it)[1], (*it)[2]);
-    }
+    nsmsg << "Nodespacing: ";
+    std::copy_n(it->cbegin(), m_imgdims, infix_ostream_iterator<integer>(nsmsg, " "));
+    nsmsg << std::endl;
+    PetscPrintf(m_comm, nsmsg.str().c_str());
+
     innerloop(loop_count);
     std::advance(it, 1);
     if (it == m_v_nodespacings.rend())
@@ -192,17 +177,6 @@ void Elastic::calculate_node_spacings()
       return a * 2;
     });
     m_v_nodespacings.push_back(currspc);
-  }
-
-  PetscPrintf(m_comm, "Calculated spacings:\n");
-  for (auto spcs = m_v_nodespacings.crbegin(); spcs != m_v_nodespacings.crend(); spcs++)
-  {
-    PetscPrintf(m_comm, "Spacing: ");
-    for (auto spc = spcs->cbegin(); spc != spcs->cend(); spc++)
-    {
-      PetscPrintf(m_comm, "%g ", *spc);
-    }
-    PetscPrintf(m_comm, "\n");
   }
 }
 

@@ -25,5 +25,5 @@ const std::string kbanner_text_lower =R"(
 :#######:
 :#######:
 """""""""
-a
+
 )";

@@ -11,6 +11,7 @@
 #include "map.hpp"
 #include "types.hpp"
 #include "utils.hpp"
+#include "infix_iterator.hpp"
 
 #include "xdmfwriter.hpp"
 
@@ -65,9 +66,13 @@ void mainflow(std::shared_ptr<ConfigurationBase> config)
     std::cerr << "Error: Failed to load fixed image: " << e.what() << std::endl;
     return;
   }
-  PetscPrintf(
-      PETSC_COMM_WORLD, "Loaded fixed image of shape %i x %i x %i.\n", fixed->shape()[0],
-      fixed->shape()[1], fixed->shape()[2]);
+
+  std::ostringstream immsg;
+  immsg << "Loaded fixed image of shape ";
+  std::copy_n(fixed->shape().cbegin(), fixed->ndim(),
+              infix_ostream_iterator<integer>(immsg, " x "));
+  immsg << ".\n";
+  PetscPrintf(PETSC_COMM_WORLD, immsg.str().c_str());
 
   std::unique_ptr<Image> moved;
   try
