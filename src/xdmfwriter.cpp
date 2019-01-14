@@ -158,10 +158,10 @@ void XDMFWriter::write_map(const Map& map, const std::string& name)
       // Have separate datasets in hdf5 so use join
       std::ostringstream joinfunc;
       joinfunc << "join(";
-      for(integer idx=0; idx < map.ndim(); idx++)
+      for(uinteger idx=0; idx < map.ndim(); idx++)
       {
         if(idx != 0) {joinfunc << ", ";}
-        joinfunc << "$" << idx;
+        joinfunc << "$" << static_cast<unsigned long>(idx); // resolve ambiguity due to lack of explicit << overload
       }
       joinfunc << ")";
       std::ostringstream mapdims;
@@ -175,7 +175,7 @@ void XDMFWriter::write_map(const Map& map, const std::string& name)
       vecdat.add("<xmlattr>.Function", joinfunc.str());
 
       // And link to hdf5 datasets
-      for(integer idx=0; idx < map.ndim(); idx++)
+      for(uinteger idx=0; idx < map.ndim(); idx++)
       {
         std::ostringstream datapath;
         datapath << h5_filename << ":/" << name << "/" << _components[idx];
