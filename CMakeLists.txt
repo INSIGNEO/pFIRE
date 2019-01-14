@@ -37,6 +37,7 @@ if(DEBUG_OUTPUT_INTERMEDIATES)
   add_definitions(-DDEBUG_DUMP_INTERMEDIATES)
 endif(DEBUG_OUTPUT_INTERMEDIATES)
 
+set(GITCPP_PATH "src/gitstate.cpp")
 include(cmake-modules/GitState.cmake)
 #WriteGitStateFile("${pFIRE_SOURCE_DIR}")
 #WriteGitVersionSrc("${pFIRE_SOURCE_DIR}/src/gitstate.cpp")

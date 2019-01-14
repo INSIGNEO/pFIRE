@@ -7,35 +7,32 @@ if(NOT DEFINED git_state_src)
   set(git_state_src "${CMAKE_CURRENT_LIST_DIR}/gitstate")
 endif()
 if(NOT DEFINED git_state_tgt)
-  set(git_state_tgt "${PROJECT_SOURCE_DIR}/src/gitstate")
+  if(NOT DEFINED GITCPP_PATH)
+    message(FATAL_ERROR "GITCPP_PATH must be set")
+  endif(NOT DEFINED GITCPP_PATH)
+
+  string(REGEX REPLACE "\\.[^.]*$" "" _filepath_noext ${GITCPP_PATH})
+  set(git_state_tgt "${PROJECT_SOURCE_DIR}/${_filepath_noext}")
 endif()
 
 function(WriteGitVersionSrc _filepath)
-  message(STATUS "PATH: ${_filepath}")
-
   ReadGitStatefile(git_sha git_tag git_dirty)
 
-  string(REGEX REPLACE "\\.[^.]*$" "" _filepath_noext ${_filepath})
-
-  message(STATUS "${git_state_src}")
-  message(STATUS "${git_state_tgt}")
-
   execute_process(COMMAND
-    cp -u "${git_state_src}.hpp.in" "${_filepath_noext}.hpp" 
+    cp -u "${git_state_src}.hpp.in" "${git_state_tgt}.hpp" 
     RESULT_VARIABLE res
     ERROR_QUIET)
   if(NOT res EQUAL 0)
-    message(FATAL_ERROR "Failed to update ${_filepath_noext}.hpp")
+    message(FATAL_ERROR "Failed to update ${git_state_tgt}.hpp")
   endif(NOT res EQUAL 0)
   
-  configure_file("${git_state_src}.cpp.in" "${_filepath_noext}.cpp" @ONLY)
+  configure_file("${git_state_src}.cpp.in" "${git_state_tgt}.cpp" @ONLY)
 
 endfunction(WriteGitVersionSrc)
 
 
 function(ReadGitStatefile hash tag dirty)
 
-  message(STATUS "STATE FILE: ${git_state_file}")
   file(STRINGS "${git_state_file}" file_contents)
   list(GET file_contents 1 _hash)
   list(GET file_contents 2 _tag)
@@ -66,8 +63,6 @@ function(GetGitStateString _working_dir _state_string)
 endfunction(GetGitStateString)
 
 function(GetGitState _working_dir _hashvar _tagvar _dirty)
-
-  message(STATUS "${_working_dir}")
 
   set(${_hashvar} "" PARENT_SCOPE)
   set(${_tagvar} "" PARENT_SCOPE)
@@ -146,14 +141,16 @@ endfunction(EnableMonitoring)
 Function(CheckGitStatus _working_dir _state_changed)
 
   GetGitStateString("${_working_dir}" new_state)
-  
-  if(EXISTS "${git_state_file}")
-    file(READ "${git_state_file}" old_state)
-    if(old_state STREQUAL new_state)
-      set("${_state_changed}" "false" PARENT_SCOPE)
-      return()
-    endif(old_state STREQUAL new_state)
-  endif(EXISTS "${git_state_file}")
+
+  if(EXISTS "${git_state_tgt}.cpp")  
+    if(EXISTS "${git_state_file}")
+      file(READ "${git_state_file}" old_state)
+      if(old_state STREQUAL new_state)
+        set("${_state_changed}" "false" PARENT_SCOPE)
+        return()
+      endif(old_state STREQUAL new_state)
+    endif(EXISTS "${git_state_file}")
+  endif(EXISTS "${git_state_tgt}.cpp")  
 
   file(WRITE "${git_state_file}" "${new_state}")
   set(${_state_changed} "true" PARENT_SCOPE)
