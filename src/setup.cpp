@@ -18,6 +18,10 @@
 #include "dcmloader.hpp"
 #endif // USE_DCMTK
 
+#include "basewriter.hpp"
+#include "hdfwriter.hpp"
+#include "xdmfwriter.hpp"
+
 namespace bf = boost::filesystem;
 
 void register_plugins()
@@ -31,6 +35,9 @@ void register_plugins()
 #endif // USE_OIIO
 
   BaseLoader::register_loader(ShIRTLoader::loader_name, ShIRTLoader::Create_Loader);
+
+  BaseWriter::register_writer<HDFWriter>();
+  BaseWriter::register_writer<XDMFWriter>();
 }
 
 void pfire_setup(const std::vector<std::string>& petsc_args)

@@ -23,6 +23,9 @@ public:
 
   void write_map(const Map& map, const std::string& name);
 
+  static const std::string writer_name;
+  static const std::vector<std::string> extensions;
+
 protected:
   int rank;
   std::string xdmf_filename;

@@ -17,6 +17,9 @@ public:
   void write_image(const Image& image, const std::string& groupname);
   void write_map(const Map& map, const std::string& groupname);
 
+  static const std::string writer_name;
+  static const std::vector<std::string> extensions;
+
 protected:
   std::string h5_filename;
 

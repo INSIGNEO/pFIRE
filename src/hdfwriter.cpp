@@ -8,6 +8,9 @@
 #include "infix_iterator.hpp"
 #include "map.hpp"
 
+const std::string HDFWriter::writer_name = "hdf5";
+const std::vector<std::string> HDFWriter::extensions = {".h5"};
+
 HDFWriter::HDFWriter(std::string filename, const MPI_Comm& comm)
     : BaseWriter(filename, comm), h5_filename(std::move(filename)), _file_h(-1)
 {

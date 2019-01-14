@@ -3,10 +3,17 @@
 #include <algorithm>
 #include <sstream>
 
+#include <boost/filesystem.hpp>
+
 #include "image.hpp"
 #include "indexing.hpp"
 #include "infix_iterator.hpp"
 #include "map.hpp"
+
+namespace bf = boost::filesystem;
+
+const std::string XDMFWriter::writer_name = "xdmf";
+const std::vector<std::string> XDMFWriter::extensions = {".xdmf"};
 
 XDMFWriter::XDMFWriter(std::string filename, const MPI_Comm& comm)
   : HDFWriter(h5name_from_xdmfname(filename), comm), rank(-1), xdmf_filename(filename),

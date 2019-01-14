@@ -20,6 +20,7 @@ class WorkSpace;
 class Map;
 class Elastic;
 class BaseLoader;
+class BaseWriter;
 
 // Useful typedefs
 using integer = PetscInt;
@@ -34,6 +35,7 @@ using floatvector = std::vector<floating>;
 using floatvector2d = std::vector<floatvector>;
 
 using BaseLoader_unique = std::unique_ptr<BaseLoader>;
+using BaseWriter_unique = std::unique_ptr<BaseWriter>;
 
 //// Self-destructing PETSc objects
 // Can apply identical treatment to many PETSc types

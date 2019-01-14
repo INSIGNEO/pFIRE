@@ -95,10 +95,11 @@ void mainflow(std::shared_ptr<ConfigurationBase> config)
   Elastic reg(*fixed, *moved, nodespacing, *config);
   reg.autoregister();
 
-  XDMFWriter wtr("data.xdmf", fixed->comm());
+  std::string outfile = "data.xdmf";
+  BaseWriter_unique wtr = BaseWriter::get_writer_for_filename(outfile, fixed->comm());
 
   std::string reggroup("registered");
   std::string mapgroup("map");
-  wtr.write_image(*reg.registered(), reggroup);
-  wtr.write_map(*reg.m_p_map, mapgroup);
+  wtr->write_image(*reg.registered(), reggroup);
+  wtr->write_map(*reg.m_p_map, mapgroup);
 }
