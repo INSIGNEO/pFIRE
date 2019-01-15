@@ -7,26 +7,27 @@
 #include <mpi.h>
 
 #include "types.hpp"
+#include "basewriter.hpp"
 
-class HDFWriter {
+class HDFWriter: public BaseWriter {
 public:
-  HDFWriter(std::string filename, const MPI_Comm& comm);
+  HDFWriter(const std::string& filename, const MPI_Comm& comm);
   ~HDFWriter();
 
-  void write_image(const Image& image, const std::string& groupname);
+  void write_image(const Image& image);
+  void write_map(const Map& map);
 
-  void write_map(const Map& map, const std::string& groupname);
+  static const std::string writer_name;
+  static const std::vector<std::string> extensions;
 
 protected:
-  MPI_Comm _comm;
   std::string h5_filename;
-
-  static const std::vector<std::string> _components;
+  std::string h5_groupname;
 
 private:
   hid_t _file_h;
 
-  void create_or_truncate_h5();
+  void open_or_create_h5();
 };
 
 #endif // HDFWRITER_HPP

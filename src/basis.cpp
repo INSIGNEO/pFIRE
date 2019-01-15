@@ -3,6 +3,7 @@
 #include <petscmat.h>
 
 #include "debug.hpp"
+#include "petsc_debug.hpp"
 #include "indexing.hpp"
 #include "iterator_routines.hpp"
 
@@ -229,6 +230,7 @@ Mat_unique build_warp_matrix(
       comm, idxn.size() - 1, idxn.size() - 1, mat_size, mat_size, idxn.data(), idxm.data(),
       mdat.data(), warp.get());
   CHKERRABORT(comm, perr);
+  debug_creation(*warp, "Warp matrix");
 
   return warp;
 }

@@ -1,33 +1,34 @@
 #include "elastic.hpp"
 
 #include <iomanip>
+#include <sstream>
 
+#include "infix_iterator.hpp"
 #include "fd_routines.hpp"
 #include "iterator_routines.hpp"
+#include "petsc_debug.hpp"
 
-Elastic::Elastic(const Image& fixed, const Image& moved, const floatvector nodespacing)
-    : m_comm(fixed.comm()), m_imgdims(fixed.ndim()), m_mapdims(m_imgdims + 1),
-      m_size(fixed.size()), m_iternum(0), m_fixed(fixed), m_moved(moved),
-      m_v_nodespacings(floatvector2d()), m_v_final_nodespacing(nodespacing),
-      m_p_registered(std::shared_ptr<Image>(nullptr)), m_p_map(std::unique_ptr<Map>(nullptr)),
-      m_workspace(std::shared_ptr<WorkSpace>(nullptr)), normmat(create_unique_mat())
+Elastic::Elastic(
+    const Image& fixed, const Image& moved, const floatvector nodespacing,
+    const ConfigurationBase& configuration)
+  : m_comm(fixed.comm()), configuration(configuration), m_imgdims(fixed.ndim()),
+    m_mapdims(m_imgdims + 1), m_size(fixed.size()), m_iternum(0), m_fixed(fixed), m_moved(moved),
+    m_v_nodespacings(floatvector2d()), m_v_final_nodespacing(nodespacing),
+    m_p_registered(std::shared_ptr<Image>(nullptr)), m_p_map(std::unique_ptr<Map>(nullptr)),
+    m_workspace(std::shared_ptr<WorkSpace>(nullptr)), normmat(create_unique_mat())
 {
   // TODO: image compatibility checks (maybe write Image.iscompat(Image foo)
   // TODO: enforce normalization
 
   // make sure nodespacing is compatible with image
-  if (m_fixed.ndim() > m_v_final_nodespacing.size())
+  if (m_fixed.ndim() != m_v_final_nodespacing.size())
   {
     throw std::runtime_error("number of nodespacings must match number of image dimensions");
   }
-  m_v_final_nodespacing.resize(m_fixed.ndim());
-
-#ifdef VERBOSEDEBUG
-  PetscPrintf(m_comm, "Fixed image initial contents:\n");
-  VecView(*m_fixed.global_vec(), PETSC_VIEWER_STDOUT_(m_comm));
-  PetscPrintf(m_comm, "Moved image initial contents:\n");
-  VecView(*m_fixed.global_vec(), PETSC_VIEWER_STDOUT_(m_comm));
-#endif
+  if (m_v_final_nodespacing.size() == 2)
+  {
+    m_v_final_nodespacing.push_back(1);
+  }
 
   // not in initializer to avoid copy until we know images are compatible and we can proceed
   m_p_registered = moved.copy();
@@ -46,32 +47,22 @@ void Elastic::autoregister()
 {
   integer loop_count = 1;
   PetscPrintf(m_comm, "Beginning elastic registration\n");
-  if (m_imgdims == 2)
-  {
-    PetscPrintf(
-        m_comm, "Target nodespacing: %.1f, %.1f\n", m_v_final_nodespacing[0],
-        m_v_final_nodespacing[1]);
-  }
-  else
-  {
-    PetscPrintf(
-        m_comm, "Target node spacing: %.1f, %.1f, %.1f\n", m_v_final_nodespacing[0],
-        m_v_final_nodespacing[1], m_v_final_nodespacing[2]);
-  }
+  std::ostringstream nsmsg;
+  nsmsg << "Target nodespacing: ";
+  std::copy_n(
+      m_v_final_nodespacing.cbegin(), m_imgdims, infix_ostream_iterator<integer>(nsmsg, " "));
+  nsmsg << std::endl;
+  PetscPrintf(m_comm, nsmsg.str().c_str());
   PetscPrintf(m_comm, "Using %i generations\n\n", m_v_nodespacings.size());
 
   auto it = m_v_nodespacings.crbegin();
   while (it != m_v_nodespacings.rend())
   {
-    PetscPrintf(m_comm, "Generation %i, ", loop_count);
-    if (m_imgdims == 2)
-    {
-      PetscPrintf(m_comm, "Nodespacing %.1f, %.1f\n", (*it)[0], (*it)[1]);
-    }
-    else
-    {
-      PetscPrintf(m_comm, "Nodespacing %.1f, %.1f, %1.f\n", (*it)[0], (*it)[1], (*it)[2]);
-    }
+    nsmsg << "Nodespacing: ";
+    std::copy_n(it->cbegin(), m_imgdims, infix_ostream_iterator<integer>(nsmsg, " "));
+    nsmsg << std::endl;
+    PetscPrintf(m_comm, nsmsg.str().c_str());
+
     innerloop(loop_count);
     std::advance(it, 1);
     if (it == m_v_nodespacings.rend())
@@ -88,21 +79,23 @@ void Elastic::autoregister()
 
 void Elastic::innerloop(integer outer_count)
 {
-// setup map resolution specific solution storage (tmat, delta a, rvec)
-// calculate lambda for loop
-#ifdef DEBUG_DUMP_INTERMEDIATES
-  save_debug_frame(outer_count, 0);
-#endif // DEBUG_DUMP_INTERMEDIATES
+  // setup map resolution specific solution storage (tmat, delta a, rvec)
+  // calculate lambda for loop
+  if (configuration.grab<bool>("debug_frames"))
+  {
+    save_debug_frame(configuration.grab<std::string>("debug_frames_prefix"), outer_count, 0);
+  }
 
   floating lambda = 20.0;
   for (integer inum = 1; inum <= m_max_iter; inum++)
   {
     PetscPrintf(m_comm, "Iteration %i:\n", inum);
-    innerstep(lambda);
+    innerstep(lambda, inum);
 
-#ifdef DEBUG_DUMP_INTERMEDIATES
-    save_debug_frame(outer_count, inum);
-#endif // DEBUG_DUMP_INTERMEDIATES
+    if (configuration.grab<bool>("debug_frames"))
+    {
+      save_debug_frame(configuration.grab<std::string>("debug_frames_prefix"), outer_count, inum);
+    }
 
     // check convergence and break if below threshold
     floating posmax, negmax;
@@ -120,10 +113,10 @@ void Elastic::innerloop(integer outer_count)
   }
 }
 
-void Elastic::innerstep(floating lambda)
+void Elastic::innerstep(floating lambda, integer inum)
 {
   // calculate up to date tmat
-  calculate_tmat();
+  calculate_tmat(inum);
 
   // calculate tmat2 and precondition
   normmat = create_unique_mat();
@@ -132,6 +125,7 @@ void Elastic::innerstep(floating lambda)
       *m_workspace->m_tmat, *m_workspace->m_tmat, MAT_INITIAL_MATRIX, PETSC_DEFAULT,
       normmat.get());
   CHKERRABORT(m_comm, perr);
+  debug_creation(*normmat, std::string("Mat_normal") + std::to_string(inum));
   // precondition tmat2
   block_precondition();
 
@@ -184,20 +178,9 @@ void Elastic::calculate_node_spacings()
     });
     m_v_nodespacings.push_back(currspc);
   }
-
-  PetscPrintf(m_comm, "Calculated spacings:\n");
-  for (auto spcs = m_v_nodespacings.crbegin(); spcs != m_v_nodespacings.crend(); spcs++)
-  {
-    PetscPrintf(m_comm, "Spacing: ");
-    for (auto spc = spcs->cbegin(); spc != spcs->cend(); spc++)
-    {
-      PetscPrintf(m_comm, "%g ", *spc);
-    }
-    PetscPrintf(m_comm, "\n");
-  }
 }
 
-void Elastic::calculate_tmat()
+void Elastic::calculate_tmat(integer iternum)
 {
   // Calculate average intensity 0.5(f+m)
   // Constant offset needed later, does not affect gradients
@@ -237,6 +220,7 @@ void Elastic::calculate_tmat()
   // 3. copy basis into p_tmat
   m_workspace->m_tmat = create_unique_mat();
   perr = MatDuplicate(*m_p_map->basis(), MAT_COPY_VALUES, m_workspace->m_tmat.get());
+  debug_creation(*m_workspace->m_tmat, std::string("Mat_tmat_") + std::to_string(iternum));
   CHKERRABORT(m_comm, perr);
 
   // 4. left diagonal multiply p_tmat with stacked vector
@@ -250,6 +234,7 @@ void Elastic::block_precondition()
   Vec_unique diag = create_unique_vec();
   PetscErrorCode perr = MatCreateVecs(*normmat, diag.get(), nullptr);
   CHKERRABORT(m_comm, perr);
+  debug_creation(*diag, "Vec_block_normalise");
   perr = MatGetDiagonal(*normmat, *diag);
   CHKERRABORT(m_comm, perr);
 
@@ -303,4 +288,16 @@ void Elastic::block_precondition()
 
   perr = MatDiagonalScale(*normmat, *diag, nullptr);
   CHKERRABORT(m_comm, perr);
+}
+
+void Elastic::save_debug_frame(std::string prefix, integer outer_count, integer inner_count)
+{
+  std::ostringstream outname;
+  outname << prefix << "_" << outer_count << "_" << inner_count;
+
+  std::cout << outname.str() << std::endl;
+
+  // XDMFWriter wtr(outname.str(), m_comm);
+
+  // wtr.write_image(*m_p_registered, "registered");
 }

@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include <memory>
+#include <set>
+#include <string>
 #include <vector>
 
 #include <petscdm.h>
@@ -11,6 +13,8 @@
 #include <petscsys.h>
 #include <petscvec.h>
 
+#include "petsc_debug.hpp"
+
 // Forward Defs
 //
 class Image;
@@ -18,6 +22,7 @@ class WorkSpace;
 class Map;
 class Elastic;
 class BaseLoader;
+class BaseWriter;
 
 // Useful typedefs
 using integer = PetscInt;
@@ -31,7 +36,10 @@ using floating = PetscScalar;
 using floatvector = std::vector<floating>;
 using floatvector2d = std::vector<floatvector>;
 
+using stringset = std::set<std::string>;
+
 using BaseLoader_unique = std::unique_ptr<BaseLoader>;
+using BaseWriter_unique = std::unique_ptr<BaseWriter>;
 
 //// Self-destructing PETSc objects
 // Can apply identical treatment to many PETSc types
@@ -41,6 +49,7 @@ using BaseLoader_unique = std::unique_ptr<BaseLoader>;
 struct VecDeleter {
   void operator()(Vec* v) const
   {
+    debug_deletion(*v);
     VecDestroy(v);
     delete v;
   }
@@ -68,6 +77,7 @@ inline Vec_shared create_shared_vec()
 struct MatDeleter {
   void operator()(Mat* v) const
   {
+    debug_deletion(*v);
     MatDestroy(v);
     delete v;
   }

@@ -1,6 +1,6 @@
-// infix_iterator.h
 #ifndef INFIX_ITERATOR_HPP
 #define INFIX_ITERATOR_HPP
+
 #include <iterator>
 #include <ostream>
 #include <string>
@@ -47,5 +47,4 @@ public:
     return *this;
   }
 };
-
 #endif // INFIX_ITERATOR_HPP

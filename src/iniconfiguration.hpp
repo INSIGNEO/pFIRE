@@ -4,10 +4,10 @@
 #include <string>
 #include <vector>
 
-#include "configuration.hpp"
+#include "baseconfiguration.hpp"
 #include "types.hpp"
 
-class IniConfig: public RegistrationConfig {
+class IniConfig: public ConfigurationBase {
 public:
   IniConfig(const int &argc, char const *const *argv);
 

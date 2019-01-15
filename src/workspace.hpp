@@ -31,6 +31,8 @@ public:
   Vec_unique m_stacktmp, m_localtmp;
   Vec_unique m_delta, m_rhs;
   Mat_unique m_tmat;
+
+  integer ephemeral_count;
 };
 
 #endif

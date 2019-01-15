@@ -51,6 +51,7 @@ public:
 
   const floating* get_raw_data_ro() const;
   void release_raw_data_ro(const floating*& ptr) const;
+  Vec_unique get_raw_data_row_major() const;
 
   floating normalize();
 
@@ -68,7 +69,7 @@ public:
       const std::string& filename, const Image* existing = nullptr,
       MPI_Comm comm = PETSC_COMM_WORLD);
 
-  void save_OIIO(std::string filename);
+  Vec_unique scatter_to_zero(Vec& vec) const;
 
 protected:
   explicit Image(const Image& image);
@@ -84,7 +85,10 @@ protected:
   void initialize_dmda();
   void initialize_vectors();
 
-  Vec_unique scatter_to_zero(Vec& vec);
+
+  integer instance_id;
+
+  static integer instance_id_counter;
 };
 
 template <typename inttype>

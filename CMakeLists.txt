@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.7.0)
 project(pFIRE)
 
 if("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
-  message(FATAL_ERROR "In-source builds are not permitted. Make a separate folder for"
+  message(FATAL_ERROR "In-source builds are not permitted. Make a separate folder for "
           "building:\nmkdir build; cd build; cmake ..\n"
           "Before that, remove the files already created:\nrm -rf CMakeCache.txt CMakeFiles")
 endif("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
@@ -26,11 +26,21 @@ if(DEBUG_VERBOSE)
   message(STATUS "Enabled verbose debugging messages")
 endif(DEBUG_VERBOSE)
 
+option(DEBUG_PETSC "Debug PETSc object creation and deletion")
+if(DEBUG_PETSC)
+  add_definitions(-DDEBUG_PETSC_OBJECTS)
+  message(STATUS "Enabled debugging of PETSc object lifetimes")
+endif(DEBUG_PETSC)
+
 option(DEBUG_OUTPUT_INTERMEDIATES "Save all intermediate frames in registration")
 if(DEBUG_OUTPUT_INTERMEDIATES)
   add_definitions(-DDEBUG_DUMP_INTERMEDIATES)
 endif(DEBUG_OUTPUT_INTERMEDIATES)
 
+set(GITCPP_PATH "src/gitstate.cpp")
+include(cmake-modules/GitState.cmake)
+#WriteGitStateFile("${pFIRE_SOURCE_DIR}")
+#WriteGitVersionSrc("${pFIRE_SOURCE_DIR}/src/gitstate.cpp")
 
 # Output programs to a "bin" directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${pFIRE_SOURCE_DIR}/bin)

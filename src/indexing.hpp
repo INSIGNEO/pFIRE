@@ -39,4 +39,15 @@ inline inttype ravel(const std::vector<inttype>& loc, const std::vector<inttype>
   return idx;
 }
 
+template <typename inttype>
+inline inttype idx_cmaj_to_rmaj(const inttype& idx, const std::vector<inttype>& shape)
+{
+  inttype z = idx / (shape[0] * shape[1]);
+  inttype y = (idx / shape[0]) % shape[1];
+  inttype x = idx % shape[0];
+
+  return x * shape[1] * shape[2] + y * shape[2] + z;
+}
+
+
 #endif

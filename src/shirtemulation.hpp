@@ -4,10 +4,10 @@
 #include <string>
 #include <vector>
 
-#include "configuration.hpp"
+#include "baseconfiguration.hpp"
 #include "types.hpp"
 
-class ShirtConfig: public RegistrationConfig {
+class ShirtConfig: public ConfigurationBase {
 public:
   ShirtConfig(const int& argc, char const* const* argv);
 

@@ -7,14 +7,16 @@
 #include <petscdmda.h>
 #include <petscmat.h>
 
+#include "types.hpp"
+#include "baseconfiguration.hpp"
 #include "image.hpp"
 #include "map.hpp"
-#include "types.hpp"
 #include "workspace.hpp"
 
 class Elastic {
 public:
-  Elastic(const Image& fixed, const Image& moved, const floatvector nodespacing);
+  Elastic(const Image& fixed, const Image& moved, const floatvector nodespacing,
+          const ConfigurationBase& configuration);
 
   void autoregister();
 
@@ -30,6 +32,7 @@ public:
 
   // Straightforward initialize-by-copy
   MPI_Comm m_comm;
+  const ConfigurationBase& configuration;
   integer m_imgdims;
   integer m_mapdims;
   integer m_size;
@@ -45,13 +48,13 @@ public:
   std::shared_ptr<WorkSpace> m_workspace;
   Mat_unique normmat;
 
-  void save_debug_frame(integer ocount, integer icount);
+  void save_debug_frame(std::string prefix, integer ocount, integer icount);
   void innerloop(integer outer_count);
-  void innerstep(floating lambda);
+  void innerstep(floating lambda, integer inum);
 
   void block_precondition();
   void calculate_node_spacings();
-  void calculate_tmat();
+  void calculate_tmat(integer inum);
 };
 
 #endif

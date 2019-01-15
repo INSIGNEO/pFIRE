@@ -7,6 +7,10 @@ Testing
 bin/
 compile_commands.json
 test_data/
+build/
+doc/_build/
+gitstate.hpp
+gitstate.cpp
 
 *.swp
 
