@@ -16,12 +16,12 @@ namespace pt = boost::property_tree;
 
 class XDMFWriter: public HDFWriter {
 public:
-  XDMFWriter(std::string filename, const MPI_Comm& comm);
+  XDMFWriter(std::string filespec, const MPI_Comm& comm);
   ~XDMFWriter();
 
-  void write_image(const Image& image, const std::string& name);
+  void write_image(const Image& image);
 
-  void write_map(const Map& map, const std::string& name);
+  void write_map(const Map& map);
 
   static const std::string writer_name;
   static const std::vector<std::string> extensions;
@@ -29,6 +29,7 @@ public:
 protected:
   int rank;
   std::string xdmf_filename;
+  std::string xdmf_groupname;
   pt::ptree xdmf_tree;
 
   static std::string h5name_from_xdmfname(const std::string &filename);

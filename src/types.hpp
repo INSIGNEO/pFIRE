@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include <memory>
+#include <set>
+#include <string>
 #include <vector>
 
 #include <petscdm.h>
@@ -33,6 +35,8 @@ using uintvector = std::vector<uinteger>;
 using floating = PetscScalar;
 using floatvector = std::vector<floating>;
 using floatvector2d = std::vector<floatvector>;
+
+using stringset = std::set<std::string>;
 
 using BaseLoader_unique = std::unique_ptr<BaseLoader>;
 using BaseWriter_unique = std::unique_ptr<BaseWriter>;

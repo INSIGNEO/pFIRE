@@ -5,7 +5,8 @@
 #include "infix_iterator.hpp"
 
 const config_map ConfigurationBase::default_config = {{"verbose", "false"},
-                                                      {"registered", "output.xdmf"},
+                                                      {"registered", "registered.xdmf:registered"},
+                                                      {"map", "map.xdmf:map"},
                                                       {"debug_frames", "false"},
                                                       {"debug_frames_prefix", "debug"}};
 
@@ -13,7 +14,7 @@ const std::vector<std::string> ConfigurationBase::required_options = {"fixed", "
                                                                       "nodespacing"};
 
 const std::vector<std::string> ConfigurationBase::arg_options = {
-    "fixed", "moved", "mask", "nodespacing", "registered", "debug_frames_prefix"};
+    "fixed", "moved", "mask", "nodespacing", "registered", "map", "debug_frames_prefix"};
 
 const std::vector<std::string> ConfigurationBase::bool_options = {"verbose", "debug_frames"};
 

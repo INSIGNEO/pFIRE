@@ -11,11 +11,11 @@
 const std::string HDFWriter::writer_name = "hdf5";
 const std::vector<std::string> HDFWriter::extensions = {".h5"};
 
-HDFWriter::HDFWriter(std::string filename, const MPI_Comm& comm)
-    : BaseWriter(filename, comm), h5_filename(std::move(filename)), _file_h(-1)
+HDFWriter::HDFWriter(const std::string& filespec, const MPI_Comm& comm)
+  : BaseWriter(filespec, comm), h5_filename(filename), h5_groupname(extra_path), _file_h(-1)
 {
   // Will open h5 file or throw
-  create_or_truncate_h5();
+  open_or_create_h5();
 }
 
 HDFWriter::~HDFWriter()
@@ -23,7 +23,7 @@ HDFWriter::~HDFWriter()
   H5Fclose(_file_h);
 }
 
-void HDFWriter::write_image(const Image& image, const std::string& groupname)
+void HDFWriter::write_image(const Image& image)
 {
   // Sanity check communicators
   MPI_Comm comm = image.comm();
@@ -41,9 +41,8 @@ void HDFWriter::write_image(const Image& image, const std::string& groupname)
   std::vector<hsize_t> imshape(image.shape().cbegin(), image.shape().cend());
   hid_t fspace_h = H5Screate_simple(image.ndim(), imshape.data(), nullptr);
 
-  hid_t dset_h = H5Dcreate(
-      _file_h, groupname.c_str(), H5T_NATIVE_DOUBLE, fspace_h, H5P_DEFAULT, H5P_DEFAULT,
-      H5P_DEFAULT);
+  hid_t dset_h = H5Dcreate(_file_h, h5_groupname.c_str(), H5T_NATIVE_DOUBLE, fspace_h, H5P_DEFAULT,
+      H5P_DEFAULT, H5P_DEFAULT);
 
   std::vector<hsize_t> offset = image.mpi_get_offset<hsize_t>();
   std::vector<hsize_t> chunksize = image.mpi_get_chunksize<hsize_t>();
@@ -57,7 +56,7 @@ void HDFWriter::write_image(const Image& image, const std::string& groupname)
 
   Vec_unique rm_data = image.get_raw_data_row_major();
   const floating* imgdata;
-  PetscErrorCode perr = VecGetArrayRead(*rm_data, &imgdata); 
+  PetscErrorCode perr = VecGetArrayRead(*rm_data, &imgdata);
   CHKERRABORT(_comm, perr);
   H5Dwrite(dset_h, H5T_NATIVE_DOUBLE, dspace_h, fspace_h, plist_h, imgdata);
   perr = VecRestoreArrayRead(*rm_data, &imgdata);
@@ -69,7 +68,7 @@ void HDFWriter::write_image(const Image& image, const std::string& groupname)
   H5Pclose(plist_h);
 }
 
-void HDFWriter::write_map(const Map& map, const std::string& groupname)
+void HDFWriter::write_map(const Map& map)
 {
   // Sanity check communicators
   MPI_Comm comm = map.comm();
@@ -85,18 +84,18 @@ void HDFWriter::write_map(const Map& map, const std::string& groupname)
 
   // No need to set max size as want it to be same as given size.
   std::vector<hsize_t> mapshape(map.shape().cbegin(), map.shape().cend());
-//  mapshape.resize(map.ndim());
-//  std::reverse(mapshape.begin(), mapshape.end());
+  //  mapshape.resize(map.ndim());
+  //  std::reverse(mapshape.begin(), mapshape.end());
 
   // Set up for collective writes
   hid_t plist_h = H5Pcreate(H5P_DATASET_XFER);
   H5Pset_dxpl_mpio(plist_h, H5FD_MPIO_COLLECTIVE);
 
-  hid_t mgroup_h = H5Gcreate(_file_h, groupname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  hid_t mgroup_h = H5Gcreate(_file_h, h5_groupname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   if (mgroup_h < 0)
   {
     std::ostringstream errstr;
-    errstr << "Failed to create group " << groupname << ".";
+    errstr << "Failed to create group " << h5_groupname << ".";
     throw std::runtime_error(errstr.str());
   }
 
@@ -106,14 +105,13 @@ void HDFWriter::write_map(const Map& map, const std::string& groupname)
   {
     // Maps contained in group
     std::ostringstream dsetstr;
-    dsetstr << groupname << "/" << _components[idx];
+    dsetstr << h5_groupname << "/" << _components[idx];
     std::string dsetname = dsetstr.str();
     PetscPrintf(_comm, "%s\n", dsetname.c_str());
     // Create dataspace and dataset to hold full data
     hid_t fspace_h = H5Screate_simple(map.ndim(), mapshape.data(), nullptr);
-    hid_t dset_h = H5Dcreate(
-        _file_h, dsetname.c_str(), H5T_NATIVE_DOUBLE, fspace_h, H5P_DEFAULT, H5P_DEFAULT,
-        H5P_DEFAULT);
+    hid_t dset_h = H5Dcreate(_file_h, dsetname.c_str(), H5T_NATIVE_DOUBLE, fspace_h, H5P_DEFAULT,
+        H5P_DEFAULT, H5P_DEFAULT);
 
     auto corners = map.get_dmda_local_extents();
     std::vector<hsize_t> offset(corners.first.cbegin(), corners.first.cend());
@@ -150,7 +148,7 @@ void HDFWriter::write_map(const Map& map, const std::string& groupname)
   H5Pclose(plist_h);
 }
 
-void HDFWriter::create_or_truncate_h5()
+void HDFWriter::open_or_create_h5()
 {
   if (_file_h >= 0)
   {
@@ -169,7 +167,15 @@ void HDFWriter::create_or_truncate_h5()
   H5Eset_auto1(nullptr, nullptr);
 
   // Open if available, will get file_h > 0 if successful
-  _file_h = H5Fcreate(h5_filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, file_props);
+  if(BaseWriter::check_truncated(h5_filename))
+  {
+    _file_h = H5Fopen(h5_filename.c_str(), H5F_ACC_RDWR, file_props);
+  }
+  else
+  {
+    _file_h = H5Fcreate(h5_filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, file_props);
+    BaseWriter::mark_truncated(h5_filename);
+  }
   if (_file_h < 0)
   {
     std::ostringstream err;

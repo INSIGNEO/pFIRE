@@ -7,11 +7,11 @@
 
 #include "elastic.hpp"
 #include "image.hpp"
+#include "infix_iterator.hpp"
 #include "laplacian.hpp"
 #include "map.hpp"
 #include "types.hpp"
 #include "utils.hpp"
-#include "infix_iterator.hpp"
 
 #include "xdmfwriter.hpp"
 
@@ -69,8 +69,8 @@ void mainflow(std::shared_ptr<ConfigurationBase> config)
 
   std::ostringstream immsg;
   immsg << "Loaded fixed image of shape ";
-  std::copy_n(fixed->shape().cbegin(), fixed->ndim(),
-              infix_ostream_iterator<integer>(immsg, " x "));
+  std::copy_n(
+      fixed->shape().cbegin(), fixed->ndim(), infix_ostream_iterator<integer>(immsg, " x "));
   immsg << ".\n";
   PetscPrintf(PETSC_COMM_WORLD, immsg.str().c_str());
 
@@ -87,7 +87,7 @@ void mainflow(std::shared_ptr<ConfigurationBase> config)
 
   floatvector nodespacing(fixed->ndim(), config->grab<integer>("nodespacing"));
 
-  //explain_memory(fixed->shape(), Map::calculate_map_shape(fixed->shape(), nodespacing));
+  // explain_memory(fixed->shape(), Map::calculate_map_shape(fixed->shape(), nodespacing));
 
   fixed->normalize();
   moved->normalize();
@@ -95,11 +95,11 @@ void mainflow(std::shared_ptr<ConfigurationBase> config)
   Elastic reg(*fixed, *moved, nodespacing, *config);
   reg.autoregister();
 
-  std::string outfile = "data.xdmf";
+  std::string outfile = config->grab<std::string>("registered");
   BaseWriter_unique wtr = BaseWriter::get_writer_for_filename(outfile, fixed->comm());
+  wtr->write_image(*reg.registered());
 
-  std::string reggroup("registered");
-  std::string mapgroup("map");
-  wtr->write_image(*reg.registered(), reggroup);
-  wtr->write_map(*reg.m_p_map, mapgroup);
+  outfile = config->grab<std::string>("map");
+  wtr = BaseWriter::get_writer_for_filename(outfile, fixed->comm());
+  wtr->write_map(*reg.m_p_map);
 }

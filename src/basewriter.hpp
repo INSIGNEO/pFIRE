@@ -19,11 +19,13 @@ public:
   using creator_map = std::map<std::string, writer_creator>;
   using extension_map = std::map<std::string, std::string>;
 
-  BaseWriter(std::string filename, const MPI_Comm& comm = PETSC_COMM_WORLD);
+  using string_pair = std::pair<std::string, std::string>;
+
+  BaseWriter(const std::string& filespec, const MPI_Comm& comm = PETSC_COMM_WORLD);
   virtual ~BaseWriter() = default;
 
-  virtual void write_image(const Image& image, const std::string& groupname) = 0;
-  virtual void write_map(const Map& map, const std::string& groupname) = 0;
+  virtual void write_image(const Image& image) = 0;
+  virtual void write_map(const Map& map) = 0;
 
   template <typename WriterClass>
   static BaseWriter_unique create_writer(const std::string &path, MPI_Comm comm)
@@ -45,18 +47,25 @@ public:
   static BaseWriter_unique get_writer_for_filename(const std::string& filename,
                                                     MPI_Comm comm = PETSC_COMM_WORLD);
 
+  static string_pair split_filespec(std::string input);
+
+  static bool check_truncated(const std::string& filename);
+  static void mark_truncated(std::string filename);
+
   static const std::string writer_name;
   static const std::vector<std::string> extensions;
 
 protected:
-  MPI_Comm _comm;
   std::string filename;
+  std::string extra_path;
+  MPI_Comm _comm;
 
   static const std::vector<std::string> _components;
 
 private:
   static std::unique_ptr<creator_map> _creators;
   static std::unique_ptr<extension_map> _extension_handlers;
+  static std::unique_ptr<stringset> _truncated_files;
 };
 
 
