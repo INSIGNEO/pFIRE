@@ -9,7 +9,7 @@ OIIOWriter::OIIOWriter(std::string filename, const MPI_Comm& comm)
 {
 }
 
-void OIIOWriter::write_image(const Image& image, const std::string& groupname)
+void OIIOWriter::write_image(const Image& image)
 {
   Vec_unique imgvec = create_unique_vec();
   imgvec = image.scatter_to_zero(*imgvec);
@@ -39,7 +39,7 @@ void OIIOWriter::write_image(const Image& image, const std::string& groupname)
   MPI_Barrier(_comm);
 }
 
-void OIIOWriter::write_map(const Map& map, const std::string& groupname)
+void OIIOWriter::write_map(const Map& map __attribute__((unused)))
 {
   throw std::runtime_error("Cannot save map using OIIO.");
 }

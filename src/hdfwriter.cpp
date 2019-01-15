@@ -99,8 +99,6 @@ void HDFWriter::write_map(const Map& map)
     throw std::runtime_error(errstr.str());
   }
 
-  std::pair<integer, integer> own_range = map.get_displacement_ownershiprange();
-
   for (uinteger idx = 0; idx < map.ndim(); idx++)
   {
     // Maps contained in group

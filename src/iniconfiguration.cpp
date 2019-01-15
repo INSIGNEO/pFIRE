@@ -119,7 +119,8 @@ void IniConfig::read_config_file(const std::string &config_path)
   }
 }
 
-bool IniConfig::valid_invocation(std::string &inv)
+// Ignore unused inv because needed in other derived classes
+bool IniConfig::valid_invocation(std::string &inv __attribute__((unused)))
 {
   return true;
 }
