@@ -17,7 +17,7 @@ if( NOT CMAKE_BUILD_TYPE )
         FORCE )
 endif()
 
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -Weffc++ -Wuninitialized -O0 -ggdb -march=native -fstack-protector-strong")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -Wuninitialized -O0 -ggdb -march=native -fstack-protector-strong")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -O3 -march=native -fno-fast-math")
 
 option(DEBUG_VERBOSE "Verbose debug outputs")

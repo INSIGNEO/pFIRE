@@ -92,7 +92,7 @@ intvector ShIRTLoader::read_and_validate_image_header(const MPI_File &fh)
     {
       integer imsize =
           std::accumulate(headerdata.cbegin(), headerdata.cend(), 1, std::multiplies<>());
-      if (image_header_bytes + imsize * sizeof(image_data_dtype) == fsize)
+      if (image_header_bytes + imsize * sizeof(image_data_dtype) == static_cast<uinteger>(fsize))
       {
         std::copy_n(headerdata.cbegin(), shape.size(), shape.begin());
       }
@@ -124,7 +124,7 @@ intvector ShIRTLoader::read_and_validate_mask_header(const MPI_File &fh)
     {
       integer imsize =
           std::accumulate(headerdata.cbegin(), headerdata.cend(), 1, std::multiplies<>());
-      if (mask_header_bytes + imsize * sizeof(mask_data_dtype) == fsize)
+      if (mask_header_bytes + imsize * sizeof(mask_data_dtype) == static_cast<uinteger>(fsize))
       {
         std::copy_n(headerdata.cbegin(), shape.size(), shape.begin());
       }

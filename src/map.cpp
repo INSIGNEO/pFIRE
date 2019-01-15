@@ -180,7 +180,7 @@ std::pair<intvector, intvector> Map::get_dmda_local_extents() const
   return std::make_pair(locs, widths);
 }
 
-Vec_unique Map::get_dim_data_dmda_blocked(integer dim) const
+Vec_unique Map::get_dim_data_dmda_blocked(uinteger dim) const
 {
   initialize_dmda();
   if (dim >= m_ndim)

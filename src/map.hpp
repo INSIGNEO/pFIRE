@@ -64,7 +64,7 @@ public:
   std::unique_ptr<Image> warp(const Image& image, WorkSpace& wksp);
 
   std::pair<intvector, intvector> get_dmda_local_extents() const;
-  Vec_unique get_dim_data_dmda_blocked(integer dim) const;
+  Vec_unique get_dim_data_dmda_blocked(uinteger dim) const;
 
   static intvector
   calculate_map_shape(intvector const& image_shape, floatvector const& nodespacing);

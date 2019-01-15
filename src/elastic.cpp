@@ -179,8 +179,8 @@ void Elastic::calculate_node_spacings()
     m_v_nodespacings.push_back(currspc);
   }
 }
-
-void Elastic::calculate_tmat(integer iternum)
+// iternum may be unused depending on debug level
+void Elastic::calculate_tmat(integer iternum __attribute__((unused)))
 {
   // Calculate average intensity 0.5(f+m)
   // Constant offset needed later, does not affect gradients
@@ -220,8 +220,8 @@ void Elastic::calculate_tmat(integer iternum)
   // 3. copy basis into p_tmat
   m_workspace->m_tmat = create_unique_mat();
   perr = MatDuplicate(*m_p_map->basis(), MAT_COPY_VALUES, m_workspace->m_tmat.get());
-  debug_creation(*m_workspace->m_tmat, std::string("Mat_tmat_") + std::to_string(iternum));
   CHKERRABORT(m_comm, perr);
+  debug_creation(*m_workspace->m_tmat, std::string("Mat_tmat_") + std::to_string(iternum));
 
   // 4. left diagonal multiply p_tmat with stacked vector
   perr = MatDiagonalScale(*m_workspace->m_tmat, *m_workspace->m_stacktmp, nullptr);
