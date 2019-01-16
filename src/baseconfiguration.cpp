@@ -5,8 +5,8 @@
 #include "infix_iterator.hpp"
 
 const config_map ConfigurationBase::default_config = {{"verbose", "false"},
-                                                      {"registered", "registered.xdmf:registered"},
-                                                      {"map", "map.xdmf:map"},
+                                                      {"registered", "registered.xdmf:/registered"},
+                                                      {"map", "map.xdmf:/map"},
                                                       {"debug_frames", "false"},
                                                       {"debug_frames_prefix", "debug"}};
 
