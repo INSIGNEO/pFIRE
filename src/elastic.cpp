@@ -3,13 +3,12 @@
 #include <iomanip>
 #include <sstream>
 
-#include "infix_iterator.hpp"
 #include "fd_routines.hpp"
+#include "infix_iterator.hpp"
 #include "iterator_routines.hpp"
 #include "petsc_debug.hpp"
 
-Elastic::Elastic(
-    const Image& fixed, const Image& moved, const floatvector nodespacing,
+Elastic::Elastic(const Image& fixed, const Image& moved, const floatvector nodespacing,
     const ConfigurationBase& configuration)
   : m_comm(fixed.comm()), configuration(configuration), m_imgdims(fixed.ndim()),
     m_mapdims(m_imgdims + 1), m_size(fixed.size()), m_iternum(0), m_fixed(fixed), m_moved(moved),
@@ -121,9 +120,8 @@ void Elastic::innerstep(floating lambda, integer inum)
   // calculate tmat2 and precondition
   normmat = create_unique_mat();
   // TODO: can we reuse here?
-  PetscErrorCode perr = MatTransposeMatMult(
-      *m_workspace->m_tmat, *m_workspace->m_tmat, MAT_INITIAL_MATRIX, PETSC_DEFAULT,
-      normmat.get());
+  PetscErrorCode perr = MatTransposeMatMult(*m_workspace->m_tmat, *m_workspace->m_tmat,
+      MAT_INITIAL_MATRIX, PETSC_DEFAULT, normmat.get());
   CHKERRABORT(m_comm, perr);
   debug_creation(*normmat, std::string("Mat_normal") + std::to_string(inum));
   // precondition tmat2
@@ -169,13 +167,11 @@ void Elastic::calculate_node_spacings()
   const intvector& imshape = m_fixed.shape();
   floatvector currspc = m_v_final_nodespacing;
   m_v_nodespacings.push_back(currspc);
-  while (all_true_varlen(
-      currspc.begin(), currspc.end(), imshape.begin(), imshape.end(),
+  while (all_true_varlen(currspc.begin(), currspc.end(), imshape.begin(), imshape.end(),
       [](floating x, integer y) -> bool { return (y / x) > 2.0; }))
   {
-    std::transform(currspc.begin(), currspc.end(), currspc.begin(), [](floating a) -> floating {
-      return a * 2;
-    });
+    std::transform(currspc.begin(), currspc.end(), currspc.begin(),
+        [](floating a) -> floating { return a * 2; });
     m_v_nodespacings.push_back(currspc);
   }
 }
@@ -187,19 +183,16 @@ void Elastic::calculate_tmat(integer iternum __attribute__((unused)))
   PetscErrorCode perr = VecSet(*m_workspace->m_globaltmps[m_fixed.ndim()], -1.0);
   CHKERRABORT(PETSC_COMM_WORLD, perr);
   // NB Z = aX + bY + cZ has call signature VecAXPBYPCZ(Z, a, b, c, X, Y) because reasons....
-  perr = VecAXPBYPCZ(
-      *m_workspace->m_globaltmps[m_fixed.ndim()], 0.5, 0.5, 1, *m_fixed.global_vec(),
-      *m_p_registered->global_vec());
+  perr = VecAXPBYPCZ(*m_workspace->m_globaltmps[m_fixed.ndim()], 0.5, 0.5, 1,
+      *m_fixed.global_vec(), *m_p_registered->global_vec());
   CHKERRABORT(PETSC_COMM_WORLD, perr);
 
   // scatter this to local for later
-  perr = DMGlobalToLocalBegin(
-      *m_fixed.dmda(), *m_workspace->m_globaltmps[m_fixed.ndim()], INSERT_VALUES,
-      *m_workspace->m_localtmp);
+  perr = DMGlobalToLocalBegin(*m_fixed.dmda(), *m_workspace->m_globaltmps[m_fixed.ndim()],
+      INSERT_VALUES, *m_workspace->m_localtmp);
   CHKERRABORT(m_comm, perr);
-  perr = DMGlobalToLocalEnd(
-      *m_fixed.dmda(), *m_workspace->m_globaltmps[m_fixed.ndim()], INSERT_VALUES,
-      *m_workspace->m_localtmp);
+  perr = DMGlobalToLocalEnd(*m_fixed.dmda(), *m_workspace->m_globaltmps[m_fixed.ndim()],
+      INSERT_VALUES, *m_workspace->m_localtmp);
   CHKERRABORT(m_comm, perr);
 
   // find average gradients
