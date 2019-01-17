@@ -11,7 +11,7 @@
 #include "laplacian.hpp"
 #include "map.hpp"
 #include "types.hpp"
-#include "utils.hpp"
+#include "math_utils.hpp"
 
 #include "xdmfwriter.hpp"
 

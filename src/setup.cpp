@@ -12,6 +12,7 @@
 
 #ifdef USE_OIIO
 #include "oiioloader.hpp"
+#include "oiiowriter.hpp"
 #endif // USE_OIIO
 
 #ifdef USE_DCMTK
@@ -32,6 +33,7 @@ void register_plugins()
 
 #ifdef USE_OIIO
   BaseLoader::register_loader(OIIOLoader::loader_name, OIIOLoader::Create_Loader);
+  BaseWriter::register_writer<OIIOWriter>();
 #endif // USE_OIIO
 
   BaseLoader::register_loader(ShIRTLoader::loader_name, ShIRTLoader::Create_Loader);

@@ -1,5 +1,8 @@
 #include "oiioloader.hpp"
 
+#include "exceptions.hpp"
+#include "file_utils.hpp"
+
 //// ImageCache
 // typedef and helpers for unique_ptr
 
@@ -35,7 +38,8 @@ OIIOLoader::OIIOLoader(const std::string &path, MPI_Comm comm) : BaseLoader(path
   OIIO::ImageSpec const *spec = OIIOLoader::cache->imagespec(OIIO::ustring(path));
   if (spec == nullptr)
   {
-    throw std::runtime_error("Failed to open image file");
+    throw_if_nonexistent(path);
+    throw InvalidLoaderError(path);
   }
   this->_shape = {spec->width, spec->height, spec->depth};
 }
@@ -54,6 +58,7 @@ void OIIOLoader::copy_scaled_chunk(
       OIIO::AutoStride, OIIO::AutoStride);
   if (!res)
   {
-    throw std::runtime_error("Failed to load image");
+    throw_if_nonexistent(_path);
+    throw InvalidLoaderError(_path);
   }
 }

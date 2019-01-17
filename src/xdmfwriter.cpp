@@ -24,8 +24,6 @@ XDMFWriter::XDMFWriter(std::string filespec, const MPI_Comm &comm)
   // but still to hdf5 writing from all ranks
   MPI_Comm_rank(comm, &rank);
 
-  h5_filename = h5name_from_xdmfname(filename);
-
   // Pointless if rank != 0
   if (rank == 0)
   {
@@ -198,7 +196,7 @@ void XDMFWriter::write_map(const Map &map)
       for (uinteger idx = 0; idx < map.ndim(); idx++)
       {
         std::ostringstream datapath;
-        datapath << h5_filename << ":/" << h5_groupname << "/" << _components[idx];
+        datapath << h5_filename << ":" << h5_groupname << "/" << _components[idx];
 
         pt::ptree &imdata = attr.add("DataItem", datapath.str());
         imdata.add("<xmlattr>.Name", std::string("d") + _components[idx]);

@@ -1,5 +1,7 @@
 #include "baseloader.hpp"
 
+#include "exceptions.hpp"
+
 std::unique_ptr<BaseLoader::loader_map> BaseLoader::_loaders =
     std::make_unique<BaseLoader::loader_map>();
 
@@ -29,7 +31,7 @@ BaseLoader_unique BaseLoader::find_loader(const std::string &path, MPI_Comm comm
       BaseLoader_unique loader = it.second(path, comm);
       return loader;
     }
-    catch (...)
+    catch (InvalidLoaderError&)
     {
       continue;
     }

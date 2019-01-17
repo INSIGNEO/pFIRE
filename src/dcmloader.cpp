@@ -5,6 +5,9 @@
 #include <dcmtk/dcmdata/dctk.h>
 #include <dcmtk/dcmimgle/dcmimage.h>
 
+#include "exceptions.hpp"
+#include "file_utils.hpp"
+
 constexpr uinteger METADATA_MAX_BYTES = 4 * 1024;
 
 constexpr unsigned int TG_IMG(0x0028);
@@ -30,7 +33,8 @@ DCMLoader::DCMLoader(const std::string &path, MPI_Comm comm)
 
   if (status.bad())
   {
-    throw std::runtime_error("Failed to load file, likely corrupt or not a Dicom image.");
+    throw_if_nonexistent(path);
+    throw InvalidLoaderError(path);
   }
 
   DcmDataset *dataset = _datafile.getDataset();
