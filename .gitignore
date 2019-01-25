@@ -11,6 +11,7 @@ build/
 doc/_build/
 gitstate.hpp
 gitstate.cpp
+gh-pages
 
 *.swp
 
