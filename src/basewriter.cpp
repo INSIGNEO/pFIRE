@@ -25,6 +25,9 @@ namespace bf = boost::filesystem;
 
 const std::vector<std::string> BaseWriter::_components({"x", "y", "z"});
 
+const std::string BaseWriter::writer_name = "Basewriter";
+const std::vector<std::string> BaseWriter::extensions({});
+
 BaseWriter::BaseWriter(const std::string& filespec, const MPI_Comm &comm)
   : filename(BaseWriter::split_filespec(filespec).first),
     extra_path(BaseWriter::split_filespec(filespec).second), _comm(comm)
