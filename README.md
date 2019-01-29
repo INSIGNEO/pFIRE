@@ -3,7 +3,7 @@
 
 pFIRE performs elastic registration of 2- and 3-dimensional images by the method of Barber and
 Hose&#91;[1](#note1)&#93;. It is implemented in C++ using the
-[https://www.mcs.anl.gov/petsc/](PETSc) scientific toolkit to provide parallelised mathematical
+[PETSc](https://www.mcs.anl.gov/petsc/) scientific toolkit to provide parallelised mathematical
 routines.
 
 Usage
@@ -41,28 +41,28 @@ and registered image will be saved to the default hdf5+xdmf format with filename
 Dependencies
 ------------
 
-pFIRE is an MPI application built on top the the [https://www.mcs.anl.gov/petsc/](PETSc)
-distributed scientific toolkit. It is additionally dependent on the [https://www.boost.org/](Boost)
-libraries for general utility routines and [https://www.hdfgroup.org/solutions/hdf5/](HDF5) input
+pFIRE is an MPI application built on top the the [PETSc](https://www.mcs.anl.gov/petsc/)
+distributed scientific toolkit. It is additionally dependent on the [Boost](https://www.boost.org/)
+libraries for general utility routines and [HDF5](https://www.hdfgroup.org/solutions/hdf5/) input
 and output support.  There are also optional dependencies which allow support for various
 additional input image file formats.  At least one of these should be used depending on your
 intended use case.
 
 For all dependencies we recommend using the latest stable version.  Additionally we recommend that
-[https://www.mcs.anl.gov/petsc/](PETSc) be configured to using single precision floating point
+[PETSc](https://www.mcs.anl.gov/petsc/) be configured to using single precision floating point
 numbers.  This halves memory usage as double precision math provides no real benefit for image
 registration.
 
 **Required Dependencies**
 
-   * [https://www.mcs.anl.gov/petsc/](PETSc) >= 3.10.0 (Recommend --with-precision=single)
-   * [https://www.boost.org/](Boost) >= 1.58
-   * [https://www.hdfgroup.org/solutions/hdf5/](HDF5) >= 1.10.0
+   * [PETSc](https://www.mcs.anl.gov/petsc/) >= 3.10.0 (Recommend --with-precision=single)
+   * [Boost](https://www.boost.org/) >= 1.58
+   * [HDF5](https://www.hdfgroup.org/solutions/hdf5/) >= 1.10.0
 
 *Optional Dependencies*
 
-   * [https://dicom.offis.de/dcmtk.php.en](DCMTK) >= 3.6.3 (Support for DICOM image input)
-   * [http://www.openimageio.org/](OpenImageIO) >= 1.8.13 (General purpose image format support e.g .png .tiff and image stack support)
+   * [DCMTK](https://dicom.offis.de/dcmtk.php.en) >= 3.6.3 (Support for DICOM image input)
+   * [OpenImageIO](http://www.openimageio.org/) >= 1.8.13 (General purpose image format support e.g .png .tiff and image stack support)
 
 We recommend installing dependencies using your system package manager (e.g synaptic, apt, yum), or
 on HPC the use of SPACK may be appropriate.
