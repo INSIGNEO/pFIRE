@@ -48,7 +48,14 @@ public:
   typename std::enable_if<std::is_integral<T>::value && !std::is_same<T, bool>::value, T>::type
   grab(const std::string key) const
   {
-    return std::stoll(config.at(key));
+    return static_cast<T>(std::stoll(config.at(key)));
+  }
+
+  template <typename T>
+  typename std::enable_if<std::is_floating_point<T>::value && !std::is_same<T, bool>::value, T>::type
+  grab(const std::string key) const
+  {
+    return static_cast<T>(std::stold(config.at(key)));
   }
 
   template <typename T>

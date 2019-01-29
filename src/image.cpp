@@ -222,13 +222,13 @@ Vec_unique Image::gradient(integer dim)
   return fd::gradient_to_global_unique(*m_dmda, *m_localvec, dim);
 }
 
-Vec_unique Image::scatter_to_zero(Vec& vec) const
+Vec_unique Image::scatter_to_zero() const
 {
   Vec_unique new_vec = create_unique_vec();
   VecScatter_unique sct = create_unique_vecscatter();
-  VecScatterCreateToZero(vec, sct.get(), new_vec.get());
-  VecScatterBegin(*sct, vec, *new_vec, INSERT_VALUES, SCATTER_FORWARD);
-  VecScatterEnd(*sct, vec, *new_vec, INSERT_VALUES, SCATTER_FORWARD);
+  VecScatterCreateToZero(*m_globalvec, sct.get(), new_vec.get());
+  VecScatterBegin(*sct, *m_globalvec, *new_vec, INSERT_VALUES, SCATTER_FORWARD);
+  VecScatterEnd(*sct, *m_globalvec, *new_vec, INSERT_VALUES, SCATTER_FORWARD);
 
   return new_vec;
 }

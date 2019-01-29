@@ -26,8 +26,11 @@ class OIIOWriter : public BaseWriter {
   ~OIIOWriter() = default;
 
   void write_image(const Image& image);
-  
   void write_map(const Map& map);
+
+  static const std::string writer_name;
+  static const std::vector<std::string> extensions;
+
 };
 
 #endif // OIIOWRITER_HPP

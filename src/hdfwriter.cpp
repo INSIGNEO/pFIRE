@@ -120,7 +120,8 @@ void HDFWriter::write_map(const Map& map)
     std::ostringstream dsetstr;
     dsetstr << h5_groupname << "/" << _components[idx];
     std::string dsetname = dsetstr.str();
-    PetscPrintf(_comm, "%s\n", dsetname.c_str());
+    // TODO: verbose printout
+    // PetscPrintf(_comm, "%s\n", dsetname.c_str());
     // Create dataspace and dataset to hold full data
     hid_t fspace_h = H5Screate_simple(map.ndim(), mapshape.data(), nullptr);
     hid_t dset_h = H5Dcreate(_file_h, dsetname.c_str(), H5T_NATIVE_DOUBLE, fspace_h, H5P_DEFAULT,
@@ -137,10 +138,6 @@ void HDFWriter::write_map(const Map& map)
     std::copy(chunksize.cbegin(), chunksize.cend(), infix_ostream_iterator<integer>(cks, ", "));
     int rank;
     MPI_Comm_rank(_comm, &rank);
-
-    PetscSynchronizedPrintf(
-        _comm, "Rank %i: offset: %s, chunksize: %s\n", rank, ofs.str().c_str(), cks.str().c_str());
-    PetscSynchronizedFlush(_comm, PETSC_STDOUT);
 
     H5Sselect_hyperslab(
         fspace_h, H5S_SELECT_SET, offset.data(), nullptr, chunksize.data(), nullptr);

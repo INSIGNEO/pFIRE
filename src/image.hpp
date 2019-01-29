@@ -84,7 +84,7 @@ public:
       const std::string& filename, const Image* existing = nullptr,
       MPI_Comm comm = PETSC_COMM_WORLD);
 
-  Vec_unique scatter_to_zero(Vec& vec) const;
+  Vec_unique scatter_to_zero() const;
 
 protected:
   explicit Image(const Image& image);

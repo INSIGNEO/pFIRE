@@ -19,6 +19,9 @@
 
 #include "image.hpp"
 
+const std::string OIIOWriter::writer_name = "OpenImageIO";
+const std::vector<std::string> OIIOWriter::extensions = {".png",".jpg",".jpeg",".tiff"};
+
 OIIOWriter::OIIOWriter(std::string filename, const MPI_Comm& comm)
   : BaseWriter(std::move(filename), comm)
 {
@@ -26,8 +29,7 @@ OIIOWriter::OIIOWriter(std::string filename, const MPI_Comm& comm)
 
 void OIIOWriter::write_image(const Image& image)
 {
-  Vec_unique imgvec = create_unique_vec();
-  imgvec = image.scatter_to_zero(*imgvec);
+  Vec_unique imgvec = image.scatter_to_zero();
 
   integer rank;
   MPI_Comm_rank(_comm, &rank);
