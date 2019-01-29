@@ -18,6 +18,7 @@
 #include <iomanip>
 #include <sstream>
 
+#include "math_utils.hpp"
 #include "fd_routines.hpp"
 #include "infix_iterator.hpp"
 #include "iterator_routines.hpp"
@@ -100,11 +101,21 @@ void Elastic::innerloop(integer outer_count)
     save_debug_frame(configuration.grab<std::string>("debug_frames_prefix"), outer_count, 0);
   }
 
-  floating lambda = 20.0;
+  bool recalculate_lambda = false;
+  try
+  {
+    m_lambda = configuration.grab<floating>("lambda");
+  }
+  catch (std::invalid_argument& err)
+  {
+    m_lambda = Elastic::k_lambda_default;
+    recalculate_lambda = true;
+  }
   for (integer inum = 1; inum <= m_max_iter; inum++)
   {
     PetscPrintf(m_comm, "Iteration %i:\n", inum);
-    innerstep(lambda, inum);
+    innerstep(inum, recalculate_lambda);
+    recalculate_lambda = false;
 
     if (configuration.grab<bool>("debug_frames"))
     {
@@ -127,7 +138,7 @@ void Elastic::innerloop(integer outer_count)
   }
 }
 
-void Elastic::innerstep(floating lambda, integer inum)
+void Elastic::innerstep(integer inum, bool recalculate_lambda)
 {
   // calculate up to date tmat
   calculate_tmat(inum);
@@ -140,10 +151,23 @@ void Elastic::innerstep(floating lambda, integer inum)
   CHKERRABORT(m_comm, perr);
   debug_creation(*normmat, std::string("Mat_normal") + std::to_string(inum));
   // precondition tmat2
-  block_precondition();
+  block_precondition(*normmat, m_p_map->size(), m_p_map->m_ndim);
+
+  floating lapldiagavg = diagonal_sum(*m_p_map->laplacian()) / (m_p_map->size() * m_p_map->m_ndim);
+  floating tdiagavg = diagonal_sum(*normmat) / m_p_map->size();
+  floating laplmult = tdiagavg / lapldiagavg;
+  PetscPrintf(m_comm, "laplavg = %g, tavg = %g, mult=%g\n", lapldiagavg, tdiagavg, laplmult);
+
+  if(recalculate_lambda)
+  {
+    m_lambda = approximate_optimum_lambda(*normmat, *m_p_map->laplacian(), laplmult,
+        m_lambda, 10.0, 30, k_lambda_min);
+    PetscPrintf(m_comm, "Calculated smoothing factor: %.2f\n", m_lambda);
+
+  }
 
   // calculate tmat2 + lambda*lapl2
-  perr = MatAXPY(*normmat, lambda, *m_p_map->laplacian(), DIFFERENT_NONZERO_PATTERN);
+  perr = MatAXPY(*normmat, laplmult * m_lambda, *m_p_map->laplacian(), DIFFERENT_NONZERO_PATTERN);
   CHKERRABORT(m_comm, perr);
 
   // calculate rvec, to do this need to reuse stacked vector for [f-m f-m f-m f-m]
@@ -236,76 +260,93 @@ void Elastic::calculate_tmat(integer iternum __attribute__((unused)))
   CHKERRABORT(m_comm, perr);
 }
 
-void Elastic::block_precondition()
-{
-  // Normalize luminance block of matrix to spatial blocks using diagonal norm
-  Vec_unique diag = create_unique_vec();
-  PetscErrorCode perr = MatCreateVecs(*normmat, diag.get(), nullptr);
-  CHKERRABORT(m_comm, perr);
-  debug_creation(*diag, "Vec_block_normalise");
-  perr = MatGetDiagonal(*normmat, *diag);
-  CHKERRABORT(m_comm, perr);
-
-  // index where spatial dims stop and intensity dim starts
-  integer crit_idx = m_p_map->size() * m_p_map->m_ndim;
-
-  // Find rank-local sums for spatial and luminance blocks
-  integer rowstart, rowend;
-  perr = VecGetOwnershipRange(*diag, &rowstart, &rowend);
-  CHKERRABORT(m_comm, perr);
-  integer localsize = rowend - rowstart;
-  floatvector norm(2, 0.0); // norm[0] is spatial, norm[1] is luminance
-  integer spt_end = crit_idx - rowstart;
-  spt_end = (spt_end < 0) ? 0 : (spt_end > localsize) ? localsize : spt_end;
-
-  floating* ptr;
-  perr = VecGetArray(*diag, &ptr);
-  CHKERRABORT(m_comm, perr);
-  for (integer idx = 0; idx < spt_end; idx++)
-  {
-    norm[0] += ptr[idx];
-  }
-  for (integer idx = spt_end; idx < localsize; idx++)
-  {
-    norm[1] += ptr[idx];
-  }
-  perr = VecRestoreArray(*diag, &ptr);
-  CHKERRABORT(m_comm, perr);
-
-  // MPI_AllReduce to sum over all processes
-  MPI_Allreduce(MPI_IN_PLACE, norm.data(), 2, MPI_DOUBLE, MPI_SUM, m_comm);
-
-  // calculate average of norms and scaling factor
-  norm[0] /= crit_idx;
-  norm[1] /= m_p_map->size();
-  floating lum_scale = norm[0] / norm[1];
-
-  // reuse diag vector to hold scaling values
-  perr = VecGetArray(*diag, &ptr);
-  CHKERRABORT(m_comm, perr);
-  for (integer idx = 0; idx < spt_end; idx++)
-  {
-    ptr[idx] = 1;
-  }
-  for (integer idx = spt_end; idx < localsize; idx++)
-  {
-    ptr[idx] = lum_scale;
-  }
-  perr = VecRestoreArray(*diag, &ptr);
-  CHKERRABORT(m_comm, perr);
-
-  perr = MatDiagonalScale(*normmat, *diag, nullptr);
-  CHKERRABORT(m_comm, perr);
-}
-
-void Elastic::save_debug_frame(std::string prefix, integer outer_count, integer inner_count)
+void Elastic::save_debug_frame(const std::string& prefix, integer outer_count, integer inner_count)
 {
   std::ostringstream outname;
   outname << prefix << "_" << outer_count << "_" << inner_count;
 
-  std::cout << outname.str() << std::endl;
-
   // XDMFWriter wtr(outname.str(), m_comm);
 
   // wtr.write_image(*m_p_registered, "registered");
+}
+
+floating Elastic::approximate_optimum_lambda(Mat& mat_a, Mat& mat_b, floating lambda_mult,
+    floating initial_guess, floating search_width, uinteger max_iter, floating lambda_min)
+{
+
+  floating x_lo = initial_guess - search_width > lambda_min ? initial_guess - search_width : lambda_min;
+  floating x_mid = initial_guess;
+  floating x_hi = initial_guess + search_width;
+
+  floating y_lo(0), y_mid(0), y_hi(0);
+  bool recalc_first = true;
+
+  for (uinteger iter = 0; iter < max_iter; iter++)
+  {
+    Mat_unique mat_c = create_unique_mat();
+    PetscErrorCode perr = MatDuplicate(mat_a, MAT_COPY_VALUES, mat_c.get());
+
+    // calculate at lower value
+    if (recalc_first)
+    {
+      perr = MatAXPY(*mat_c, lambda_mult * x_lo, mat_b, DIFFERENT_NONZERO_PATTERN);
+      CHKERRABORT(m_comm, perr);
+      y_lo = get_condnum_by_poweriter(*mat_c, 0.01, 100);
+    }
+    recalc_first = true;
+
+    // Calculate at initial guess
+    perr = MatAXPY(*mat_c, lambda_mult * (x_mid - x_lo), mat_b, DIFFERENT_NONZERO_PATTERN);
+    CHKERRABORT(m_comm, perr);
+    y_mid = get_condnum_by_poweriter(*mat_c, 0.01, 100);
+
+    // calculate at higher value
+    perr = MatAXPY(*mat_c, lambda_mult * (x_hi - x_mid), mat_b, DIFFERENT_NONZERO_PATTERN);
+    CHKERRABORT(m_comm, perr);
+    y_hi = get_condnum_by_poweriter(*mat_c, 0.01, 100);
+
+    PetscPrintf(
+        m_comm, " lo: %g(%g) mid: %g(%g) hi: %g(%g)\n", x_lo, y_lo, x_mid, y_mid, x_hi, y_hi);
+
+    // check initial lower than either side
+    if (y_lo >= y_mid)
+    {
+      // two options, either close to a minimum or need to search to higher x
+      if (y_hi < y_mid)
+      {
+        // All points are negative gradient: keep searching to higher values of x:
+        x_mid *= 2;
+        x_hi *= 2;
+        recalc_first = false;
+        continue;
+      }
+      // Otherwise we have are close to a local minimum and are done
+      break;
+    }
+    else
+    {
+      if(x_lo == lambda_min)
+      {
+        break;
+      }
+      // All negative gradient so keep searching left
+      x_lo = x_lo >= 2.0*lambda_min ? x_lo / 2 : 1.0*lambda_min;
+      x_mid = x_mid >= 2.0*x_lo ? x_mid / 2 : x_lo+1.0;
+      x_hi = x_hi >= 2.0*x_mid ? x_hi / 2 : x_mid+1.0;
+      continue;
+    }
+  }
+  // fit quadratic and return minimum
+  floating a,b,c;
+  quadratic_from_points(x_lo, x_mid, x_hi, y_lo, y_mid, y_hi, a, b, c);
+
+  floating x, y;
+  quadratic_vertex(a, b, c, x, y);
+
+  if(x < lambda_min)
+  {
+    x = lambda_min;
+  }
+
+  return x;
 }

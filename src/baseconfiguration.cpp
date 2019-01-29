@@ -22,6 +22,7 @@
 const config_map ConfigurationBase::default_config = {{"verbose", "false"},
                                                       {"registered", "registered.xdmf:/registered"},
                                                       {"map", "map.xdmf:/map"},
+                                                      {"lambda", "auto"},
                                                       {"debug_frames", "false"},
                                                       {"debug_frames_prefix", "debug"}};
 

@@ -22,16 +22,16 @@
 #include <petscdmda.h>
 #include <petscmat.h>
 
-#include "types.hpp"
 #include "baseconfiguration.hpp"
 #include "image.hpp"
 #include "map.hpp"
+#include "types.hpp"
 #include "workspace.hpp"
 
 class Elastic {
 public:
   Elastic(const Image& fixed, const Image& moved, const floatvector nodespacing,
-          const ConfigurationBase& configuration);
+      const ConfigurationBase& configuration);
 
   void autoregister();
 
@@ -45,6 +45,9 @@ public:
   integer m_max_iter = 50;
   floating m_convergence_thres = 0.1;
 
+  static constexpr floating k_lambda_default = 10;
+  static constexpr floating k_lambda_min = 2;
+
   // Straightforward initialize-by-copy
   MPI_Comm m_comm;
   const ConfigurationBase& configuration;
@@ -54,6 +57,7 @@ public:
   integer m_iternum;
   const Image& m_fixed;
   const Image& m_moved;
+  floating m_lambda;
 
   // Other class data, default initialize then populate in c'tor
   floatvector2d m_v_nodespacings;
@@ -63,11 +67,12 @@ public:
   std::shared_ptr<WorkSpace> m_workspace;
   Mat_unique normmat;
 
-  void save_debug_frame(std::string prefix, integer ocount, integer icount);
+  void save_debug_frame(const std::string& prefix, integer ocount, integer icount);
   void innerloop(integer outer_count);
-  void innerstep(floating lambda, integer inum);
+  void innerstep(integer inum, bool recalculate_lambda);
 
-  void block_precondition();
+  floating approximate_optimum_lambda(Mat& mat_a, Mat& mat_b, floating lambda_mult,
+      floating initial_guess, floating search_width, uinteger max_iter, floating lambda_min);
   void calculate_node_spacings();
   void calculate_tmat(integer inum);
 };

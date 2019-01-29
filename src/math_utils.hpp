@@ -16,7 +16,16 @@
 #ifndef UTILS_HPP
 #define UTILS_HPP
 
+#include "types.hpp"
+
 #include <numeric>
+
+void quadratic_from_points(floating x_1, floating x_2, floating x_3,
+                           floating y_1, floating y_2, floating y_3,
+                           floating &a, floating &b, floating &c);
+
+void quadratic_vertex(floating a, floating b, floating c, floating &x, floating &y);
+
 
 inline floating mat_size(integer ndim, integer nvox)
 {

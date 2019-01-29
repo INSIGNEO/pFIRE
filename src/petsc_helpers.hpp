@@ -20,6 +20,14 @@
 
 #include "types.hpp"
 
-bool vecs_equivalent(const Vec &vec1, const Vec &vec2);
+floating diagonal_sum(const Mat& matrix);
+
+bool vecs_equivalent(const Vec& vec1, const Vec& vec2);
+
+void block_precondition(const Mat& normmat, integer size, integer ndim);
+
+floating get_condnum_by_poweriter(const Mat& matrix, floating conv_thres, integer max_iter);
+
+floating get_eigenvalue_by_poweriter(const Mat& matrix, floating conv_thres, integer max_iter);
 
 #endif
