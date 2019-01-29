@@ -7,7 +7,10 @@
 pFIRE
 =====
 
-*pFIRE is a parallel framework for the elastic registration of large images.*
+pFIRE is a parallel framework for the elastic registration of large images by the method of Barber
+and Hose [1]_ [2]_. It is implemented in C++ using the PETSc scientific toolkit to
+provide parallelised mathematical routines.
+
 
 There are two ways to use pFIRE:
 
@@ -70,5 +73,10 @@ Index
 
 ..  api_highlevel.rst
 
-Development of pFIRE is supported by the European Union’s Horizon 2020 research and innovation
-programme under grant agreement No 675451.
+.. [1] Barber D, Hose D. Automatic segmentation of medical images using image registration:
+       diagnostic and simulation applications. *Journal of medical engineering & technology*,
+       **29(2)**, pp. 53-63, (2005), DOI:`10.1080/03091900412331289889 
+       <https://doi.org/10.1080/03091900412331289889>`_.
+.. [2] Barber DC, Oubel E, Frangi AF, Hose D. Efficient computational fluid dynamics mesh
+       generation by image registration. *Medical image analysis*, **11(6)**, pp. 648–662, (2007),
+       DOI:`10.1016/j.media.2007.06.011 <https://doi.org/10.1016/j.media.2007.06.011>`_.
