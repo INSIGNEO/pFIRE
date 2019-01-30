@@ -1,20 +1,42 @@
+//
+//   Copyright 2019 University of Sheffield
+//
+//   Licensed under the Apache License, Version 2.0 (the "License");
+//   you may not use this file except in compliance with the License.
+//   You may obtain a copy of the License at
+//
+//       http://www.apache.org/licenses/LICENSE-2.0
+//
+//   Unless required by applicable law or agreed to in writing, software
+//   distributed under the License is distributed on an "AS IS" BASIS,
+//   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//   See the License for the specific language governing permissions and
+//   limitations under the License.
+
 #include "setup.hpp"
 
 #include <petscsys.h>
 
 #include <boost/filesystem.hpp>
 
+#include "types.hpp"
+#include "banner.hpp"
+#include "gitstate.hpp"
 #include "baseloader.hpp"
 #include "shirtloader.hpp"
-#include "types.hpp"
 
 #ifdef USE_OIIO
 #include "oiioloader.hpp"
+#include "oiiowriter.hpp"
 #endif // USE_OIIO
 
 #ifdef USE_DCMTK
 #include "dcmloader.hpp"
 #endif // USE_DCMTK
+
+#include "basewriter.hpp"
+#include "hdfwriter.hpp"
+#include "xdmfwriter.hpp"
 
 namespace bf = boost::filesystem;
 
@@ -26,13 +48,18 @@ void register_plugins()
 
 #ifdef USE_OIIO
   BaseLoader::register_loader(OIIOLoader::loader_name, OIIOLoader::Create_Loader);
+  BaseWriter::register_writer<OIIOWriter>();
 #endif // USE_OIIO
 
   BaseLoader::register_loader(ShIRTLoader::loader_name, ShIRTLoader::Create_Loader);
+
+  BaseWriter::register_writer<HDFWriter>();
+  BaseWriter::register_writer<XDMFWriter>();
 }
 
 void pfire_setup(const std::vector<std::string>& petsc_args)
 {
+
   std::vector<char*> cstrings;
   cstrings.resize(petsc_args.size());
   std::transform(
@@ -43,6 +70,14 @@ void pfire_setup(const std::vector<std::string>& petsc_args)
 
   PetscErrorCode perr = PetscInitialize(&n_cstrings, &cstr_ptr, nullptr, nullptr);
   CHKERRABORT(PETSC_COMM_WORLD, perr);
+
+  int rank;
+  MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+
+  if(rank == 0)
+  {
+    print_welcome_message();
+  }
 
   check_and_warn_odd_comm();
 
@@ -70,4 +105,32 @@ void check_and_warn_odd_comm()
 void pfire_teardown()
 {
   PetscFinalize();
+}
+
+
+void print_welcome_message()
+{
+
+  std::ostringstream welcomess;
+  welcomess << kbanner_text_upper;
+
+  if(kGitTag.empty())
+  {
+    welcomess << "Development version";
+  }
+  else
+  {
+    welcomess << "Release " << kGitTag; 
+  }
+
+  welcomess << " (commit:" << kGitSHA;
+  if (kGitDirty)
+  {
+    welcomess << "-dirty";
+  }
+  welcomess << ")";
+
+  welcomess << kbanner_text_lower;
+
+  std::cout << welcomess.str();
 }

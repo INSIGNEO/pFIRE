@@ -1,4 +1,21 @@
+//
+//   Copyright 2019 University of Sheffield
+//
+//   Licensed under the Apache License, Version 2.0 (the "License");
+//   you may not use this file except in compliance with the License.
+//   You may obtain a copy of the License at
+//
+//       http://www.apache.org/licenses/LICENSE-2.0
+//
+//   Unless required by applicable law or agreed to in writing, software
+//   distributed under the License is distributed on an "AS IS" BASIS,
+//   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//   See the License for the specific language governing permissions and
+//   limitations under the License.
+
 #include "baseloader.hpp"
+
+#include "exceptions.hpp"
 
 std::unique_ptr<BaseLoader::loader_map> BaseLoader::_loaders =
     std::make_unique<BaseLoader::loader_map>();
@@ -29,7 +46,7 @@ BaseLoader_unique BaseLoader::find_loader(const std::string &path, MPI_Comm comm
       BaseLoader_unique loader = it.second(path, comm);
       return loader;
     }
-    catch (...)
+    catch (InvalidLoaderError&)
     {
       continue;
     }

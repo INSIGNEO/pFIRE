@@ -1,3 +1,18 @@
+//
+//   Copyright 2019 University of Sheffield
+//
+//   Licensed under the Apache License, Version 2.0 (the "License");
+//   you may not use this file except in compliance with the License.
+//   You may obtain a copy of the License at
+//
+//       http://www.apache.org/licenses/LICENSE-2.0
+//
+//   Unless required by applicable law or agreed to in writing, software
+//   distributed under the License is distributed on an "AS IS" BASIS,
+//   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//   See the License for the specific language governing permissions and
+//   limitations under the License.
+
 #include "iniconfiguration.hpp"
 
 #include <cstdlib>
@@ -27,7 +42,7 @@ std::string IniConfig::usage()
   return usagess.str();
 }
 
-IniConfig::IniConfig(int const &argc, char const *const *argv) : RegistrationConfig(argc, argv)
+IniConfig::IniConfig(int const &argc, char const *const *argv) : ConfigurationBase(argc, argv)
 {
   // parent constructor provides arguments list so just need to parse
   parse_arguments();
@@ -119,7 +134,8 @@ void IniConfig::read_config_file(const std::string &config_path)
   }
 }
 
-bool IniConfig::valid_invocation(std::string &inv)
+// Ignore unused inv because needed in other derived classes
+bool IniConfig::valid_invocation(std::string &inv __attribute__((unused)))
 {
   return true;
 }

@@ -1,6 +1,22 @@
+//
+//   Copyright 2019 University of Sheffield
+//
+//   Licensed under the Apache License, Version 2.0 (the "License");
+//   you may not use this file except in compliance with the License.
+//   You may obtain a copy of the License at
+//
+//       http://www.apache.org/licenses/LICENSE-2.0
+//
+//   Unless required by applicable law or agreed to in writing, software
+//   distributed under the License is distributed on an "AS IS" BASIS,
+//   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//   See the License for the specific language governing permissions and
+//   limitations under the License.
+
 #include "laplacian.hpp"
 
 #include "indexing.hpp"
+#include "petsc_debug.hpp"
 
 Mat_unique build_laplacian_autostride(MPI_Comm comm, intvector shape, integer ndim)
 {
@@ -77,6 +93,7 @@ Mat_unique build_laplacian_matrix(
   PetscErrorCode perr = MatCreateMPIAIJWithArrays(
       comm, idxn.size() - 1, PETSC_DECIDE, matsize, matsize, idxn.data(), idxm.data(), mdat.data(),
       lapl_mat.get());
+  debug_creation(*lapl_mat, "laplacian");
   CHKERRABORT(comm, perr);
   return lapl_mat;
 }

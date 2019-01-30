@@ -13,29 +13,12 @@
 //   See the License for the specific language governing permissions and
 //   limitations under the License.
 
-#ifndef DCMLOADER_HPP
-#define DCMLOADER_HPP
+#ifndef BANNER_HPP
+#define BANNER_HPP
 
-#include <dcmtk/config/osconfig.h>
-#include <dcmtk/dcmdata/dctk.h>
+#include <string>
 
-#include "baseloader.hpp"
-#include "types.hpp"
+extern const std::string kbanner_text_upper;
+extern const std::string kbanner_text_lower;
 
-class DCMLoader: public BaseLoader {
-public:
-  static const std::string loader_name;
-
-  DCMLoader(const std::string &path, MPI_Comm comm = PETSC_COMM_WORLD);
-
-  ~DCMLoader() = default;
-
-  void copy_scaled_chunk(floating ***data, const intvector &size, const intvector &offset) const;
-
-  static BaseLoader_unique Create_Loader(const std::string &path, MPI_Comm comm);
-
-private:
-  mutable DcmFileFormat _datafile;
-};
-
-#endif // DCMLOADER_HPP
+#endif // BANNER_HPP

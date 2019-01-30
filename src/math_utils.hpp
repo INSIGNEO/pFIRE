@@ -1,18 +1,41 @@
+//
+//   Copyright 2019 University of Sheffield
+//
+//   Licensed under the Apache License, Version 2.0 (the "License");
+//   you may not use this file except in compliance with the License.
+//   You may obtain a copy of the License at
+//
+//       http://www.apache.org/licenses/LICENSE-2.0
+//
+//   Unless required by applicable law or agreed to in writing, software
+//   distributed under the License is distributed on an "AS IS" BASIS,
+//   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//   See the License for the specific language governing permissions and
+//   limitations under the License.
+
 #ifndef UTILS_HPP
 #define UTILS_HPP
 
+#include "types.hpp"
+
 #include <numeric>
 
-floating mat_size(integer ndim, integer nvox)
+void quadratic_from_points(floating x_1, floating x_2, floating x_3,
+                           floating y_1, floating y_2, floating y_3,
+                           floating &a, floating &b, floating &c);
+
+void quadratic_vertex(floating a, floating b, floating c, floating &x, floating &y);
+
+
+inline floating mat_size(integer ndim, integer nvox)
 {
   floating nd = std::pow(2, ndim);
-  std::cout << "intsize" << sizeof(PetscInt) << "\n";
   // matrix index size seems to be 8 even if PetscInt is 4 byte...
   integer petscintsize = 8;
   return nvox * (nd * sizeof(floating) + (nd + 1) * petscintsize);
 }
 
-void explain_memory(const intvector &image_size, const intvector &map_size)
+inline void explain_memory(const intvector &image_size, const intvector &map_size)
 {
   if (image_size.size() < 2 || image_size.size() > 3)
   {
@@ -36,9 +59,9 @@ void explain_memory(const intvector &image_size, const intvector &map_size)
   integer nreg_mat = 2;
 
   floating warp_mat = mat_size(ndim, nvox * (ndim + 1));
-  floating image = 9 * nvox * floatbytes;
-  floating reg_mat = 2 * mat_size(ndim, nmapnod * (ndim + 1));
-  floating map = 2 * nmapnod * floatbytes;
+  floating image = nimage * nvox * floatbytes;
+  floating reg_mat = nreg_mat * mat_size(ndim, nmapnod * (ndim + 1));
+  floating map = nmap * nmapnod * floatbytes;
 
   floating total_bytes = nwarp_mat * warp_mat + nimage * image + nreg_mat * reg_mat + nmap * map;
 

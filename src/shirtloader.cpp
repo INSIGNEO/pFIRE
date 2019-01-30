@@ -1,7 +1,25 @@
+//
+//   Copyright 2019 University of Sheffield
+//
+//   Licensed under the Apache License, Version 2.0 (the "License");
+//   you may not use this file except in compliance with the License.
+//   You may obtain a copy of the License at
+//
+//       http://www.apache.org/licenses/LICENSE-2.0
+//
+//   Unless required by applicable law or agreed to in writing, software
+//   distributed under the License is distributed on an "AS IS" BASIS,
+//   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//   See the License for the specific language governing permissions and
+//   limitations under the License.
+
 #include "shirtloader.hpp"
 
 #include <numeric>
 #include <sstream>
+
+#include "exceptions.hpp"
+#include "file_utils.hpp"
 
 const std::string ShIRTLoader::loader_name = "ShIRT";
 
@@ -17,16 +35,6 @@ ShIRTLoader::ShIRTLoader(const std::string &path, MPI_Comm comm)
   int rank;
   MPI_Comm_rank(comm, &rank);
 
-  MPI_File fh;
-  int mpi_err;
-  mpi_err = MPI_File_open(_comm, path.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
-  if (mpi_err != MPI_SUCCESS)
-  {
-    std::ostringstream errss;
-    errss << "Failed to open file " << path << ".";
-    throw std::runtime_error(errss.str());
-  }
-
   if (rank == 0)
   {
     MPI_File fh;
@@ -34,23 +42,24 @@ ShIRTLoader::ShIRTLoader(const std::string &path, MPI_Comm comm)
     mpi_err = MPI_File_open(MPI_COMM_SELF, path.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
     if (mpi_err != MPI_SUCCESS)
     {
-      std::ostringstream errss;
-      errss << "Failed to open file " << path << ".";
-      throw std::runtime_error(errss.str());
+      _shape[0] = -1;
     }
-    try
-    {
-      _shape = read_and_validate_image_header(fh);
-    }
-    catch (const std::runtime_error &)
+    else
     {
       try
       {
-        _shape = read_and_validate_mask_header(fh);
+        _shape = read_and_validate_image_header(fh);
       }
       catch (const std::runtime_error &)
       {
-        _shape[0] = -1;
+        try
+        {
+          _shape = read_and_validate_mask_header(fh);
+        }
+        catch (const std::runtime_error &)
+        {
+          _shape[0] = -1;
+        }
       }
     }
     MPI_File_close(&fh);
@@ -61,9 +70,8 @@ ShIRTLoader::ShIRTLoader(const std::string &path, MPI_Comm comm)
 
   if (_shape[0] <= 0)
   {
-    std::ostringstream errss;
-    errss << path << " is not a valid ShIRT image.";
-    throw std::runtime_error(errss.str());
+    throw_if_nonexistent(path);
+    throw InvalidLoaderError(path);
   }
 }
 
@@ -92,7 +100,7 @@ intvector ShIRTLoader::read_and_validate_image_header(const MPI_File &fh)
     {
       integer imsize =
           std::accumulate(headerdata.cbegin(), headerdata.cend(), 1, std::multiplies<>());
-      if (image_header_bytes + imsize * sizeof(image_data_dtype) == fsize)
+      if (image_header_bytes + imsize * sizeof(image_data_dtype) == static_cast<uinteger>(fsize))
       {
         std::copy_n(headerdata.cbegin(), shape.size(), shape.begin());
       }
@@ -124,7 +132,7 @@ intvector ShIRTLoader::read_and_validate_mask_header(const MPI_File &fh)
     {
       integer imsize =
           std::accumulate(headerdata.cbegin(), headerdata.cend(), 1, std::multiplies<>());
-      if (mask_header_bytes + imsize * sizeof(mask_data_dtype) == fsize)
+      if (mask_header_bytes + imsize * sizeof(mask_data_dtype) == static_cast<uinteger>(fsize))
       {
         std::copy_n(headerdata.cbegin(), shape.size(), shape.begin());
       }
@@ -166,8 +174,6 @@ void ShIRTLoader::copy_chunk_image(
 
   int irank;
   MPI_Comm_rank(_comm, &irank);
-  PetscSynchronizedPrintf(_comm, "Rank %i: Alloc: %i\n", irank, dcount);
-  PetscSynchronizedFlush(_comm, PETSC_STDOUT);
 
   std::vector<image_data_dtype> databuf(dcount, 0);
 
@@ -182,9 +188,8 @@ void ShIRTLoader::copy_chunk_image(
   mpi_err = MPI_File_open(_comm, _path.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
   if (mpi_err != MPI_SUCCESS)
   {
-    std::ostringstream errss;
-    errss << "Failed to open file " << _path << ".";
-    throw std::runtime_error(errss.str());
+    throw_if_nonexistent(_path);
+    throw InvalidLoaderError(_path); 
   }
 
   mpi_err = MPI_File_set_view(
@@ -242,9 +247,8 @@ void ShIRTLoader::copy_chunk_mask(
   mpi_err = MPI_File_open(_comm, _path.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
   if (mpi_err != MPI_SUCCESS)
   {
-    std::ostringstream errss;
-    errss << "Failed to open file " << _path << ".";
-    throw std::runtime_error(errss.str());
+    throw_if_nonexistent(_path);
+    throw InvalidLoaderError(_path); 
   }
 
   mpi_err = MPI_File_set_view(

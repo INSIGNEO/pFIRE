@@ -13,29 +13,24 @@
 //   See the License for the specific language governing permissions and
 //   limitations under the License.
 
-#ifndef DCMLOADER_HPP
-#define DCMLOADER_HPP
+#ifndef OIIOWRITER_HPP
+#define OIIOWRITER_HPP
 
-#include <dcmtk/config/osconfig.h>
-#include <dcmtk/dcmdata/dctk.h>
+#include <string>
 
-#include "baseloader.hpp"
-#include "types.hpp"
+#include "basewriter.hpp"
 
-class DCMLoader: public BaseLoader {
-public:
-  static const std::string loader_name;
+class OIIOWriter : public BaseWriter {
+  public:
+  OIIOWriter(std::string filename, const MPI_Comm& comm = PETSC_COMM_WORLD);
+  ~OIIOWriter() = default;
 
-  DCMLoader(const std::string &path, MPI_Comm comm = PETSC_COMM_WORLD);
+  void write_image(const Image& image);
+  void write_map(const Map& map);
 
-  ~DCMLoader() = default;
+  static const std::string writer_name;
+  static const std::vector<std::string> extensions;
 
-  void copy_scaled_chunk(floating ***data, const intvector &size, const intvector &offset) const;
-
-  static BaseLoader_unique Create_Loader(const std::string &path, MPI_Comm comm);
-
-private:
-  mutable DcmFileFormat _datafile;
 };
 
-#endif // DCMLOADER_HPP
+#endif // OIIOWRITER_HPP

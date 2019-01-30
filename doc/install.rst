@@ -40,15 +40,15 @@ on HPC the use of SPACK_ may be appropriate.
 .. _SPACK: https://spack.io
 
 
-Building pFIRE
---------------
+Manually Building pFIRE
+-----------------------
 
 pFIRE is installed using cmake, so after checking out the code and ensuring all dependencies are
 installed first call `cmake` followed by `make`
 
 .. code-block:: shell
 
-   git clone https://github.com/INSIGNEO/pfire_petsc.git
+   git clone https://github.com/INSIGNEO/pfire.git
    cd pfire
    mkdir build
    cd build

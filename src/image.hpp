@@ -1,3 +1,18 @@
+//
+//   Copyright 2019 University of Sheffield
+//
+//   Licensed under the Apache License, Version 2.0 (the "License");
+//   you may not use this file except in compliance with the License.
+//   You may obtain a copy of the License at
+//
+//       http://www.apache.org/licenses/LICENSE-2.0
+//
+//   Unless required by applicable law or agreed to in writing, software
+//   distributed under the License is distributed on an "AS IS" BASIS,
+//   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//   See the License for the specific language governing permissions and
+//   limitations under the License.
+
 #ifndef IMAGE_HPP
 #define IMAGE_HPP
 
@@ -51,6 +66,7 @@ public:
 
   const floating* get_raw_data_ro() const;
   void release_raw_data_ro(const floating*& ptr) const;
+  Vec_unique get_raw_data_row_major() const;
 
   floating normalize();
 
@@ -68,7 +84,7 @@ public:
       const std::string& filename, const Image* existing = nullptr,
       MPI_Comm comm = PETSC_COMM_WORLD);
 
-  void save_OIIO(std::string filename);
+  Vec_unique scatter_to_zero() const;
 
 protected:
   explicit Image(const Image& image);
@@ -84,7 +100,10 @@ protected:
   void initialize_dmda();
   void initialize_vectors();
 
-  Vec_unique scatter_to_zero(Vec& vec);
+
+  integer instance_id;
+
+  static integer instance_id_counter;
 };
 
 template <typename inttype>

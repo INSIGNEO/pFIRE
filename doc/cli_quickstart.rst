@@ -2,10 +2,9 @@
 Running pFIRE
 =============
 
-Interaction with pFIRE on the command line is achieved through the `pfire` executable. There are
-various subcommands available to allow interaction with images, maps, masks and various
-registration options.  All the available options are documented in the :doc:`command
-reference<cli_ref>`.
+Interaction with pFIRE on the command line is achieved through the `pfire` executable. Registration
+options are passed to pFIRE through a configuration file. All the available options are documented
+in the :doc:`command reference<cli_ref>`.
 
 Elastic Registration
 --------------------
@@ -32,9 +31,10 @@ A minimal usage example would be:
   moved = "moved image.dcm"
   nodespacing = 10
 
-This will register `fixed_image.dcm` to `moved image.dcm` with a nodespacing of 10 pixels, note
-that if the filename contains spaces it must be enclosed in quotes.  In this case the output map
-and registered image will be saved to the default hdf5 format with filename ``registration.h5``.
+This will register `fixed_image.dcm` to `moved image.dcm` with a nodespacing of 10 pixels, note that if
+the filename contains spaces it must be enclosed in quotes. In this case the output map and
+registered image will be saved to the default hdf5+xdmf format with filenames ``registered.xdmf``
+and ``map.xdmf``.
 
 
 ShIRT Compatibility

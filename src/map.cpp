@@ -1,3 +1,18 @@
+//
+//   Copyright 2019 University of Sheffield
+//
+//   Licensed under the Apache License, Version 2.0 (the "License");
+//   you may not use this file except in compliance with the License.
+//   You may obtain a copy of the License at
+//
+//       http://www.apache.org/licenses/LICENSE-2.0
+//
+//   Unless required by applicable law or agreed to in writing, software
+//   distributed under the License is distributed on an "AS IS" BASIS,
+//   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//   See the License for the specific language governing permissions and
+//   limitations under the License.
+
 #include "map.hpp"
 
 #include <petscvec.h>
@@ -157,6 +172,7 @@ std::unique_ptr<Image> Map::warp(const Image& image, WorkSpace& wksp)
   Vec_unique src_nat = create_unique_vec();
   perr = DMDACreateNaturalVector(*image.dmda(), src_nat.get());
   CHKERRABORT(m_comm, perr);
+  debug_creation(*src_nat, "Vec_source_natural");
   perr = DMDAGlobalToNaturalBegin(*image.dmda(), *image.global_vec(), INSERT_VALUES, *src_nat);
   CHKERRABORT(m_comm, perr);
   perr = DMDAGlobalToNaturalEnd(*image.dmda(), *image.global_vec(), INSERT_VALUES, *src_nat);
@@ -165,6 +181,7 @@ std::unique_ptr<Image> Map::warp(const Image& image, WorkSpace& wksp)
   Vec_unique tgt_nat = create_unique_vec();
   perr = DMDACreateNaturalVector(*image.dmda(), tgt_nat.get());
   CHKERRABORT(m_comm, perr);
+  debug_creation(*tgt_nat, "Vec_target_natural");
   perr = MatMult(*warp, *src_nat, *tgt_nat);
   CHKERRABORT(m_comm, perr);
 
@@ -184,7 +201,6 @@ std::pair<intvector, intvector> Map::get_dmda_local_extents() const
 
   intvector locs(3, 0);
   intvector widths(3, 0);
-
   PetscErrorCode perr =
       DMDAGetCorners(*map_dmda, &locs[0], &locs[1], &locs[2], &widths[0], &widths[1], &widths[2]);
   CHKERRABORT(m_comm, perr);
@@ -192,7 +208,7 @@ std::pair<intvector, intvector> Map::get_dmda_local_extents() const
   return std::make_pair(locs, widths);
 }
 
-Vec_unique Map::get_dim_data_dmda_blocked(integer dim) const
+Vec_unique Map::get_dim_data_dmda_blocked(uinteger dim) const
 {
   initialize_dmda();
   if (dim >= m_ndim)
@@ -215,15 +231,16 @@ Vec_unique Map::get_dim_data_dmda_blocked(integer dim) const
   CHKERRABORT(m_comm, perr);
   datasize -= startelem;
 
-  // Target range is then just owned part of new data vec
+  // Target range is then just owned part of new data vec in appropriate ordering
   IS_unique tgt_is(create_unique_is());
   perr = ISCreateStride(m_comm, datasize, startelem, 1, tgt_is.get());
   CHKERRABORT(m_comm, perr);
+  perr = AOPetscToApplicationIS(ao_petsctonat, *tgt_is);
+  CHKERRABORT(m_comm, perr);
 
-  // Source range is equivalent range in appropriate ordering
+  // Source range is equivalent range offset to dimension 
   IS_unique src_is(create_unique_is());
   perr = ISCreateStride(m_comm, datasize, startelem + (dim * this->size()), 1, src_is.get());
-  perr = AOApplicationToPetscIS(ao_petsctonat, *src_is);
   CHKERRABORT(m_comm, perr);
 
   // Now create the scatter
@@ -282,6 +299,7 @@ void Map::calculate_laplacian()
 
   Mat_unique lapl = build_laplacian_matrix(m_comm, map_shape, startrow, endrow, m_ndim + 1);
   perr = MatTransposeMatMult(*lapl, *lapl, MAT_INITIAL_MATRIX, PETSC_DEFAULT, m_lapl.get());
+  debug_creation(*m_lapl, "Mat_l_squared");
   CHKERRABORT(m_comm, perr);
 }
 

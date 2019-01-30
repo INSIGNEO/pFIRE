@@ -1,8 +1,23 @@
+#
+#   Copyright 2019 University of Sheffield
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http:#www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+
 cmake_minimum_required(VERSION 3.7.0)
 project(pFIRE)
 
 if("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
-  message(FATAL_ERROR "In-source builds are not permitted. Make a separate folder for"
+  message(FATAL_ERROR "In-source builds are not permitted. Make a separate folder for "
           "building:\nmkdir build; cd build; cmake ..\n"
           "Before that, remove the files already created:\nrm -rf CMakeCache.txt CMakeFiles")
 endif("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
@@ -17,7 +32,7 @@ if( NOT CMAKE_BUILD_TYPE )
         FORCE )
 endif()
 
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -Weffc++ -Wuninitialized -O0 -ggdb -march=native -fstack-protector-strong")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -Wuninitialized -O0 -ggdb -march=native -fstack-protector-strong")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -O3 -march=native -fno-fast-math")
 
 option(DEBUG_VERBOSE "Verbose debug outputs")
@@ -26,11 +41,21 @@ if(DEBUG_VERBOSE)
   message(STATUS "Enabled verbose debugging messages")
 endif(DEBUG_VERBOSE)
 
+option(DEBUG_PETSC "Debug PETSc object creation and deletion")
+if(DEBUG_PETSC)
+  add_definitions(-DDEBUG_PETSC_OBJECTS)
+  message(STATUS "Enabled debugging of PETSc object lifetimes")
+endif(DEBUG_PETSC)
+
 option(DEBUG_OUTPUT_INTERMEDIATES "Save all intermediate frames in registration")
 if(DEBUG_OUTPUT_INTERMEDIATES)
   add_definitions(-DDEBUG_DUMP_INTERMEDIATES)
 endif(DEBUG_OUTPUT_INTERMEDIATES)
 
+set(GITCPP_PATH "src/gitstate.cpp")
+include(cmake-modules/GitState.cmake)
+#WriteGitStateFile("${pFIRE_SOURCE_DIR}")
+#WriteGitVersionSrc("${pFIRE_SOURCE_DIR}/src/gitstate.cpp")
 
 # Output programs to a "bin" directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${pFIRE_SOURCE_DIR}/bin)

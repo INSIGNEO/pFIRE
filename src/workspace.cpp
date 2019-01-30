@@ -1,3 +1,18 @@
+//
+//   Copyright 2019 University of Sheffield
+//
+//   Licensed under the Apache License, Version 2.0 (the "License");
+//   you may not use this file except in compliance with the License.
+//   You may obtain a copy of the License at
+//
+//       http://www.apache.org/licenses/LICENSE-2.0
+//
+//   Unless required by applicable law or agreed to in writing, software
+//   distributed under the License is distributed on an "AS IS" BASIS,
+//   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//   See the License for the specific language governing permissions and
+//   limitations under the License.
+
 #include "workspace.hpp"
 
 WorkSpace::WorkSpace(const Image& image, const Map& map)
@@ -5,13 +20,14 @@ WorkSpace::WorkSpace(const Image& image, const Map& map)
       m_globaltmps(std::vector<Vec_unique>()), m_iss(std::vector<IS_unique>()),
       m_scatterers(std::vector<VecScatter_unique>()), m_stacktmp(create_unique_vec()),
       m_localtmp(create_unique_vec()), m_delta(create_unique_vec()), m_rhs(create_unique_vec()),
-      m_tmat(create_unique_mat())
+      m_tmat(create_unique_mat()), ephemeral_count(0)
 {
   // create "local" vectors for gradient storage, one per map dim
   for (uinteger idim = 0; idim < image.ndim() + 1; idim++)
   {
     Vec_unique tmp_vec = create_unique_vec();
     PetscErrorCode perr = VecDuplicate(*image.global_vec(), tmp_vec.get());
+    debug_creation(*tmp_vec, std::string("grads_") + std::to_string(static_cast<int>(idim)));
     CHKERRABORT(m_comm, perr);
     m_globaltmps.push_back(std::move(tmp_vec));
   }
@@ -25,6 +41,7 @@ WorkSpace::WorkSpace(const Image& image, const Map& map)
   // should be compatible with all map bases of this size
   m_stacktmp = create_unique_vec();
   perr = MatCreateVecs(*map.basis(), nullptr, m_stacktmp.get());
+  debug_creation(*m_stacktmp, "workspace vector");
   CHKERRABORT(m_comm, perr);
 
   create_scatterers();
@@ -33,16 +50,19 @@ WorkSpace::WorkSpace(const Image& image, const Map& map)
 
 void WorkSpace::reallocate_ephemeral_workspace(const Map& map)
 {
+  ephemeral_count++;
   // allocate rhs vec and solution storage, use existing displacements in map
   PetscErrorCode perr;
   m_delta = create_unique_vec();
   m_rhs = create_unique_vec();
   perr = VecDuplicate(*map.m_displacements, m_delta.get());
   CHKERRABORT(m_comm, perr);
+  debug_creation(*m_delta, std::string("solution_storage_") + std::to_string(ephemeral_count));
   perr = VecSet(*m_delta, 0.);
   CHKERRABORT(m_comm, perr);
   perr = VecDuplicate(*map.m_displacements, m_rhs.get());
   CHKERRABORT(m_comm, perr);
+  debug_creation(*m_delta, std::string("rhs_storage_") + std::to_string(ephemeral_count));
   perr = VecSet(*m_rhs, 0.);
   CHKERRABORT(m_comm, perr);
 }
