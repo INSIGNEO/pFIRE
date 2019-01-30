@@ -61,6 +61,7 @@ Index
   
   install.rst
   cli_quickstart.rst
+  cli_ref.rst
 
 .. **pFIRE API Reference**
 
