@@ -21,6 +21,7 @@
 
 const config_map ConfigurationBase::default_config = {{"verbose", "false"},
                                                       {"registered", "registered.xdmf:/registered"},
+                                                      {"mask", ""},
                                                       {"map", "map.xdmf:/map"},
                                                       {"lambda", "auto"},
                                                       {"debug_frames", "false"},
@@ -30,7 +31,8 @@ const std::vector<std::string> ConfigurationBase::required_options = {"fixed", "
                                                                       "nodespacing"};
 
 const std::vector<std::string> ConfigurationBase::arg_options = {
-    "fixed", "moved", "mask", "nodespacing", "registered", "map", "debug_frames_prefix"};
+    "fixed", "moved", "mask", "nodespacing", "registered", "map", "debug_frames_prefix",
+    "mask"};
 
 const std::vector<std::string> ConfigurationBase::bool_options = {"verbose", "debug_frames"};
 

@@ -21,47 +21,23 @@
 #include <numeric>
 #include <utility>
 
+#include "mask.hpp"
 #include "types.hpp"
 
 class Map {
 public:
-  Map(const Image& mask, const floatvector& node_spacing);
-  Map(const Map& map, const floatvector& node_spacing);
+  Map(floatvector node_spacing, const Mask& mask);
 
   //  ~Map();
 
-  Mat* basis() const
-  {
-    return m_basis.get();
-  }
-  Mat* laplacian() const
-  {
-    return m_lapl.get();
-  }
-  const floatvector2d node_locs() const
-  {
-    return m_vv_node_locs;
-  }
-  const MPI_Comm& comm() const
-  {
-    return m_comm;
-  }
-  uinteger ndim() const
-  {
-    return m_ndim;
-  }
-  const intvector& shape() const
-  {
-    return map_shape;
-  }
-  const intvector& image_shape() const
-  {
-    return m_v_image_shape;
-  }
-  const floatvector& spacing() const
-  {
-    return m_v_node_spacing;
-  }
+  Mat* basis() const { return m_basis.get(); }
+  Mat* laplacian() const { return m_lapl.get(); }
+  const floatvector2d node_locs() const { return m_vv_node_locs; }
+  const MPI_Comm& comm() const { return m_comm; }
+  uinteger ndim() const { return m_ndim; }
+  const intvector& shape() const { return map_shape; }
+  const intvector& image_shape() const { return m_v_image_shape; }
+  const floatvector& spacing() const { return m_v_node_spacing; }
   integer size() const
   {
     return std::accumulate(map_shape.cbegin(), map_shape.cend(), 1, std::multiplies<>());
@@ -81,13 +57,13 @@ public:
   std::pair<intvector, intvector> get_dmda_local_extents() const;
   Vec_unique get_dim_data_dmda_blocked(uinteger dim) const;
 
-  static intvector
-  calculate_map_shape(intvector const& image_shape, floatvector const& nodespacing);
+  static intvector calculate_map_shape(
+      intvector const& image_shape, floatvector const& nodespacing);
 
   // private:
 
   MPI_Comm m_comm;
-  const Image& m_mask;
+  const Mask& m_mask;
   uinteger m_ndim;
   floatvector m_v_node_spacing;
   floatvector m_v_offsets;
@@ -102,10 +78,11 @@ public:
   void apply_mask_to_basis();
   void alloc_displacements();
   void initialize_dmda() const;
-  void calculate_node_locs();
+  void calculate_node_info();
   void calculate_basis();
   void calculate_laplacian();
   void calculate_warp_matrix();
+  Vec_unique calculate_map_mask(Vec& stacked_mask);
 };
 
 #endif

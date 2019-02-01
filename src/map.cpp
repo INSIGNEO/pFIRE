@@ -21,35 +21,76 @@
 #include "image.hpp"
 #include "indexing.hpp"
 #include "laplacian.hpp"
+#include "math_utils.hpp"
+#include "petsc_helpers.hpp"
 #include "workspace.hpp"
+#include "math_utils.hpp"
 
 #include "iterator_routines.hpp"
 
-Map::Map(const Image& mask, const floatvector& node_spacing)
-    : m_comm(mask.comm()), m_mask(mask), m_ndim(mask.ndim()), m_v_node_spacing(node_spacing),
-      m_v_offsets(floatvector()), m_v_image_shape(mask.shape()), map_shape(intvector()),
-      m_vv_node_locs(floatvector2d()), m_basis(create_unique_mat()), m_lapl(create_unique_mat()),
-      m_displacements(create_unique_vec()), map_dmda(create_unique_dm())
+Map::Map(floatvector node_spacing, const Mask& mask)
+  : m_comm(mask.comm()), m_mask(mask), m_ndim(mask.ndim()),
+    m_v_node_spacing(std::move(node_spacing)), m_v_image_shape(mask.shape()),
+    m_basis(create_unique_mat()), m_lapl(create_unique_mat()),
+    m_displacements(create_unique_vec()), map_dmda(create_unique_dm())
 {
-  calculate_node_locs();
+  calculate_node_info();
   calculate_basis();
-  // TODO: mask basis
+  initialize_dmda();
+
   apply_mask_to_basis();
+
   // initialize displacement storage
   alloc_displacements();
   calculate_laplacian();
 }
 
+
 void Map::apply_mask_to_basis()
 {
   // Need to apply mask to both image and map "side" of basis
+  // First stack basis to depth of map
+  Vec_unique stacked_basis = create_unique_vec();
+  PetscErrorCode perr = MatCreateVecs(*m_basis, nullptr, stacked_basis.get());
+  CHKERRABORT(m_comm, perr);
+
+  repeat_stack(*m_mask.global_vec(), *stacked_basis);
+
+  // For map side determine from mask what nodes are relevant, mask out others
+  Vec_unique map_side = calculate_map_mask(*stacked_basis);
+
+  // Use matdiagonalscale and apply both at once
   // Mask applies directly to image side of basis
-  apply_image_mask();
 
-  // Work out from basis what nodes are relevant, mask out others
+  perr = MatDiagonalScale(*m_basis, *stacked_basis, *map_side);
+  CHKERRABORT(m_comm, perr);
+}
 
-  calculate_map_mask();
-  apply_map_mask();
+Vec_unique Map::calculate_map_mask(Vec& stacked_mask )
+{
+  // Create map mask from image mask and basis
+  Vec_unique map_mask = create_unique_vec();
+  PetscErrorCode perr = MatCreateVecs(*m_basis, map_mask.get(), nullptr);
+  CHKERRABORT(m_comm, perr);
+  perr = MatMultTranspose(*m_basis, stacked_mask, *map_mask);
+  CHKERRABORT(m_comm, perr);
+
+  
+  // Dilate to include surrounding nodes
+  // First need 1 copy in global layout
+  Vec_unique map_mask_global = create_unique_vec();
+  perr = DMCreateGlobalVector(*map_dmda, map_mask_global.get());
+  CHKERRABORT(m_comm, perr);
+  copy_nth_from_stack_nat_to_petsc(*map_mask_global, *map_mask, *map_dmda, 0);
+
+  // Now dilate
+  dilate_dmda(*map_dmda, *map_mask_global);
+  binarize_vector(*map_mask_global, 0.01);
+
+  // Now map back:
+  repeat_stack_petsc_to_nat(*map_mask_global, *map_mask, *map_dmda);
+
+  return map_mask;
 }
 
 void Map::update(const Vec& delta_vec)
@@ -60,18 +101,16 @@ void Map::update(const Vec& delta_vec)
 
 std::unique_ptr<Map> Map::interpolate(const floatvector& new_spacing)
 {
-  std::unique_ptr<Map> new_map(new Map(this->m_mask, new_spacing));
+  std::unique_ptr<Map> new_map(new Map(new_spacing, this->m_mask));
 
   floatvector scalings(m_ndim, 0.0);
   floatvector offsets(m_ndim, 0.0);
 
-  n_ary_transform(
-      std::divides<>(), scalings.begin(), new_map->m_v_node_spacing.begin(),
+  n_ary_transform(std::divides<>(), scalings.begin(), new_map->m_v_node_spacing.begin(),
       new_map->m_v_node_spacing.end(), this->m_v_node_spacing.begin());
-  n_ary_transform(
-      [](floating x, floating y, floating a) -> floating { return (x - y) / a; }, offsets.begin(),
-      new_map->m_v_offsets.begin(), new_map->m_v_offsets.end(), this->m_v_offsets.begin(),
-      this->m_v_node_spacing.begin());
+  n_ary_transform([](floating x, floating y, floating a) -> floating { return (x - y) / a; },
+      offsets.begin(), new_map->m_v_offsets.begin(), new_map->m_v_offsets.end(),
+      this->m_v_offsets.begin(), this->m_v_node_spacing.begin());
 
   Mat_unique interp = build_basis_matrix(
       m_comm, map_shape, new_map->map_shape, scalings, offsets, m_ndim, m_ndim + 1);
@@ -95,13 +134,12 @@ void Map::initialize_dmda() const
   PetscErrorCode perr;
 
   // Make sure things get gracefully cleaned up
-  perr = DMDACreate3d(
-      m_comm, DM_BOUNDARY_NONE, DM_BOUNDARY_NONE, DM_BOUNDARY_NONE, // BCs
-      DMDA_STENCIL_STAR,                                            // stencil shape
-      map_shape[0], map_shape[1], map_shape[2],                     // global mesh shape
-      PETSC_DECIDE, PETSC_DECIDE, PETSC_DECIDE,                     // ranks per dim
-      dof_per_node, stencil_width,                                  // dof per node, stencil size
-      nullptr, nullptr, nullptr, // partition sizes nullptr -> petsc chooses
+  perr = DMDACreate3d(m_comm, DM_BOUNDARY_GHOSTED, DM_BOUNDARY_GHOSTED, DM_BOUNDARY_GHOSTED, // BCs
+      DMDA_STENCIL_STAR,                        // stencil shape
+      map_shape[0], map_shape[1], map_shape[2], // global mesh shape
+      PETSC_DECIDE, PETSC_DECIDE, PETSC_DECIDE, // ranks per dim
+      dof_per_node, stencil_width,              // dof per node, stencil size
+      nullptr, nullptr, nullptr,                // partition sizes nullptr -> petsc chooses
       map_dmda.get());
   CHKERRABORT(m_comm, perr);
 
@@ -125,15 +163,14 @@ intvector Map::calculate_map_shape(intvector const& image_shape, floatvector con
   // multiply by two and subtract one to get total nodes
   // N.B number of nodes = 1 + number of spaces, so:
   intvector nnod(image_shape.size());
-  std::transform(
-      image_shape.cbegin(), image_shape.cend(), nodespacing.cbegin(), nnod.begin(),
+  std::transform(image_shape.cbegin(), image_shape.cend(), nodespacing.cbegin(), nnod.begin(),
       [](integer is, floating ns) -> integer {
         return static_cast<integer>(1 + 2 * std::ceil((is / 2. - 0.5) / ns));
       });
   return nnod;
 }
 
-void Map::calculate_node_locs()
+void Map::calculate_node_info()
 {
   map_shape = calculate_map_shape(m_v_image_shape, m_v_node_spacing);
   // calculate self size and offset
@@ -143,7 +180,7 @@ void Map::calculate_node_locs()
     floatvector nodes(map_shape[idim], 0.0);
     std::generate(nodes.begin(), nodes.end(), [x = lo, y = m_v_node_spacing[idim]]() mutable {
       x += y;
-      return x-y;
+      return x - y;
     });
     m_vv_node_locs.push_back(nodes);
     m_v_offsets.push_back(lo);
@@ -186,7 +223,7 @@ std::unique_ptr<Image> Map::warp(const Image& image, WorkSpace& wksp)
   CHKERRABORT(m_comm, perr);
 
   // create new image and insert data in petsc ordering
-  std::unique_ptr<Image> new_image = image.duplicate();
+  std::unique_ptr<Image> new_image = Image::duplicate(image);
   perr =
       DMDANaturalToGlobalBegin(*image.dmda(), *tgt_nat, INSERT_VALUES, *new_image->global_vec());
   CHKERRABORT(m_comm, perr);
@@ -238,7 +275,7 @@ Vec_unique Map::get_dim_data_dmda_blocked(uinteger dim) const
   perr = AOPetscToApplicationIS(ao_petsctonat, *tgt_is);
   CHKERRABORT(m_comm, perr);
 
-  // Source range is equivalent range offset to dimension 
+  // Source range is equivalent range offset to dimension
   IS_unique src_is(create_unique_is());
   perr = ISCreateStride(m_comm, datasize, startelem + (dim * this->size()), 1, src_is.get());
   CHKERRABORT(m_comm, perr);
@@ -262,11 +299,9 @@ void Map::calculate_basis()
   floatvector scalings(m_ndim, 0.0);
   floatvector offsets(m_ndim, 0.0);
 
-  std::transform(
-      this->m_v_node_spacing.begin(), this->m_v_node_spacing.end(), scalings.begin(),
+  std::transform(this->m_v_node_spacing.begin(), this->m_v_node_spacing.end(), scalings.begin(),
       [](floating a) -> floating { return 1 / a; });
-  n_ary_transform(
-      [](floating x, floating a) -> floating { return -x / a; }, offsets.begin(),
+  n_ary_transform([](floating x, floating a) -> floating { return -x / a; }, offsets.begin(),
       this->m_v_offsets.begin(), this->m_v_offsets.end(), this->m_v_node_spacing.begin());
   m_basis = build_basis_matrix(
       m_comm, map_shape, m_v_image_shape, scalings, offsets, m_ndim, m_ndim + 1);
@@ -331,6 +366,6 @@ floatvector Map::low_corner() const
 {
   floatvector corner(3, 0.);
   std::transform(m_vv_node_locs.cbegin(), m_vv_node_locs.cend(), corner.begin(),
-                 [](const floatvector &v){return v.front();});
+      [](const floatvector& v) { return v.front(); });
   return corner;
 }

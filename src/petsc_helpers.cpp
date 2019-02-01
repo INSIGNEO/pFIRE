@@ -16,6 +16,7 @@
 #include "petsc_helpers.hpp"
 
 #include <algorithm>
+#include <sstream>
 
 floating diagonal_sum(const Mat& matrix)
 {
@@ -215,3 +216,188 @@ floating get_eigenvalue_by_poweriter(const Mat& matrix, floating conv_thres, int
 
   return lambda;
 }
+
+
+void repeat_stack(const Vec& subvec, const Vec& stacked)
+{
+  MPI_Comm comm, comm2;
+  PetscObjectGetComm(reinterpret_cast<PetscObject>(subvec), &comm);
+  PetscObjectGetComm(reinterpret_cast<PetscObject>(stacked), &comm2);
+  if (comm != comm2){
+    throw std::runtime_error("stacked and subvec must share a communicator");
+  }
+
+  integer subvec_len;
+  VecGetSize(subvec, &subvec_len);
+  integer stacked_len;
+  VecGetSize(stacked, &stacked_len);
+
+  if (stacked_len % subvec_len != 0){
+    std::ostringstream errss;
+    errss << "stacked length (" << stacked_len << ") not a multiple of subvec length ("
+          << subvec_len << ").";
+    throw std::runtime_error(errss.str());
+  }
+
+  // Get extents of local data in subvector
+  integer startelem, datasize;
+  PetscErrorCode perr = VecGetOwnershipRange(subvec, &startelem, &datasize);
+  CHKERRABORT(comm, perr);
+  datasize -= startelem;
+  // Create IS for source indices in stacked array
+  IS_unique src_is = create_unique_is();
+  perr = ISCreateStride(comm, datasize, startelem, 1, src_is.get());
+  CHKERRABORT(comm, perr);
+
+  integer stack_total = stacked_len / subvec_len;
+  integer offset = 0; // Track offset
+  for (integer count = 0; count < stack_total; count++)
+  {
+    
+    IS_unique tgt_is = create_unique_is();
+    perr = ISCreateStride(comm, datasize, startelem + offset, 1, tgt_is.get());
+    CHKERRABORT(comm, perr);
+
+    // Create scatterer and add to array
+    VecScatter_unique scatterer = create_unique_vecscatter();
+    perr = VecScatterCreate(subvec, *src_is, stacked, *tgt_is, scatterer.get());
+    CHKERRABORT(comm, perr);
+
+    perr = VecScatterBegin(*scatterer, subvec, stacked, INSERT_VALUES, SCATTER_FORWARD);
+    CHKERRABORT(comm, perr);
+    perr = VecScatterEnd(*scatterer, subvec, stacked, INSERT_VALUES, SCATTER_FORWARD);
+    CHKERRABORT(comm, perr);
+
+    offset += subvec_len;
+  }
+}
+
+
+void repeat_stack_petsc_to_nat(const Vec& subvec, const Vec& stacked, const DM& subvec_dmda)
+{
+  MPI_Comm comm, comm2;
+  PetscObjectGetComm(reinterpret_cast<PetscObject>(subvec), &comm);
+  PetscObjectGetComm(reinterpret_cast<PetscObject>(stacked), &comm2);
+  if (comm != comm2){
+    throw std::runtime_error("stacked and subvec must share a communicator");
+  }
+
+  integer subvec_len;
+  VecGetSize(subvec, &subvec_len);
+  integer stacked_len;
+  VecGetSize(stacked, &stacked_len);
+
+  if (stacked_len % subvec_len != 0){
+    std::ostringstream errss;
+    errss << "stacked length (" << stacked_len << ") not a multiple of subvec length ("
+          << subvec_len << ").";
+    throw std::runtime_error(errss.str());
+  }
+
+  AO ao_petsctonat; // N.B this is not going to be a leak, we are just borrowing a Petsc managed
+                    // obj.
+  PetscErrorCode perr = DMDAGetAO(subvec_dmda, &ao_petsctonat); // Destroying this would break the dmda
+  CHKERRABORT(comm, perr);
+
+  // Get extents of local data in subvector
+  integer startelem, datasize;
+  perr = VecGetOwnershipRange(subvec, &startelem, &datasize);
+  CHKERRABORT(comm, perr);
+  datasize -= startelem;
+  // Create IS for source indices in stacked array
+  IS_unique src_is = create_unique_is();
+  perr = ISCreateStride(comm, datasize, startelem, 1, src_is.get());
+  CHKERRABORT(comm, perr);
+  // Convert with AO to map from natural to petsc ordering (do here because tgt_is is offset)
+  perr = AOApplicationToPetscIS(ao_petsctonat, *src_is);
+  CHKERRABORT(comm, perr);
+
+  integer stack_total = stacked_len / subvec_len;
+  integer offset = 0; // Track offset
+  for (integer count = 0; count < stack_total; count++)
+  {
+    
+    IS_unique tgt_is = create_unique_is();
+    perr = ISCreateStride(comm, datasize, startelem + offset, 1, tgt_is.get());
+    CHKERRABORT(comm, perr);
+
+    // Create scatterer and add to array
+    VecScatter_unique scatterer = create_unique_vecscatter();
+    perr = VecScatterCreate(subvec, *src_is, stacked, *tgt_is, scatterer.get());
+    CHKERRABORT(comm, perr);
+
+    perr = VecScatterBegin(*scatterer, subvec, stacked, INSERT_VALUES, SCATTER_FORWARD);
+    CHKERRABORT(comm, perr);
+    perr = VecScatterEnd(*scatterer, subvec, stacked, INSERT_VALUES, SCATTER_FORWARD);
+    CHKERRABORT(comm, perr);
+
+    offset += subvec_len;
+  }
+}
+
+
+void copy_nth_from_stack_nat_to_petsc(const Vec& subvec, const Vec& stacked, const DM& subvec_dmda, integer n)
+{
+  MPI_Comm comm, comm2;
+  PetscObjectGetComm(reinterpret_cast<PetscObject>(subvec), &comm);
+  PetscObjectGetComm(reinterpret_cast<PetscObject>(stacked), &comm2);
+  if (comm != comm2){
+    throw std::runtime_error("stacked and subvec must share a communicator");
+  }
+
+  integer subvec_len;
+  VecGetSize(subvec, &subvec_len);
+  integer stacked_len;
+  VecGetSize(stacked, &stacked_len);
+  integer stack_total = stacked_len / subvec_len;
+
+  if (stacked_len % subvec_len != 0){
+    std::ostringstream errss;
+    errss << "stacked length (" << stacked_len << ") not a multiple of subvec length ("
+          << subvec_len << ").";
+    throw std::runtime_error(errss.str());
+  }
+
+  if (n >= stack_total)
+  {
+    std::ostringstream errss;
+    errss << "n must be less than stacked length / subvec length.";
+    throw std::runtime_error(errss.str());
+  }
+
+  AO ao_petsctonat; // N.B this is not going to be a leak, we are just borrowing a Petsc managed
+                    // obj.
+  PetscErrorCode perr = DMDAGetAO(subvec_dmda, &ao_petsctonat); // Destroying this would break the dmda
+  CHKERRABORT(comm, perr);
+
+  // Get extents of local data in subvector
+  integer startelem, datasize;
+  perr = VecGetOwnershipRange(subvec, &startelem, &datasize);
+  CHKERRABORT(comm, perr);
+  datasize -= startelem;
+  // Create IS for source indices in stacked array
+  IS_unique src_is = create_unique_is();
+  perr = ISCreateStride(comm, datasize, startelem, 1, src_is.get());
+  CHKERRABORT(comm, perr);
+  // Convert with AO to map from natural to petsc ordering (do here because tgt_is is offset)
+  // This direction because then we'll reverse the scatter
+  perr = AOApplicationToPetscIS(ao_petsctonat, *src_is);
+  CHKERRABORT(comm, perr);
+
+  integer offset = n*subvec_len; // Track offset
+  IS_unique tgt_is = create_unique_is();
+  perr = ISCreateStride(comm, datasize, startelem + offset, 1, tgt_is.get());
+  CHKERRABORT(comm, perr);
+
+  // Create scatterer and add to array
+  VecScatter_unique scatterer = create_unique_vecscatter();
+  perr = VecScatterCreate(subvec, *src_is, stacked, *tgt_is, scatterer.get());
+  CHKERRABORT(comm, perr);
+
+  perr = VecScatterBegin(*scatterer, stacked, subvec, INSERT_VALUES, SCATTER_REVERSE);
+  CHKERRABORT(comm, perr);
+  perr = VecScatterEnd(*scatterer, stacked, subvec, INSERT_VALUES, SCATTER_REVERSE);
+  CHKERRABORT(comm, perr);
+}
+
+

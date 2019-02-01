@@ -26,6 +26,9 @@ void quadratic_from_points(floating x_1, floating x_2, floating x_3,
 
 void quadratic_vertex(floating a, floating b, floating c, floating &x, floating &y);
 
+void binarize_vector(Vec &vec, floating thres);
+
+void dilate_dmda(DM &dmda, Vec &vec);
 
 inline floating mat_size(integer ndim, integer nvox)
 {

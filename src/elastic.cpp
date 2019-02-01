@@ -18,19 +18,19 @@
 #include <iomanip>
 #include <sstream>
 
-#include "math_utils.hpp"
 #include "fd_routines.hpp"
 #include "infix_iterator.hpp"
 #include "iterator_routines.hpp"
+#include "math_utils.hpp"
 #include "petsc_debug.hpp"
 
-Elastic::Elastic(const Image& fixed, const Image& moved, const floatvector nodespacing,
-    const ConfigurationBase& configuration)
+Elastic::Elastic(const Image& fixed, const Image& moved, const Mask& mask,
+    const floatvector nodespacing, const ConfigurationBase& configuration)
   : m_comm(fixed.comm()), configuration(configuration), m_imgdims(fixed.ndim()),
     m_mapdims(m_imgdims + 1), m_size(fixed.size()), m_iternum(0), m_fixed(fixed), m_moved(moved),
-    m_v_nodespacings(floatvector2d()), m_v_final_nodespacing(nodespacing),
-    m_p_registered(std::shared_ptr<Image>(nullptr)), m_p_map(std::unique_ptr<Map>(nullptr)),
-    m_workspace(std::shared_ptr<WorkSpace>(nullptr)), normmat(create_unique_mat())
+    m_v_final_nodespacing(nodespacing), m_p_registered(std::shared_ptr<Image>(nullptr)),
+    m_p_map(std::unique_ptr<Map>(nullptr)), m_workspace(std::shared_ptr<WorkSpace>(nullptr)),
+    normmat(create_unique_mat())
 {
   // TODO: image compatibility checks (maybe write Image.iscompat(Image foo)
   // TODO: enforce normalization
@@ -46,13 +46,13 @@ Elastic::Elastic(const Image& fixed, const Image& moved, const floatvector nodes
   }
 
   // not in initializer to avoid copy until we know images are compatible and we can proceed
-  m_p_registered = moved.copy();
+  m_p_registered = Image::copy(moved);
 
   // work out intermediate node spacings
   calculate_node_spacings();
 
   // make map, need to ensure basis is always the same layout
-  m_p_map = std::make_unique<Map>(fixed, m_v_nodespacings.back());
+  m_p_map = std::make_unique<Map>(m_v_nodespacings.back(), mask);
 
   // set scratchpad storage, scatterers:
   m_workspace = std::make_shared<WorkSpace>(fixed, *m_p_map);
@@ -158,12 +158,11 @@ void Elastic::innerstep(integer inum, bool recalculate_lambda)
   floating laplmult = tdiagavg / lapldiagavg;
   PetscPrintf(m_comm, "laplavg = %g, tavg = %g, mult=%g\n", lapldiagavg, tdiagavg, laplmult);
 
-  if(recalculate_lambda)
+  if (recalculate_lambda)
   {
-    m_lambda = approximate_optimum_lambda(*normmat, *m_p_map->laplacian(), laplmult,
-        m_lambda, 10.0, 30, k_lambda_min);
+    m_lambda = approximate_optimum_lambda(
+        *normmat, *m_p_map->laplacian(), laplmult, m_lambda, 10.0, 30, k_lambda_min);
     PetscPrintf(m_comm, "Calculated smoothing factor: %.2f\n", m_lambda);
-
   }
 
   // calculate tmat2 + lambda*lapl2
@@ -273,8 +272,8 @@ void Elastic::save_debug_frame(const std::string& prefix, integer outer_count, i
 floating Elastic::approximate_optimum_lambda(Mat& mat_a, Mat& mat_b, floating lambda_mult,
     floating initial_guess, floating search_width, uinteger max_iter, floating lambda_min)
 {
-
-  floating x_lo = initial_guess - search_width > lambda_min ? initial_guess - search_width : lambda_min;
+  floating x_lo =
+      initial_guess - search_width > lambda_min ? initial_guess - search_width : lambda_min;
   floating x_mid = initial_guess;
   floating x_hi = initial_guess + search_width;
 
@@ -325,27 +324,33 @@ floating Elastic::approximate_optimum_lambda(Mat& mat_a, Mat& mat_b, floating la
     }
     else
     {
-      if(x_lo == lambda_min)
+      if (x_lo == lambda_min)
       {
         break;
       }
       // All negative gradient so keep searching left
-      x_lo = x_lo >= 2.0*lambda_min ? x_lo / 2 : 1.0*lambda_min;
-      x_mid = x_mid >= 2.0*x_lo ? x_mid / 2 : x_lo+1.0;
-      x_hi = x_hi >= 2.0*x_mid ? x_hi / 2 : x_mid+1.0;
+      x_lo = x_lo >= 2.0 * lambda_min ? x_lo / 2 : 1.0 * lambda_min;
+      x_mid = x_mid >= 2.0 * x_lo ? x_mid / 2 : x_lo + 1.0;
+      x_hi = x_hi >= 2.0 * x_mid ? x_hi / 2 : x_mid + 1.0;
       continue;
     }
   }
   // fit quadratic and return minimum
-  floating a,b,c;
+  floating a, b, c;
   quadratic_from_points(x_lo, x_mid, x_hi, y_lo, y_mid, y_hi, a, b, c);
+
+  if(a <= 0){
+    PetscPrintf(m_comm, "Warning: convex function in smoothing parameter estimation.\n");
+    return lambda_min;
+  }
+
 
   floating x, y;
   quadratic_vertex(a, b, c, x, y);
 
-  if(x < lambda_min)
+  if (x < lambda_min)
   {
-    x = lambda_min;
+    return lambda_min;
   }
 
   return x;

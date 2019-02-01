@@ -30,7 +30,7 @@
 
 class Elastic {
 public:
-  Elastic(const Image& fixed, const Image& moved, const floatvector nodespacing,
+  Elastic(const Image& fixed, const Image& moved, const Mask& mask, const floatvector nodespacing,
       const ConfigurationBase& configuration);
 
   void autoregister();
