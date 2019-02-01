@@ -206,10 +206,12 @@ void Elastic::calculate_node_spacings()
   const intvector& imshape = m_fixed.shape();
   floatvector currspc = m_v_final_nodespacing;
   m_v_nodespacings.push_back(currspc);
-  while (all_true_varlen(currspc.begin(), currspc.end(), imshape.begin(), imshape.end(),
+  auto start_iter = currspc.begin();
+  auto end_iter = std::next(start_iter, m_fixed.ndim());
+  while (all_true_varlen(start_iter, end_iter, imshape.begin(), imshape.end(),
       [](floating x, integer y) -> bool { return (y / x) > 2.0; }))
   {
-    std::transform(currspc.begin(), currspc.end(), currspc.begin(),
+    std::transform(start_iter, end_iter, start_iter,
         [](floating a) -> floating { return a * 2; });
     m_v_nodespacings.push_back(currspc);
   }
