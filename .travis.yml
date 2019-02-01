@@ -3,6 +3,9 @@ branches:
   only:
     - master
 dist: xenial
+language:
+  - cpp
+
 addons:
   apt:
     sources:
