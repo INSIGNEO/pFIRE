@@ -1,0 +1,42 @@
+sudo: require
+branches:
+  only:
+    - master
+dist: xenial
+addons:
+  apt:
+    sources:
+      - libboost-dev
+      - libopenimageio-dev
+      - libopenmpi-dev
+      - libhdf5-openmpi-dev
+      - libdcmtk-dev
+      - libpetsc3.6.2-dev
+
+matrix:
+  include:
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-7
+            - cmake
+      env:
+        - GCC_EVAL="CC=gcc-7 && CXX=g++-7"
+
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-8
+            - cmake
+      env:
+        - GCC_EVAL="CC=gcc-8 && CXX=g++-8"
+
+before_install:
+  - eval "${GCC_EVAL}"
+  - CC -v && CXX -v && cmake --version
