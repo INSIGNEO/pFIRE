@@ -1,0 +1,59 @@
+sudo: require
+branches:
+  only:
+    - master
+dist: xenial
+language:
+  - cpp
+
+matrix:
+  include:
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-7
+            - g++-7
+            - cmake
+            - libboost-dev
+            - libopenimageio-dev
+            - openmpi-bin
+            - libopenmpi-dev
+            - libhdf5-openmpi-dev
+            - libdcmtk-dev
+            - petsc-dev
+      env:
+        - MATRIX_EVAL="OMPI_CC=gcc-7 && OMPI_CXX=g++-7"
+
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-8
+            - g++-8
+            - cmake
+            - libboost-dev
+            - libopenimageio-dev
+            - mpich
+            - libmpich-dev
+            - libhdf5-openmpi-dev
+            - libdcmtk-dev
+            - libpetsc3.6.2-dev
+      env:
+        - MATRIX_EVAL="OMPI_CC=gcc-8 && OMPI_CXX=g++-8"
+
+
+before_install:
+  - eval "${MATRIX_EVAL}"
+  - export CC=mpicc
+  - export CXX=mpic++
+
+script:
+  - mkdir build
+  -  cd build
+  - cmake ..
+  - make
