@@ -40,7 +40,7 @@ and ``map.xdmf``.
 ShIRT Compatibility
 -------------------
 
-pFIRE is designed to be compatible with ShIRT both algorithmically and practially.  Therefore we
+pFIRE is designed to be compatible with ShIRT both algorithmically and practically.  Therefore we
 provide a way to use pFIRE as a drop in replacement for ``ShIRT Register`` in existing workflows.
 If the executable is invoked with the name `shirt` or `pfire-shirt` (either by renaming or using a
 symlink) then pFIRE will interpret command line input using the ShIRT syntax.  In this mode the
