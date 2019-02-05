@@ -246,8 +246,8 @@ Vec_unique Map::get_dim_data_dmda_blocked(uinteger dim) const
 void Map::calculate_basis()
 {
   // Get the full Nd basis
-  floatvector scalings(m_ndim, 0.0);
-  floatvector offsets(m_ndim, 0.0);
+  floatvector scalings(this->m_v_node_spacing.size(), 0.0);
+  floatvector offsets(this->m_v_node_spacing.size(), 0.0);
 
   std::transform(
       this->m_v_node_spacing.begin(), this->m_v_node_spacing.end(), scalings.begin(),
