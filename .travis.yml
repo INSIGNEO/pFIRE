@@ -25,7 +25,7 @@ matrix:
             - libdcmtk-dev
             - petsc-dev
       env:
-        - MATRIX_EVAL="OMPI_CC=gcc-7 && OMPI_CXX=g++-7"
+        - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
 
     - os: linux
       addons:
@@ -44,16 +44,14 @@ matrix:
             - libdcmtk-dev
             - libpetsc3.6.2-dev
       env:
-        - MATRIX_EVAL="OMPI_CC=gcc-8 && OMPI_CXX=g++-8"
+        - MATRIX_EVAL="CC=gcc-8 && CXX=g++-8"
 
 
 before_install:
   - eval "${MATRIX_EVAL}"
-  - export CC=mpicc
-  - export CXX=mpic++
 
 script:
   - mkdir build
   -  cd build
-  - cmake ..
+  - cmake -DPETSC_EXECUTABLE_RUNS:BOOL=Yes ..
   - make
