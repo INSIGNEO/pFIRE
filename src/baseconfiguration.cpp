@@ -20,19 +20,18 @@
 #include "infix_iterator.hpp"
 
 const config_map ConfigurationBase::default_config = {{"verbose", "false"},
-                                                      {"registered", "registered.xdmf:/registered"},
-                                                      {"map", "map.xdmf:/map"},
-                                                      {"lambda", "auto"},
-                                                      {"debug_frames", "false"},
-                                                      {"debug_frames_prefix", "debug"}};
+    {"registered", "registered.xdmf:/registered"}, {"map", "map.xdmf:/map"}, {"lambda", "auto"},
+    {"lambda_mult", "1.0"}, {"with_memory", "true"}, {"debug_frames", "false"},
+    {"debug_frames_prefix", "debug"}};
 
-const std::vector<std::string> ConfigurationBase::required_options = {"fixed", "moved",
-                                                                      "nodespacing"};
+const std::vector<std::string> ConfigurationBase::required_options = {
+    "fixed", "moved", "nodespacing"};
 
-const std::vector<std::string> ConfigurationBase::arg_options = {
-    "fixed", "moved", "mask", "nodespacing", "registered", "map", "debug_frames_prefix", "lambda"};
+const std::vector<std::string> ConfigurationBase::arg_options = {"fixed", "moved", "mask",
+    "nodespacing", "registered", "map", "debug_frames_prefix", "lambda", "lambda_mult"};
 
-const std::vector<std::string> ConfigurationBase::bool_options = {"verbose", "debug_frames"};
+const std::vector<std::string> ConfigurationBase::bool_options = {
+    "verbose", "debug_frames", "with_memory"};
 
 ConfigurationBase::ConfigurationBase(const int &argc, char const *const *argv)
   : config(default_config), arguments(argv + 1, argv + argc),

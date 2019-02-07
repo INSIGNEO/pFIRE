@@ -140,6 +140,7 @@ void Elastic::innerloop(integer outer_count)
 
 void Elastic::innerstep(integer inum, bool recalculate_lambda)
 {
+  floating lambda_mult = configuration.grab<floating>("lambda_mult");
   // calculate up to date tmat
   calculate_tmat(inum);
 
@@ -155,19 +156,20 @@ void Elastic::innerstep(integer inum, bool recalculate_lambda)
 
   floating lapldiagavg = diagonal_sum(*m_p_map->laplacian()) / (m_p_map->size() * m_p_map->m_ndim);
   floating tdiagavg = diagonal_sum(*normmat) / m_p_map->size();
-  floating laplmult = tdiagavg / lapldiagavg;
-  PetscPrintf(m_comm, "laplavg = %g, tavg = %g, mult=%g\n", lapldiagavg, tdiagavg, laplmult);
+  floating lapl_mult = tdiagavg / lapldiagavg;
+  PetscPrintf(m_comm, "laplavg = %g, tavg = %g, mult=%g\n", lapldiagavg, tdiagavg, lapl_mult);
 
   if(recalculate_lambda)
   {
-    m_lambda = approximate_optimum_lambda(*normmat, *m_p_map->laplacian(), laplmult,
+    m_lambda = approximate_optimum_lambda(*normmat, *m_p_map->laplacian(), lapl_mult,
         m_lambda, 10.0, 30, k_lambda_min);
     PetscPrintf(m_comm, "Calculated smoothing factor: %.2f\n", m_lambda);
 
   }
 
+  floating total_mult = lapl_mult * lambda_mult * m_lambda;
   // calculate tmat2 + lambda*lapl2
-  perr = MatAXPY(*normmat, laplmult * m_lambda, *m_p_map->laplacian(), DIFFERENT_NONZERO_PATTERN);
+  perr = MatAXPY(*normmat, total_mult, *m_p_map->laplacian(), DIFFERENT_NONZERO_PATTERN);
   CHKERRABORT(m_comm, perr);
 
   // calculate rvec, to do this need to reuse stacked vector for [f-m f-m f-m f-m]
@@ -176,6 +178,25 @@ void Elastic::innerstep(integer inum, bool recalculate_lambda)
   CHKERRABORT(m_comm, perr);
   m_workspace->duplicate_single_grad_to_stacked(0);
   perr = MatMultTranspose(*m_workspace->m_tmat, *m_workspace->m_stacktmp, *m_workspace->m_rhs);
+  CHKERRABORT(m_comm, perr);
+
+  // apply memory term if needed
+  if(configuration.grab<bool>("with_memory"))
+  {
+    // build -lambda*a
+    Vec_unique disp = create_unique_vec();
+    perr = VecDuplicate(m_p_map->displacements(), disp.get());
+    CHKERRABORT(m_comm, perr);
+    perr = VecCopy(m_p_map->displacements(), *disp);
+    CHKERRABORT(m_comm, perr);
+    perr = VecScale(*disp, -m_lambda * lambda_mult);
+    CHKERRABORT(m_comm, perr);
+
+    // calculate vecdot(lapl_2, -lambda*a) and add to rhs in one operation
+    perr = MatMultAdd(*m_p_map->laplacian(), *disp, *m_workspace->m_rhs, *m_workspace->m_rhs);
+    CHKERRABORT(m_comm, perr);
+  }
+
 
   // Force free tmat as no longer needed
   m_workspace->m_tmat = create_unique_mat();

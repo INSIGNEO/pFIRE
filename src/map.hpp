@@ -66,6 +66,10 @@ public:
   {
     return std::accumulate(map_shape.cbegin(), map_shape.cend(), 1, std::multiplies<>());
   }
+  Vec& displacements() const
+  {
+    return *m_displacements;
+  }
 
   floatvector low_corner() const;
   std::pair<integer, integer> get_displacement_ownershiprange() const;
@@ -81,8 +85,8 @@ public:
   std::pair<intvector, intvector> get_dmda_local_extents() const;
   Vec_unique get_dim_data_dmda_blocked(uinteger dim) const;
 
-  static intvector
-  calculate_map_shape(intvector const& image_shape, floatvector const& nodespacing);
+  static intvector calculate_map_shape(
+      intvector const& image_shape, floatvector const& nodespacing);
 
   // private:
 
