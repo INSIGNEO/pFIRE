@@ -1,11 +1,20 @@
 #!/bin/bash
 
 (
-cd $HOME/repos/pfire
-export PATH="${PATH}:${PWD}/bin"
-sphinx-build doc/ gh-pages/
-cd gh-pages/
-git add --all
-git commit -m "$(date)"
-git push upstream gh-pages
+basedir="$HOME/repos/pfire/"
+docdir="doc"
+ghpdir="gh-pages"
+
+
+cd $basedir
+(
+cd $docdir
+zip -r _static/pfire_tutorial_files.zip tutorial_files
+)
+export PATH="${PATH}:${basedir}/bin"
+sphinx-build -an $docdir $ghpdir
+cd $ghpdir
+#git add --all
+#git commit -m "$(date)"
+#git push upstream gh-pages
 )

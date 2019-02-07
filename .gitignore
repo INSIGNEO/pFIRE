@@ -9,6 +9,7 @@ compile_commands.json
 test_data/
 build/
 doc/_build/
+doc/_static/pfire_tutorial_files.zip
 gitstate.hpp
 gitstate.cpp
 gh-pages
