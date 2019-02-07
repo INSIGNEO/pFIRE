@@ -229,7 +229,7 @@ With the global smoothing term disabled the quality of the registration is vastl
 mouth is cleanly registered with much smaller error, and the border of the face, along with the
 eyes remain static through the registration.
 
-*The ``with memory`` parameter provides control over the global smoothing of the displacement
+*The* ``with memory`` *parameter provides control over the global smoothing of the displacement
 field.  The appropriateness of the global smoothing is problem specific, and for more unusual
 problems some experimentation may be required to find the optimal smoothing behaviour.*
 
