@@ -16,6 +16,7 @@
 #include "map.hpp"
 
 #include <petscvec.h>
+#include <petscis.h>
 
 #include "basis.hpp"
 #include "image.hpp"
@@ -222,8 +223,30 @@ Vec_unique Map::get_dim_data_dmda_blocked(uinteger dim) const
   IS_unique tgt_is(create_unique_is());
   perr = ISCreateStride(m_comm, datasize, startelem, 1, tgt_is.get());
   CHKERRABORT(m_comm, perr);
-  perr = AOPetscToApplicationIS(ao_petsctonat, *tgt_is);
+  // First need to get natural ordering -> Petsc (col major)
+  perr = AOApplicationToPetscIS(ao_petsctonat, *tgt_is);
   CHKERRABORT(m_comm, perr);
+  // Now mutate to row major
+  intvector locs(3, 0);
+  intvector widths(3, 0);
+  perr = DMDAGetCorners(*map_dmda, &locs[0], &locs[1], &locs[2], &widths[0], &widths[1], &widths[2]);
+  CHKERRABORT(m_comm, perr);
+
+  integer tgt_is_len;
+  perr = ISGetLocalSize(*tgt_is, &tgt_is_len);
+  CHKERRABORT(m_comm, perr);
+
+  integer const * indices;
+  perr = ISGetIndices(*tgt_is, &indices);
+  CHKERRABORT(m_comm, perr);
+  intvector tgtidxn(tgt_is_len);
+  std::transform(indices, indices + tgt_is_len, tgtidxn.begin(),
+                 [widths, startelem](integer idx) -> integer {return idx_cmaj_to_rmaj(idx, widths) + startelem;});
+  perr = ISRestoreIndices(*tgt_is, &indices);
+  CHKERRABORT(m_comm, perr);
+  // Now create final target IS
+  tgt_is.reset(new IS);
+  perr = ISCreateGeneral(m_comm, tgt_is_len, tgtidxn.data(), PETSC_USE_POINTER, tgt_is.get());
 
   // Source range is equivalent range offset to dimension 
   IS_unique src_is(create_unique_is());
