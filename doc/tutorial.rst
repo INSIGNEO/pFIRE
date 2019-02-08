@@ -23,7 +23,7 @@ in the registration until the required resolution is reached.  This is expressed
 configuration file using the parameter ``nodespacing``, which gives the spacing between nodes in
 image pixels.
 
-A Minimal Configuration File
+The pFIRE Configuration File
 ============================
 
 pFIRE is run from the command line, with all the configuration options set in a configuration file.
@@ -184,7 +184,7 @@ This registers the same images once again, but reducing the smoothing by a facto
 
 This results in a registration that is very similar to the first, the registration of the details
 of the mouth is improved, but there are still issues with the rest of the image. This is a problem
-with the way the image is smoothed, and cannot be solved by simply changing the smoothing strength,
+with the way the image is smoothed, and cannot be solved by simply changing the smoothing strength;
 instead we must change the fundamental smoothing behaviour.
 
 The Memory Term
@@ -277,3 +277,54 @@ provided in ``sad2grin.conf``.  Performing the registration should result in:
 
 As you can see: *pFIRE will always produce a result. It is entirely up to the user to determine if
 two images are suitable to be registered, and to check the results are sane!*
+
+
+Application Examples
+====================
+
+This section highlights some of the applications for elastic registration. Providing hands-on
+examples with additional exemplar code to demonstrate the pre- or post-processing steps involved in
+the application. 
+
+*Please note that this additional code is designed purely for teaching purposes and has not been
+tested or verified in any way for use in any other context.*
+
+
+Multimodal Image Alignment
+--------------------------
+
+A common application for image registration is the correct alignment of multiple images of the same
+sample, taken via different modalities.  For example the alignment of CT and MRI scans of the same
+organ, or the alignment of multiple histological samples.  This latter case is what we use for this
+example. Alignment of such histological samples is particularly difficult due to non-linear
+distortion introduced into the sample during the preparation process.  
+
+The tutorial folder ``lung_lobes`` contains a set of 2D histological microscopy tissue slices,
+stained with a variety of different stains. Along with the images, the dataset also includes a set of manually identified tissue landmarks.
+These are located on the same structures in each sample and can be used to validate the
+registration of the image. This dataset is made available under a creative commons license
+(CC-BY-SA) by `Jiří Borovec`_ (see :ref:`below <dataset_information>`).
+
+.. _dataset_information:
+
+Dataset Information
+"""""""""""""""""""
+
+This dataset [1]_ was curated by `Jiří Borovec`_, Center for Machine Perception, Department of
+Cybernetics, Faculty of Electrical Engineering, Czech Technical University in Prague, from images
+provided by Prof. Arrate Munoz-Barrutia, Center for Applied Medical Research (CIMA), University of
+Navarra, Pamplona Spain [2]_; and Prof. Ortiz de Solórzano, Center for Applied Medical Research
+(CIMA), University of Navarra, Pamplona Spain [3]_. 
+
+.. _Jiří Borovec: http://cmp.felk.cvut.cz/~borovji3/?page=dataset
+
+.. [1] J. Borovec, A. Munoz-Barrutia, and J. Kybic, “Benchmarking of Image Registration Methods for
+   Differently Stained Histological Slides,” in IEEE International Conference on Image Processing
+   (ICIP), 2018, pp. 3368–3372.
+.. [2] J. Borovec, J. Kybic, M. Bušta, C. Ortiz-de-Solorzano, and A. Munoz-Barrutia, “Registration of
+   multiple stained histological sections,” in IEEE International Symposium on Biomedical Imaging
+   (ISBI), 2013, pp. 1034–1037.
+.. [3] R. Fernandez-Gonzalez et al., “System for combined three-dimensional morphological and
+   molecular analysis of thick tissue specimens,” Microsc. Res. Tech., vol. 59, no. 6, pp. 522–530,
+   2002.
+
