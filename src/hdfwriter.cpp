@@ -38,6 +38,36 @@ HDFWriter::~HDFWriter()
   H5Fclose(_file_h);
 }
 
+void HDFWriter::write_dataset_parallel(uinteger ndim, const std::vector<hsize_t>& fullshape,
+    const std::vector<hsize_t>& chunkshape, const std::vector<hsize_t> &offset,
+    const std::string& groupname, Vec& datavec)
+{
+  // No need to set max size as want it to be same as given size.
+  hid_t fspace_h = H5Screate_simple(ndim, fullshape.data(), nullptr);
+
+  hid_t dset_h = H5Dcreate(_file_h, groupname.c_str(), H5T_NATIVE_DOUBLE, fspace_h, H5P_DEFAULT,
+      H5P_DEFAULT, H5P_DEFAULT);
+
+  H5Sselect_hyperslab(fspace_h, H5S_SELECT_SET, offset.data(), nullptr, chunkshape.data(), nullptr);
+
+  hid_t plist_h = H5Pcreate(H5P_DATASET_XFER);
+  H5Pset_dxpl_mpio(plist_h, H5FD_MPIO_COLLECTIVE);
+
+  hid_t dspace_h = H5Screate_simple(ndim, chunkshape.data(), nullptr);
+
+  const floating* imgdata;
+  PetscErrorCode perr = VecGetArrayRead(datavec, &imgdata);
+  CHKERRABORT(_comm, perr);
+  H5Dwrite(dset_h, H5T_NATIVE_DOUBLE, dspace_h, fspace_h, plist_h, imgdata);
+  perr = VecRestoreArrayRead(datavec, &imgdata);
+  CHKERRABORT(_comm, perr);
+
+  H5Dclose(dset_h);
+  H5Sclose(fspace_h);
+  H5Sclose(dspace_h);
+  H5Pclose(plist_h);
+}
+
 void HDFWriter::write_image(const Image& image)
 {
   // Sanity check communicators
@@ -52,35 +82,11 @@ void HDFWriter::write_image(const Image& image)
   int rank;
   MPI_Comm_rank(comm, &rank);
 
-  // No need to set max size as want it to be same as given size.
-  std::vector<hsize_t> imshape(image.shape().cbegin(), image.shape().cend());
-  hid_t fspace_h = H5Screate_simple(image.ndim(), imshape.data(), nullptr);
+  std::vector<hsize_t> imgsizehsizet(image.shape().cbegin(), image.shape().cend());
 
-  hid_t dset_h = H5Dcreate(_file_h, h5_groupname.c_str(), H5T_NATIVE_DOUBLE, fspace_h, H5P_DEFAULT,
-      H5P_DEFAULT, H5P_DEFAULT);
+  write_dataset_parallel(image.ndim(), imgsizehsizet, image.mpi_get_chunksize<hsize_t>(),
+      image.mpi_get_offset<hsize_t>(), h5_groupname.c_str(), *image.get_raw_data_row_major());
 
-  std::vector<hsize_t> offset = image.mpi_get_offset<hsize_t>();
-  std::vector<hsize_t> chunksize = image.mpi_get_chunksize<hsize_t>();
-
-  H5Sselect_hyperslab(fspace_h, H5S_SELECT_SET, offset.data(), nullptr, chunksize.data(), nullptr);
-
-  hid_t plist_h = H5Pcreate(H5P_DATASET_XFER);
-  H5Pset_dxpl_mpio(plist_h, H5FD_MPIO_COLLECTIVE);
-
-  hid_t dspace_h = H5Screate_simple(image.ndim(), chunksize.data(), nullptr);
-
-  Vec_unique rm_data = image.get_raw_data_row_major();
-  const floating* imgdata;
-  PetscErrorCode perr = VecGetArrayRead(*rm_data, &imgdata);
-  CHKERRABORT(_comm, perr);
-  H5Dwrite(dset_h, H5T_NATIVE_DOUBLE, dspace_h, fspace_h, plist_h, imgdata);
-  perr = VecRestoreArrayRead(*rm_data, &imgdata);
-  CHKERRABORT(_comm, perr);
-
-  H5Dclose(dset_h);
-  H5Sclose(fspace_h);
-  H5Sclose(dspace_h);
-  H5Pclose(plist_h);
 }
 
 void HDFWriter::write_map(const Map& map)

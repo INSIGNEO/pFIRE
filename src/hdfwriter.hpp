@@ -43,6 +43,11 @@ private:
   hid_t _file_h;
 
   void open_or_create_h5();
+  
+  void write_dataset_parallel(uinteger ndim, const std::vector<hsize_t>& fullshape,
+    const std::vector<hsize_t>& chunkshape, const std::vector<hsize_t> &offset,
+    const std::string& groupname, Vec& datavec);
+
 };
 
 #endif // HDFWRITER_HPP
