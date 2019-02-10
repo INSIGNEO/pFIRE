@@ -44,7 +44,9 @@ private:
 
   void open_or_create_h5();
   
-  void write_dataset_parallel(uinteger ndim, const std::vector<hsize_t>& fullshape,
+  void write_1d_dataset_rank0(hsize_t nval, const std::string& groupname, const floating *databuf);
+
+  void write_3d_dataset_parallel(uinteger ndim, const std::vector<hsize_t>& fullshape,
     const std::vector<hsize_t>& chunkshape, const std::vector<hsize_t> &offset,
     const std::string& groupname, Vec& datavec);
 
