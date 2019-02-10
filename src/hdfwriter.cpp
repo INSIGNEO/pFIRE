@@ -42,6 +42,7 @@ void HDFWriter::write_3d_dataset_parallel(uinteger ndim, const std::vector<hsize
     const std::vector<hsize_t>& chunkshape, const std::vector<hsize_t> &offset,
     const std::string& groupname, Vec& datavec)
 {
+  PetscPrintf(_comm, "Writing dataset: %s:%s\n", h5_filename.c_str(), groupname.c_str());
   // No need to set max size as want it to be same as given size.
   hid_t fspace_h = H5Screate_simple(ndim, fullshape.data(), nullptr);
 
@@ -70,7 +71,7 @@ void HDFWriter::write_3d_dataset_parallel(uinteger ndim, const std::vector<hsize
 
 void HDFWriter::write_1d_dataset_rank0(hsize_t nval, const std::string& groupname, const floating* databuf)
 {
-  PetscPrintf(_comm, "Creating dataset: %s", groupname.c_str());
+  PetscPrintf(_comm, "Writing dataset: %s:%s\n", h5_filename.c_str(), groupname.c_str());
   int rank;
   MPI_Comm_rank(_comm, &rank);
   // No need to set max size as want it to be same as given size.
@@ -136,9 +137,11 @@ void HDFWriter::write_map(const Map& map)
     auto corners = map.get_dmda_local_extents();
     std::vector<hsize_t> offset(corners.first.cbegin(), corners.first.cend());
     std::vector<hsize_t> chunksize(corners.second.cbegin(), corners.second.cend());
+    /*
     PetscSynchronizedPrintf(_comm, "Rank %i: ofs: %i %i %i, shp %i %i %i\n", rank, offset[0], offset[1], offset[2],
                             chunksize[0], chunksize[1], chunksize[2]);
     PetscSynchronizedFlush(_comm, PETSC_STDOUT);
+    */
     std::ostringstream dsetss;
     dsetss << h5_groupname << "/" << _components[idx];
     std::string dsetname = dsetss.str();

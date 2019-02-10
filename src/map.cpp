@@ -193,7 +193,6 @@ Vec_unique Map::get_raw_data_row_major(uinteger dim) const
 {
   // scatter relevant dim to dmda vec, reordering natural to global
   Vec_unique tmp_vec(get_single_dim_petsc(dim));
-  VecView(*tmp_vec, PETSC_VIEWER_STDOUT_WORLD);
 
   // get DMDA local sizes
   intvector locs(3, 0);
