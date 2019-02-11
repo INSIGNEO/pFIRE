@@ -20,9 +20,12 @@ def parse_args():
     parser.add_argument("fixed", help="Path to fixed image")
     parser.add_argument("moved", help="Path to moved image")
     parser.add_argument("map", help="Path to map file")
-    parser.add_argument("output", help="Path to save quiverplot png.")
+    parser.add_argument("output", help="Path to save output png.")
     parser.add_argument("--group", default="map", help="Group name of map.")
-    parser.add_argument("--flip", action="store_true", default=False)
+    parser.add_argument("--flip", action="store_true", default=False,
+                        help="Flip image vertically (origin top-left)")
+    parser.add_argument("--invert-map", action="store_true", default=False,
+                        help="Invert mapping before plotting")
 
     return parser.parse_args()
 
@@ -67,15 +70,14 @@ def main():
     ns_x = np.diff(nodes_x)[0]/2
     ns_y = np.diff(nodes_y)[0]/2
 
-    fixed = skio.imread(args.fixed, as_gray=True)
-    moved = skio.imread(args.moved, as_gray=True)
+    fixed = skio.imread(args.fixed, as_grey=True)
+    moved = skio.imread(args.moved, as_grey=True)
 
     assert fixed.ndim == 2
     assert fixed.shape == moved.shape
 
-    mapdata = reverse_mapping((nodes_x, nodes_y), mapdata)
-
-    print(mapdata)
+    if args.invert_map:
+        mapdata = reverse_mapping((nodes_x, nodes_y), mapdata)
 
     figsize = (basesize, basesize*(len(nodes_y)/len(nodes_x)))
 
@@ -98,7 +100,9 @@ def main():
     if args.flip:
         ax.invert_yaxis()
 
-    fig.savefig(args.output)
+    fig.savefig(args.output, fmt="png")
+
+    print("Saved {}".format(args.output))
 
 if __name__ == "__main__":
     main()

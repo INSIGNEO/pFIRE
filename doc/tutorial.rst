@@ -419,12 +419,19 @@ in Python. The script takes four arguments:
 
 :output: Path to output the resulting image (png)
 
-For example, to render the results of the first sample problem in ``faces_1/sad2happy.png``,
+:--group: Specify the group name of the map in HDF5 file (default "map")
+
+:--flip: Flip image vertically (puts origin in the upper left)
+
+:--invert-map: Invert the mapping to show direction of motion from moved to fixed image.
+
+For example, to render the results of the first sample problem in ``faces_1/sad2happy_default.png``,
 navigate to that folder and run
 
-.. code-block:: shell
+.. runblock:: console
    
-   $ mapplot2d.py happy.png sad.png happy2sad.xdmf.h5 happy2sad_map_render.png
+   $ cd tutorial_files/faces_1
+   $ mapplot2d.py --flip --invert-map happy.png sad.png sad2happy_default.xdmf.h5 sad2happy_map_render.png
 
 which results in:
 
@@ -435,6 +442,10 @@ which results in:
 +------------------------------+
 
 .. |sad2happy_map_render| image:: /tutorial_files/faces_1/sad2happy_map_render.png
+
+The resulting image shows the moved image in red, and the fixed image in grey, with the map vector
+field overlaid. In this case the map is inverted to show the direction of motion of the pixels
+between the moved and fixed images.
 
 ParaView
 """"""""
@@ -519,6 +530,15 @@ In this case, the intermediate frames will be saved to the ``intermediate_frames
 named ``intermediates-00-000.jpeg``.  Note that using this template format pFIRE has been instructed
 to output the intermediate frames as jpeg images even though the registered image is output in png
 format.
+
+This results in an image series like the following (animated gif):
+
++-----------------------------+
+| |intermediates_anim|        |
++-----------------------------+
+
+.. |intermediates_anim| image:: /tutorial_files/intermediate_frames/loop.gif
+   :scale: 100%
 
 Application Examples
 ====================

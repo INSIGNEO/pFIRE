@@ -100,13 +100,19 @@ void HDFWriter::write_image(const Image& image)
     throw std::runtime_error(errss.str());
   }
 
+  std::string groupname = h5_groupname;
+  if(groupname.empty())
+  {
+    groupname = "/registered";
+  }
+
   int rank;
   MPI_Comm_rank(comm, &rank);
 
   std::vector<hsize_t> imgsizehsizet(image.shape().cbegin(), image.shape().cend());
 
   write_3d_dataset_parallel(image.ndim(), imgsizehsizet, image.mpi_get_chunksize<hsize_t>(),
-      image.mpi_get_offset<hsize_t>(), h5_groupname, *image.get_raw_data_row_major());
+      image.mpi_get_offset<hsize_t>(), groupname, *image.get_raw_data_row_major());
 }
 
 void HDFWriter::write_map(const Map& map)
@@ -120,10 +126,16 @@ void HDFWriter::write_map(const Map& map)
     throw std::runtime_error(errss.str());
   }
 
+  std::string groupname = h5_groupname;
+  if(groupname.empty())
+  {
+    groupname = "/map";
+  }
+
   int rank;
   MPI_Comm_rank(comm, &rank);
 
-  hid_t mgroup_h = H5Gcreate(_file_h, h5_groupname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  hid_t mgroup_h = H5Gcreate(_file_h, groupname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   if (mgroup_h < 0)
   {
     std::ostringstream errstr;
@@ -143,7 +155,7 @@ void HDFWriter::write_map(const Map& map)
     PetscSynchronizedFlush(_comm, PETSC_STDOUT);
     */
     std::ostringstream dsetss;
-    dsetss << h5_groupname << "/" << _components[idx];
+    dsetss << groupname << "/" << _components[idx];
     std::string dsetname = dsetss.str();
 
     std::vector<hsize_t> mapsizehsizet(map.shape().cbegin(), map.shape().cend());
@@ -153,7 +165,7 @@ void HDFWriter::write_map(const Map& map)
 
     dsetss.clear();
     dsetss.str(std::string());
-    dsetss << h5_groupname << "/nodes_" << _components[idx];
+    dsetss << groupname << "/nodes_" << _components[idx];
     dsetname = dsetss.str();
 
     write_1d_dataset_rank0(map.shape()[idx], dsetname, map.node_locs()[idx].data());
