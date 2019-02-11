@@ -17,6 +17,9 @@ gh-pages
 *.png
 *.swp
 *.xdmf*
+*.aux
+*.log
+*.pdf
 
 # Compiled Object files
 *.slo

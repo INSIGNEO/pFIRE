@@ -278,6 +278,99 @@ provided in ``sad2grin.conf``.  Performing the registration should result in:
 As you can see: *pFIRE will always produce a result. It is entirely up to the user to determine if
 two images are suitable to be registered, and to check the results are sane!*
 
+The Displacement Map
+====================
+
+The primary output of pFIRE is the displacement map.  This is a 2-D or 3-D vector field describing
+how the moved image is related to the fixed image.  Specifically, pFIRE outputs the reverse
+mapping, describing for a given point in the fixed image, the location in the moved image that this
+point corresponds to.  This can be expressed as
+
+.. math:: f(\bar{x}) = m(\bar{x} + \bar{R}(\bar{x}))
+
+where :math:`f(\bar{x})` and :math:`m(\bar{x})` are the intensity values at the point
+:math:`\bar{x}` of the fixed and moved images respectively, and :math:`\bar{R}(\bar{x})` is the
+displacement field at that point.  The displacement field is calculated on a regular grid by pFIRE,
+with values between grid nodes found by linear interpolation.
+
+Applying the Map
+----------------
+
+This is the form of the mapping used internally in pFIRE to transform the moved image to the fixed image, since
+for each pixel in the fixed image it provides a location in the moved image which can be sampled to
+determine the value of the pixel in the fixed image. This may not be exactly located in the centre
+of a pixel, in which case linear interpolation is used to sample the four nearest pixels to the
+sample point.  This can be considered as "pulling" the moved image to line up with the fixed image.
+
+Often, however, we will in fact want to "push" something that we know the coordinates of the in
+fixed image, in order to determine its location in the moved image.  This might be the location of
+manually determined landmark, or another image. For example, in the case of segmentation by
+registration the moved image is registered to a fixed image which is already segmented.  This
+segmentation information may then be mapped back to the moved image by displacing the segmentated
+volumes using the displacement field.
+
+Specific examples of using the map in this way are demonstrated later in this tutorial.
+
+Reversing the Mapping
+"""""""""""""""""""""
+
+It is often desirable to invert the mapping. This allows objects with known coordinates in
+the moved image to be "pushed" to their corresponding location in the fixed image, or to be
+"pulled" from the fixed image to the moved image.
+
+The mapping is given by the displacement field, where for a point :math:`\bar{x}` in the fixed
+image, the corresponding point in the moved image :math:`\bar{x}'` is given by
+
+.. math:: \bar{x}' = \bar{x} + \bar{R}(\bar{x}),
+
+and since mapping goes both ways, we can also write the location of :math:`\bar{x}` in terms of
+:math:`\bar{x}'` using the reverse mapping :math:`\bar{R}'(\bar{x}')` as 
+
+.. math:: \bar{x} = \bar{x}' + \bar{R}'(\bar{x})'.
+
+Equating these two expressions we find that
+
+.. math:: \bar{R}'(\bar{x})' = -\bar{R}(\bar{x}).
+
+This means we can get the reverse mapping by simply reversing the direction of the displacement
+field, **but we must also remember to move the nodes**. The locations of the nodes for the reverse
+mapping are found by pushing the nodes from the forward mapping from the fixed image to the moved
+image.
+
+This relationship is demonstrated graphically below:
+
++-----------------------------+-----------------------------+
+| |forward_mapping|           | |reverse_mapping|           |
++-----------------------------+-----------------------------+
+| Foward Mapping              | Reverse Mapping             |
++-----------------------------+-----------------------------+
+
+.. |forward_mapping| image:: /_static/tutorial_images/mapping_forward.svg
+   :scale: 100%
+
+.. |reverse_mapping| image:: /_static/tutorial_images/mapping_reverse.svg
+   :width: 100%
+
+
+If the reverse mapping field is needed at the original node coordinates this can be found by
+interpolating the reverse mapping at the moved nodes.
+
+The HDF5/XDMF Output Format
+---------------------------
+-hdf5 format
+
+Visualising The Map
+-------------------
+
+Paraview
+""""""""
+
+The ``map2png`` script
+""""""""""""""""""""""
+
+-simple 2D map vis tool
+
+
 Intermediate Frames
 ===================
 
