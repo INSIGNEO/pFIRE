@@ -1,0 +1,6 @@
+/                        Group
+/map                     Group
+/map/nodes_x             Dataset {13}
+/map/nodes_y             Dataset {11}
+/map/x                   Dataset {13, 11}
+/map/y                   Dataset {13, 11}

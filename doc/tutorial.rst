@@ -33,6 +33,8 @@ The minimum information pFIRE requires to perform a registration is a fixed imag
 and a target nodespacing. If the parameters ``fixed``, ``moved`` and ``nodespacing`` are not set in
 the configuration file, pFIRE will abort with an error. 
 
+# TODO ADD OUTPUT OPTION INFO
+
 A minimal configuration file will look like this:
 
 .. code-block:: ini
@@ -277,6 +279,173 @@ provided in ``sad2grin.conf``.  Performing the registration should result in:
 
 As you can see: *pFIRE will always produce a result. It is entirely up to the user to determine if
 two images are suitable to be registered, and to check the results are sane!*
+
+The Displacement Map
+====================
+
+The primary output of pFIRE is the displacement map.  This is a 2-D or 3-D vector field describing
+how the moved image is related to the fixed image.  Specifically, pFIRE outputs a map which for a
+given point in the fixed image, describes the location in the moved image that this point
+corresponds to.  This can be expressed as
+
+.. math:: f(\bar{x}) = m(\bar{x} + \bar{R}(\bar{x}))
+
+where :math:`f(\bar{x})` and :math:`m(\bar{x})` are the intensity values at the point
+:math:`\bar{x}` of the fixed and moved images respectively, and :math:`\bar{R}(\bar{x})` is the
+displacement field at that point.  The displacement field is calculated on a regular grid by pFIRE,
+with values between grid nodes found by linear interpolation.
+
+Applying the Map
+----------------
+
+The output map is also the form of the mapping used internally in pFIRE to transform the moved
+image to the fixed image: Each pixel in the fixed image is mapped to a location in the moved image.
+The moved image is then sampled to determine the value of the pixel in the fixed image. The
+sampling point may not be exactly located in the centre of a pixel, in which case linear
+interpolation is used to sample the four nearest pixels to the sample point.  This can be
+considered as "pulling" the moved image to line up with the fixed image.
+
+Often, however, we will in fact want to "push" something that we know the coordinates of the in
+fixed image, in order to determine its location in the moved image.  This might be the location of
+manually determined landmark, or another image. For example, in the case of segmentation by
+registration the moved image is registered to a fixed image which is already segmented.  This
+segmentation information may then be mapped back to the moved image by displacing the segmentated
+volumes using the displacement field.
+
+Specific examples of using the map in this way are demonstrated later in this tutorial.
+
+Reversing the Mapping
+"""""""""""""""""""""
+
+It is often desirable to invert the mapping. This allows objects with known coordinates in
+the moved image to be "pushed" to their corresponding location in the fixed image, or to be
+"pulled" from the fixed image to the moved image.
+
+The mapping is given by the displacement field, where for a point :math:`\bar{x}` in the fixed
+image, the corresponding point in the moved image :math:`\bar{x}'` is given by
+
+.. math:: \bar{x}' = \bar{x} + \bar{R}(\bar{x}),
+
+and since mapping goes both ways, we can also write the location of :math:`\bar{x}` in terms of
+:math:`\bar{x}'` using the reverse mapping :math:`\bar{R}'(\bar{x}')` as 
+
+.. math:: \bar{x} = \bar{x}' + \bar{R}'(\bar{x})'.
+
+Equating these two expressions we find that
+
+.. math:: \bar{R}'(\bar{x})' = -\bar{R}(\bar{x}).
+
+This means we can get the reverse mapping by simply reversing the direction of the displacement
+field, **but we must also remember to move the nodes**. The locations of the nodes for the reverse
+mapping are found by pushing the nodes from the forward mapping from the fixed image to the moved
+image.
+
+This relationship is demonstrated graphically below:
+
++-----------------------------+-----------------------------+
+| |forward_mapping|           | |reverse_mapping|           |
++-----------------------------+-----------------------------+
+| Foward Mapping              | Reverse Mapping             |
++-----------------------------+-----------------------------+
+
+.. |forward_mapping| image:: /_static/tutorial_images/mapping_forward.svg
+   :scale: 100%
+
+.. |reverse_mapping| image:: /_static/tutorial_images/mapping_reverse.svg
+   :width: 100%
+
+
+If the inverse mapping field is needed at the original node coordinates this can be found by
+interpolating the reverse mapping at the desired points.
+
+The HDF5/XDMF Output Format
+---------------------------
+
+The primary output format that pFIRE uses for displacement maps is an HDF5_ file, with XDMF_
+metatdata file, both of which are well known and standardised formats.  The HDF5 file is a binary format which contains the map as arrays of displacement
+field values and node locations.  The XDMF file is a small metadata file which describes the layout
+of the data within the HDF5 file, and is intended to be consumed by visualisation programs such as
+ParaView_ or VisIt_.
+
+HDF5 Data Layout
+""""""""""""""""
+
+A HDF5 file may contain multiple datasets organised into groups, similar to the way that files may
+be organised into folders in a computer filesystem.  For pFIRE map data, the map data is stored in
+4 or 6 datasets, depending on the dimensionality of the image. These datasets will be stored in a
+group, the name of which can be chosen by the user in the configuration file (the default is
+``/map``).
+
+The displacement field data itself is stored in 2 or 3 2D or 3D array datasets, one per spatial
+component, named `x`, `y`, and, if the problem is 3D, `z`.  The node location data is stored in 2
+or 3 1D array datasets, named `nodes_x`, `nodes_y`, and `nodes_z`, listing the node locations along
+each axis. For example, with the default group naming of ``map``, a 2D dimensional problem with a
+:math:`13\times 11` displacement field, would result in an HDF5 file with the following structure:
+
+.. literalinclude:: /_static/tutorial_images/map_h5ls.txt
+
+This HDF5 file may be opened and used by and program or library which supports it.  However, for
+simply viewing the map, the supplied XDMF metadata file makes it straightforward to view the map
+using standard visualisation software such as Paraview.
+
+.. _HDF5: https://portal.hdfgroup.org/display/HDF5/HDF5
+.. _XDMF: http://www.xdmf.org/index.php/XDMF_Model_and_Format
+.. _ParaView: https://www.paraview.org/
+.. _VisIt: https://wci.llnl.gov/simulation/computer-codes/visit/
+
+Visualising The Map
+-------------------
+
+Visualisation of the map can be performed in multiple ways using either existing visualisation
+software, or by writing custom analysis and plotting routines.  This tutorial includes a simple
+demonstration of both of these methods.
+
+The ``mapplot2d`` script
+""""""""""""""""""""""""
+
+A small python script called ``mapplot2d.py`` is supplied with pFIRE.  It is intended to be both a
+simple viewer tool for 2D problems and as a teaching aid to demonstrate working with the map data
+in Python. The script takes four arguments:
+
+.. runblock:: console
+
+   $ mapplot2d.py --help
+
+:fixed: The path to the fixed image.
+
+:moved: The path to the moved image.
+
+:map: The path to the map hdf5 file.
+
+:output: Path to output the resulting image (png)
+
+For example, to render the results of the first sample problem in ``faces_1/sad2happy.png``,
+navigate to that folder and run
+
+.. code-block:: shell
+   
+   $ mapplot2d.py happy.png sad.png happy2sad.xdmf.h5 happy2sad_map_render.png
+
+which results in:
+
++------------------------------+
+| |sad2happy_map_render|       |
++------------------------------+
+| ``sad2happy_map_render.png`` |
++------------------------------+
+
+.. |sad2happy_map_render| image:: /tutorial_files/faces_1/sad2happy_map_render.png
+
+ParaView
+""""""""
+
+To visualise the map using ParaView, open the XDMF file produced by pFIRE.  This will instruct
+ParaView how to interpret the accompanying HDF5 file.  After opening the file using the
+*file->open* dialog, the dataset will appear in the list on the left hand pane of the screen.
+Clicking apply will cause ParaView to render the map data.  Now the data is loaded, the mapping can
+be visualised using glyphs.  The glyph filter can be applied by selecting *filters->common->glyph*
+from the menu bar, and again clicking apply in the left hand pane.
+
 
 Intermediate Frames
 ===================
