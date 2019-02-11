@@ -8,6 +8,8 @@ import h5py
 import matplotlib.figure as mf
 import matplotlib.backends.backend_agg as mplbea
 
+import scipy.interpolate as si
+
 import skimage.io as skio
 
 basesize = 8
@@ -25,37 +27,57 @@ def parse_args():
     return parser.parse_args()
 
 
+def reverse_mapping(nodes, mapping):
+    assert(len(nodes)+1 == mapping.ndim)
+    assert(tuple(len(x) for x in nodes) == mapping.shape[1:])
+
+    nodegrid = np.stack(np.meshgrid(nodes[0], nodes[1], indexing='ij'))
+
+    ofsnodes = np.moveaxis((nodegrid + mapping).reshape(nodegrid.shape[0], -1),
+                           0, -1)
+    rev_vecs = (-mapping).reshape(mapping.shape[0], -1)
+
+    return np.stack(si.griddata(ofsnodes, rv, np.moveaxis(nodegrid, 0, -1),
+        method="cubic") for rv in rev_vecs)
+
+
 def get_map_from_h5(mapfile, groupname):
     with h5py.File(mapfile, 'r') as h5f:
-        data = []
+        shape = (2,) + h5f["{}/x".format(groupname)].shape
+        data = np.empty(shape)
         for idx, tmpl in enumerate(("{}/x", "{}/y")):
-            data.append(np.asarray(h5f[tmpl.format(groupname)]))
+            data[idx] = np.asarray(h5f[tmpl.format(groupname)])
     return data
 
 def get_nodes_from_h5(mapfile, groupname):
     with h5py.File(mapfile, 'r') as h5f:
         data = []
-        for idx, tmpl in enumerate(("{}/nodes_x", "{}/nodes_y")):
+        for tmpl in ("{}/nodes_x", "{}/nodes_y"):
             data.append(np.asarray(h5f[tmpl.format(groupname)]))
     return data
 
-
 def main():
     args = parse_args()
-    
-    nodes_x, nodes_y = get_nodes_from_h5(args.map, args.group) 
-    data_x, data_y = get_map_from_h5(args.map, args.group) 
+
+    mapdata = get_map_from_h5(args.map, args.group)
+    assert mapdata.ndim == 3
+
+    nodes_x, nodes_y = get_nodes_from_h5(args.map, args.group)
 
     ns_x = np.diff(nodes_x)[0]/2
     ns_y = np.diff(nodes_y)[0]/2
-    
+
     fixed = skio.imread(args.fixed, as_gray=True)
     moved = skio.imread(args.moved, as_gray=True)
 
-    assert(fixed.ndim == 2)
-    assert(fixed.shape == moved.shape)
+    assert fixed.ndim == 2
+    assert fixed.shape == moved.shape
 
-    figsize = (basesize, basesize*(data_x.shape[1]/data_x.shape[0]))
+    mapdata = reverse_mapping((nodes_x, nodes_y), mapdata)
+
+    print(mapdata)
+
+    figsize = (basesize, basesize*(len(nodes_y)/len(nodes_x)))
 
     fig = mf.Figure(figsize=figsize)
     mplbea.FigureCanvasAgg(fig)
@@ -68,11 +90,12 @@ def main():
     ax.imshow(moved, origin='lower',
               extent=[0, moved.shape[1], 0, moved.shape[0]],
               cmap="Reds_r", alpha=0.5)
-    ax.quiver(nnx, nny, data_x, data_y)
+    ax.quiver(nnx, nny, mapdata[0], mapdata[1],
+              angles='xy', scale_units='xy', scale=1)
     ax.set_xlim(nodes_x.min() - ns_x, nodes_x.max() + ns_x)
     ax.set_ylim(nodes_y.min() - ns_y, nodes_y.max() + ns_y)
 
-    if(args.flip):
+    if args.flip:
         ax.invert_yaxis()
 
     fig.savefig(args.output)
