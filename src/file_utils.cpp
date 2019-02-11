@@ -28,3 +28,20 @@ void throw_if_nonexistent(const std::string& filepath)
     throw FileNotFoundError(filepath);
   }
 }
+
+void replace_token(std::string& str, const std::string& token, const std::string& replacement)
+{
+  while (str.find(token) != std::string::npos)
+  {
+    str.replace(str.find(token), token.size(), replacement);
+  }
+}
+
+void ensure_directories_exist(const std::string& path)
+{
+  bf::path dirpath(path);
+  if(!dirpath.parent_path().empty())
+  {
+    bf::create_directories(dirpath.parent_path());
+  }
+}

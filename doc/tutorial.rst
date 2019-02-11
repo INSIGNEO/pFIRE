@@ -23,7 +23,7 @@ in the registration until the required resolution is reached.  This is expressed
 configuration file using the parameter ``nodespacing``, which gives the spacing between nodes in
 image pixels.
 
-A Minimal Configuration File
+The pFIRE Configuration File
 ============================
 
 pFIRE is run from the command line, with all the configuration options set in a configuration file.
@@ -184,7 +184,7 @@ This registers the same images once again, but reducing the smoothing by a facto
 
 This results in a registration that is very similar to the first, the registration of the details
 of the mouth is improved, but there are still issues with the rest of the image. This is a problem
-with the way the image is smoothed, and cannot be solved by simply changing the smoothing strength,
+with the way the image is smoothed, and cannot be solved by simply changing the smoothing strength;
 instead we must change the fundamental smoothing behaviour.
 
 The Memory Term
@@ -277,3 +277,126 @@ provided in ``sad2grin.conf``.  Performing the registration should result in:
 
 As you can see: *pFIRE will always produce a result. It is entirely up to the user to determine if
 two images are suitable to be registered, and to check the results are sane!*
+
+Intermediate Frames
+===================
+
+pFIRE is capable of outputting all intermediate image frames in the registration.  This is
+primarily intended as a debugging feature but can be instructive in understanding how the elastic
+registration process proceeds.
+
+The creation of intermediate frames is controlled by the ``save_intermediate_frames`` parameter.
+Setting this to ``save_intermediate_frames = true`` will cause pFIRE to output all intermediate
+frames. By default these will be in the same format as requested for the registered image and be
+collected in a subdirectory named ``intermediates``, placed in the same directory as the registered
+image.
+
+Controlling The Output
+----------------------
+
+The naming, format and location of the intermediate frames may be controlled by two parameters,
+``intermediate_template`` allows control of the file format and filename, and
+``intermediate_directory`` allows naming of the subdirectory in which the frames are saved.
+
+The ``intermediate_directory`` Parameter
+""""""""""""""""""""""""""""""""""""""""
+
+The ``intermediate_directory`` parameter sets the path to the directory where the intermediate
+frames will be stored. If this is a relative path, it is set relative to the location of the
+registered image and the directory will be created if necessary.  If it is an absolute path then
+the directory must already exist.  The default value is ``intermediate_directory = intermediates``
+which will cause the images to be collected in subdirectory named ``intermediates``, placed in the
+same directory as the registered image.
+
+The ``intermediate_template`` Parameter
+"""""""""""""""""""""""""""""""""""""""
+
+By default ``intermediate_template`` has the value ``intermediate_template =
+%name%-intermediate-%s%-%i%.%ext%``, where the tokens surrounded by ``%`` characters will be
+replaced before output.  This allows customization of the output file name using elements of the
+registered filename as well as the step and iteration number:
+
+:``%name%``: This will be replaced with the name of the registered image without the extension. For
+             example, if the configuration file contains ``registered = reg.png``, then the string
+             *%name%* will be replaced with *reg* in the final filename.
+
+:``%ext%``: This will be replaced with the file extension of the registered image. For example, if
+            the configuration file contains ``registered = reg.png``, then the string *%ext%*
+            will be replaced with *png* in the final filename.
+        
+            Using this allows the format of the intermediate frames to be automatically matched to
+            the registered image.  Alternatively it can be set as a different format by using the
+            extension string directly instead of the ``%ext%`` placeholder, e.g
+            *%name%-mydebug-%s%-%i%.png*.
+
+:``%s%``: This will be replaced with the algorithm step number. Step number 0 corresponds to the
+          coarsest nodespacing and increments by one each time the nodespacing is refined.
+
+:``%i%``: This will be replaced by the iteration number. This is reset to zero every time the
+          nodespacing is refined.
+
+Intermediate Frames Example
+---------------------------
+
+An example for outputting the intermediate frames, with custom parameters is given in the
+``intermediate_frames`` directory of the tutorial examples.
+
+The configuration file is named ``intermediate_frames/custom_intermediates.conf``:
+
+.. literalinclude:: /tutorial_files/intermediate_frames/custom_intermediates.conf
+   :language: ini
+
+In this case, the intermediate frames will be saved to the ``intermediate_frames`` folder and be
+named ``intermediates-00-000.jpeg``.  Note that using this template format pFIRE has been instructed
+to output the intermediate frames as jpeg images even though the registered image is output in png
+format.
+
+Application Examples
+====================
+
+This section highlights some of the applications for elastic registration. Providing hands-on
+examples with additional exemplar code to demonstrate the pre- or post-processing steps involved in
+the application. 
+
+*Please note that this additional code is designed purely for teaching purposes and has not been
+tested or verified in any way for use in any other context.*
+
+
+Multimodal Image Alignment
+--------------------------
+
+A common application for image registration is the correct alignment of multiple images of the same
+sample, taken via different modalities.  For example the alignment of CT and MRI scans of the same
+organ, or the alignment of multiple histological samples.  This latter case is what we use for this
+example. Alignment of such histological samples is particularly difficult due to non-linear
+distortion introduced into the sample during the preparation process.  
+
+The tutorial folder ``lung_lobes`` contains a set of 2D histological microscopy tissue slices,
+stained with a variety of different stains. Along with the images, the dataset also includes a set of manually identified tissue landmarks.
+These are located on the same structures in each sample and can be used to validate the
+registration of the image. This dataset is made available under a creative commons license
+(CC-BY-SA) by `Jiří Borovec`_ (see :ref:`below <dataset_information>`).
+
+.. _dataset_information:
+
+Dataset Information
+"""""""""""""""""""
+
+This dataset [1]_ was curated by `Jiří Borovec`_, Center for Machine Perception, Department of
+Cybernetics, Faculty of Electrical Engineering, Czech Technical University in Prague, from images
+provided by Prof. Arrate Munoz-Barrutia, Center for Applied Medical Research (CIMA), University of
+Navarra, Pamplona Spain [2]_; and Prof. Ortiz de Solórzano, Center for Applied Medical Research
+(CIMA), University of Navarra, Pamplona Spain [3]_. 
+
+.. _Jiří Borovec: http://cmp.felk.cvut.cz/~borovji3/?page=dataset
+
+.. [1] J. Borovec, A. Munoz-Barrutia, and J. Kybic, “Benchmarking of Image Registration Methods for
+   Differently Stained Histological Slides,” in IEEE International Conference on Image Processing
+   (ICIP), 2018, pp. 3368–3372.
+.. [2] J. Borovec, J. Kybic, M. Bušta, C. Ortiz-de-Solorzano, and A. Munoz-Barrutia, “Registration of
+   multiple stained histological sections,” in IEEE International Symposium on Biomedical Imaging
+   (ISBI), 2013, pp. 1034–1037.
+.. [3] R. Fernandez-Gonzalez et al., “System for combined three-dimensional morphological and
+   molecular analysis of thick tissue specimens,” Microsc. Res. Tech., vol. 59, no. 6, pp. 522–530,
+   2002.
+

@@ -13,8 +13,10 @@ doc/_static/pfire_tutorial_files.zip
 gitstate.hpp
 gitstate.cpp
 gh-pages
-
+*.csv
+*.png
 *.swp
+*.xdmf*
 
 # Compiled Object files
 *.slo
