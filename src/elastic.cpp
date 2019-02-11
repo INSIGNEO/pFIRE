@@ -18,11 +18,18 @@
 #include <iomanip>
 #include <sstream>
 
-#include "math_utils.hpp"
+#include <boost/filesystem.hpp>
+#include <boost/format.hpp>
+
+#include "basewriter.hpp"
 #include "fd_routines.hpp"
+#include "file_utils.hpp"
 #include "infix_iterator.hpp"
 #include "iterator_routines.hpp"
+#include "math_utils.hpp"
 #include "petsc_debug.hpp"
+
+namespace bf = boost::filesystem;
 
 Elastic::Elastic(const Image& fixed, const Image& moved, const floatvector nodespacing,
     const ConfigurationBase& configuration)
@@ -96,9 +103,9 @@ void Elastic::innerloop(integer outer_count)
 {
   // setup map resolution specific solution storage (tmat, delta a, rvec)
   // calculate lambda for loop
-  if (configuration.grab<bool>("debug_frames"))
+  if (configuration.grab<bool>("save_intermediate_frames"))
   {
-    save_debug_frame(configuration.grab<std::string>("debug_frames_prefix"), outer_count, 0);
+    save_debug_frame(outer_count, 0);
   }
 
   bool recalculate_lambda = false;
@@ -117,9 +124,9 @@ void Elastic::innerloop(integer outer_count)
     innerstep(inum, recalculate_lambda);
     recalculate_lambda = false;
 
-    if (configuration.grab<bool>("debug_frames"))
+    if (configuration.grab<bool>("save_intermediate_frames"))
     {
-      save_debug_frame(configuration.grab<std::string>("debug_frames_prefix"), outer_count, inum);
+      save_debug_frame(outer_count, inum);
     }
 
     // check convergence and break if below threshold
@@ -159,12 +166,11 @@ void Elastic::innerstep(integer inum, bool recalculate_lambda)
   floating lapl_mult = tdiagavg / lapldiagavg;
   PetscPrintf(m_comm, "laplavg = %g, tavg = %g, mult=%g\n", lapldiagavg, tdiagavg, lapl_mult);
 
-  if(recalculate_lambda)
+  if (recalculate_lambda)
   {
-    m_lambda = approximate_optimum_lambda(*normmat, *m_p_map->laplacian(), lapl_mult,
-        m_lambda, 10.0, 30, k_lambda_min);
+    m_lambda = approximate_optimum_lambda(
+        *normmat, *m_p_map->laplacian(), lapl_mult, m_lambda, 10.0, 30, k_lambda_min);
     PetscPrintf(m_comm, "Calculated smoothing factor: %.2f\n", m_lambda);
-
   }
 
   floating total_mult = lapl_mult * lambda_mult * m_lambda;
@@ -181,7 +187,7 @@ void Elastic::innerstep(integer inum, bool recalculate_lambda)
   CHKERRABORT(m_comm, perr);
 
   // apply memory term if needed
-  if(configuration.grab<bool>("with_memory"))
+  if (configuration.grab<bool>("with_memory"))
   {
     // build -lambda*a
     Vec_unique disp = create_unique_vec();
@@ -196,7 +202,6 @@ void Elastic::innerstep(integer inum, bool recalculate_lambda)
     perr = MatMultAdd(*m_p_map->laplacian(), *disp, *m_workspace->m_rhs, *m_workspace->m_rhs);
     CHKERRABORT(m_comm, perr);
   }
-
 
   // Force free tmat as no longer needed
   m_workspace->m_tmat = create_unique_mat();
@@ -232,8 +237,7 @@ void Elastic::calculate_node_spacings()
   while (all_true_varlen(start_iter, end_iter, imshape.begin(), imshape.end(),
       [](floating x, integer y) -> bool { return (y / x) > 2.0; }))
   {
-    std::transform(start_iter, end_iter, start_iter,
-        [](floating a) -> floating { return a * 2; });
+    std::transform(start_iter, end_iter, start_iter, [](floating a) -> floating { return a * 2; });
     m_v_nodespacings.push_back(currspc);
   }
 }
@@ -283,21 +287,68 @@ void Elastic::calculate_tmat(integer iternum __attribute__((unused)))
   CHKERRABORT(m_comm, perr);
 }
 
-void Elastic::save_debug_frame(const std::string& prefix, integer outer_count, integer inner_count)
+void Elastic::save_debug_frame(integer outer_count, integer inner_count)
 {
   std::ostringstream outname;
-  outname << prefix << "_" << outer_count << "_" << inner_count;
+  std::string file_str(configuration.grab<std::string>("intermediate_template"));
+  bf::path registered_path(configuration.grab<std::string>("registered"));
 
-  // XDMFWriter wtr(outname.str(), m_comm);
+  boost::format pad2("%02d");
+  replace_token(file_str, ConfigurationBase::k_outer_token, (pad2 % outer_count).str());
 
-  // wtr.write_image(*m_p_registered, "registered");
+  boost::format pad3("%03d");
+  replace_token(file_str, ConfigurationBase::k_inner_token, (pad3 % inner_count).str());
+
+  replace_token(
+      file_str, ConfigurationBase::k_stem_token, registered_path.filename().stem().string());
+
+  replace_token(file_str, ConfigurationBase::k_extension_token,
+      registered_path.extension().string().substr(1, std::string::npos));
+
+  bf::path output_path(registered_path.parent_path());
+
+  bf::path intermediates_path(configuration.grab<std::string>("intermediate_directory"));
+  if(intermediates_path.is_absolute())
+  {
+    if (!bf::exists(intermediates_path))
+    {
+      std::ostringstream errss;
+      errss << "Intermediate frame output path " << intermediates_path << " does not exist.";
+      throw std::runtime_error(errss.str());
+    }
+    output_path = intermediates_path;
+  }
+  else
+  {
+    // Don't create directories we don't say we will, error instead
+    // (Pre-flight checks mean this should never throw)
+    if (!output_path.empty() && !bf::exists(output_path))
+    {
+      std::ostringstream errss;
+      errss << "Output path " << output_path << " does not exist.";
+      throw std::runtime_error(errss.str());
+    }
+
+    // Append intermediates dir
+    output_path /= configuration.grab<std::string>("intermediate_directory");
+
+    // Create intermediates dir as needed
+    bf::create_directories(output_path);
+  }
+
+  // Finally append filename
+  output_path /= file_str;
+
+  PetscPrintf(m_comm, "Saving debug frame %s.\n", output_path.string().c_str());
+  BaseWriter_unique wtr = BaseWriter::get_writer_for_filename(output_path.string(), m_comm);
+  wtr->write_image(*m_p_registered);
 }
 
 floating Elastic::approximate_optimum_lambda(Mat& mat_a, Mat& mat_b, floating lambda_mult,
     floating initial_guess, floating search_width, uinteger max_iter, floating lambda_min)
 {
-
-  floating x_lo = initial_guess - search_width > lambda_min ? initial_guess - search_width : lambda_min;
+  floating x_lo =
+      initial_guess - search_width > lambda_min ? initial_guess - search_width : lambda_min;
   floating x_mid = initial_guess;
   floating x_hi = initial_guess + search_width;
 
@@ -348,25 +399,25 @@ floating Elastic::approximate_optimum_lambda(Mat& mat_a, Mat& mat_b, floating la
     }
     else
     {
-      if(x_lo == lambda_min)
+      if (x_lo == lambda_min)
       {
         break;
       }
       // All negative gradient so keep searching left
-      x_lo = x_lo >= 2.0*lambda_min ? x_lo / 2 : 1.0*lambda_min;
-      x_mid = x_mid >= 2.0*x_lo ? x_mid / 2 : x_lo+1.0;
-      x_hi = x_hi >= 2.0*x_mid ? x_hi / 2 : x_mid+1.0;
+      x_lo = x_lo >= 2.0 * lambda_min ? x_lo / 2 : 1.0 * lambda_min;
+      x_mid = x_mid >= 2.0 * x_lo ? x_mid / 2 : x_lo + 1.0;
+      x_hi = x_hi >= 2.0 * x_mid ? x_hi / 2 : x_mid + 1.0;
       continue;
     }
   }
   // fit quadratic and return minimum
-  floating a,b,c;
+  floating a, b, c;
   quadratic_from_points(x_lo, x_mid, x_hi, y_lo, y_mid, y_hi, a, b, c);
 
   floating x, y;
   quadratic_vertex(a, b, c, x, y);
 
-  if(x < lambda_min)
+  if (x < lambda_min)
   {
     x = lambda_min;
   }

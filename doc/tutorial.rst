@@ -278,6 +278,78 @@ provided in ``sad2grin.conf``.  Performing the registration should result in:
 As you can see: *pFIRE will always produce a result. It is entirely up to the user to determine if
 two images are suitable to be registered, and to check the results are sane!*
 
+Intermediate Frames
+===================
+
+pFIRE is capable of outputting all intermediate image frames in the registration.  This is
+primarily intended as a debugging feature but can be instructive in understanding how the elastic
+registration process proceeds.
+
+The creation of intermediate frames is controlled by the ``save_intermediate_frames`` parameter.
+Setting this to ``save_intermediate_frames = true`` will cause pFIRE to output all intermediate
+frames. By default these will be in the same format as requested for the registered image and be
+collected in a subdirectory named ``intermediates``, placed in the same directory as the registered
+image.
+
+Controlling The Output
+----------------------
+
+The naming, format and location of the intermediate frames may be controlled by two parameters,
+``intermediate_template`` allows control of the file format and filename, and
+``intermediate_directory`` allows naming of the subdirectory in which the frames are saved.
+
+The ``intermediate_directory`` Parameter
+""""""""""""""""""""""""""""""""""""""""
+
+The ``intermediate_directory`` parameter sets the path to the directory where the intermediate
+frames will be stored. If this is a relative path, it is set relative to the location of the
+registered image and the directory will be created if necessary.  If it is an absolute path then
+the directory must already exist.  The default value is ``intermediate_directory = intermediates``
+which will cause the images to be collected in subdirectory named ``intermediates``, placed in the
+same directory as the registered image.
+
+The ``intermediate_template`` Parameter
+"""""""""""""""""""""""""""""""""""""""
+
+By default ``intermediate_template`` has the value ``intermediate_template =
+%name%-intermediate-%s%-%i%.%ext%``, where the tokens surrounded by ``%`` characters will be
+replaced before output.  This allows customization of the output file name using elements of the
+registered filename as well as the step and iteration number:
+
+:``%name%``: This will be replaced with the name of the registered image without the extension. For
+             example, if the configuration file contains ``registered = reg.png``, then the string
+             *%name%* will be replaced with *reg* in the final filename.
+
+:``%ext%``: This will be replaced with the file extension of the registered image. For example, if
+            the configuration file contains ``registered = reg.png``, then the string *%ext%*
+            will be replaced with *png* in the final filename.
+        
+            Using this allows the format of the intermediate frames to be automatically matched to
+            the registered image.  Alternatively it can be set as a different format by using the
+            extension string directly instead of the ``%ext%`` placeholder, e.g
+            *%name%-mydebug-%s%-%i%.png*.
+
+:``%s%``: This will be replaced with the algorithm step number. Step number 0 corresponds to the
+          coarsest nodespacing and increments by one each time the nodespacing is refined.
+
+:``%i%``: This will be replaced by the iteration number. This is reset to zero every time the
+          nodespacing is refined.
+
+Intermediate Frames Example
+---------------------------
+
+An example for outputting the intermediate frames, with custom parameters is given in the
+``intermediate_frames`` directory of the tutorial examples.
+
+The configuration file is named ``intermediate_frames/custom_intermediates.conf``:
+
+.. literalinclude:: /tutorial_files/intermediate_frames/custom_intermediates.conf
+   :language: ini
+
+In this case, the intermediate frames will be saved to the ``intermediate_frames`` folder and be
+named ``intermediates-00-000.jpeg``.  Note that using this template format pFIRE has been instructed
+to output the intermediate frames as jpeg images even though the registered image is output in png
+format.
 
 Application Examples
 ====================
