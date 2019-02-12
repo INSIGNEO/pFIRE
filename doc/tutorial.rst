@@ -236,6 +236,38 @@ field.  The appropriateness of the global smoothing is problem specific, and for
 problems some experimentation may be required to find the optimal smoothing behaviour.*
 
 
+Visualising the Result
+======================
+
+The primary purpose of outputting the registered image is to compare it with the fixed image to
+determine the quality of the registration.  This can be done in many ways, a common approach being
+to simply overlay the two images and visually determine how well the registration has performed.
+
+An example script called ``overlay_images.py`` is provided with pFIRE to demonstrate this for 2D
+images. It takes a pair of input images, and overlays them to show how closely they are aligned:
+
+.. runblock:: console
+
+   $ overlay_images.py --help
+
+For example, overlaying the results of the first registration we performed above,
+
+.. runblock:: console
+   
+   $ cd tutorial_files/faces_1
+   $ overlay_images.py happy.png sad2happy_default.png comparison.png --flip
+
+produces the following result:
+
++--------------+
+| |comparison| |
++--------------+
+
+.. |comparison| image:: /tutorial_files/faces_1/comparison.png
+
+The fixed image is shown in grey, and the moved image in red, with the composite dark red areas
+showing where the images are overlaid.
+
 Unregisterable Images
 =====================
 
@@ -431,7 +463,7 @@ navigate to that folder and run
 .. runblock:: console
    
    $ cd tutorial_files/faces_1
-   $ mapplot2d.py --flip --invert-map happy.png sad.png sad2happy_default.xdmf.h5 sad2happy_map_render.png
+   $ mapplot2d.py --flip --invert-map sad2happy_default.png sad.png sad2happy_default.xdmf.h5 sad2happy_map_render.png
 
 which results in:
 
@@ -443,9 +475,9 @@ which results in:
 
 .. |sad2happy_map_render| image:: /tutorial_files/faces_1/sad2happy_map_render.png
 
-The resulting image shows the moved image in red, and the fixed image in grey, with the map vector
-field overlaid. In this case the map is inverted to show the direction of motion of the pixels
-between the moved and fixed images.
+The resulting image shows the moved image in red, and the registered image in grey, with the map
+vector field overlaid. In this case the map is inverted to show the direction of motion of the
+pixels between the moved and fixed images.
 
 ParaView
 """"""""
@@ -560,11 +592,43 @@ organ, or the alignment of multiple histological samples.  This latter case is w
 example. Alignment of such histological samples is particularly difficult due to non-linear
 distortion introduced into the sample during the preparation process.  
 
-The tutorial folder ``lung_lobes`` contains a set of 2D histological microscopy tissue slices,
-stained with a variety of different stains. Along with the images, the dataset also includes a set of manually identified tissue landmarks.
-These are located on the same structures in each sample and can be used to validate the
-registration of the image. This dataset is made available under a creative commons license
-(CC-BY-SA) by `Jiří Borovec`_ (see :ref:`below <dataset_information>`).
+The tutorial folders ``lung_lesions`` and ``lung_lobes`` contain sets of 2D histological microscopy
+tissue slices, stained with a variety of different stains. Along with the images, the dataset also
+includes a set of manually identified tissue landmarks.  These are located on the same structures
+in each sample and can be used to validate the registration of the image. This dataset is made
+available under a creative commons license (CC-BY-SA) by `Jiří Borovec`_ (see :ref:`below
+<dataset_information>`).
+
+The typical use case for image registration with datasets such as this is to choose one image as
+the fixed image and register all the other images to that image. This produces a new dataset
+comprised of a set of aligned images for direct comparison of the same tissue location with various
+different stains.
+
+An example registration configuration is provided in each directory, these should be copied and
+modified to optimise the registration of the various images.
+
+An additional demonstration analysis script ``plot_annotations.py`` is provided to demonstrate how
+the manually identified landmarks can be used to determine the goodness of the registration.
+
+.. runblock:: console
+   
+   $  plot_annotations.py --help 
+
+Running this results in an image like the following:
+
++-----------------------------+
+| |mapped_annotations|        |
++-----------------------------+
+
+.. |mapped_annotations| image:: /tutorial_files/lung_lobes/mapped_annotations.png
+   :scale: 100%
+
+The script plots the fixed (black) and moved (red) images along with the annotated landmarks and shows the
+displacement that would be applied to each node in the moved image if warped using the pFIRE
+map.  If the registration is correct each red node should be linked directly to a black node by a
+displacement vector.  In this case the registration is poor and the displacment field does not
+correctly map all the nodes. Optimisation of registration parameters will likely improve the
+quality, but this is an exercise left to the dedicated reader.
 
 .. _dataset_information:
 
@@ -577,15 +641,34 @@ provided by Prof. Arrate Munoz-Barrutia, Center for Applied Medical Research (CI
 Navarra, Pamplona Spain [2]_; and Prof. Ortiz de Solórzano, Center for Applied Medical Research
 (CIMA), University of Navarra, Pamplona Spain [3]_. 
 
+
+Further Reading
+===============
+
+For further information on the algorithm implemented by pFIRE, the original papers describing the
+algorithm are Barber and Hose 2005 [4]_ and Barber et al. 2007 [5]_.
+
 .. _Jiří Borovec: http://cmp.felk.cvut.cz/~borovji3/?page=dataset
 
 .. [1] J. Borovec, A. Munoz-Barrutia, and J. Kybic, “Benchmarking of Image Registration Methods for
-   Differently Stained Histological Slides,” in IEEE International Conference on Image Processing
-   (ICIP), 2018, pp. 3368–3372.
-.. [2] J. Borovec, J. Kybic, M. Bušta, C. Ortiz-de-Solorzano, and A. Munoz-Barrutia, “Registration of
-   multiple stained histological sections,” in IEEE International Symposium on Biomedical Imaging
-   (ISBI), 2013, pp. 1034–1037.
-.. [3] R. Fernandez-Gonzalez et al., “System for combined three-dimensional morphological and
-   molecular analysis of thick tissue specimens,” Microsc. Res. Tech., vol. 59, no. 6, pp. 522–530,
-   2002.
+       Differently Stained Histological Slides,” *IEEE International Conference on Image Processing
+       (ICIP)*, 2018, pp. 3368–3372, DOI: `10.1109/icip.2018.8451040
+       <https://doi.org/10.1109/icip.2018.8451040>`_.
 
+.. [2] J. Borovec, J. Kybic, M. Bušta, C. Ortiz-de-Solorzano, and A. Munoz-Barrutia, “Registration of
+       multiple stained histological sections,” in IEEE International Symposium on Biomedical
+       Imaging (ISBI), 2013, pp. 1034–1037, DOI: `10.1109/ISBI.2013.6556654
+       <https://doi.org/10.1109/ISBI.2013.6556654>`_.
+
+.. [3] R. Fernandez-Gonzalez et al., “System for combined three-dimensional morphological and
+       molecular analysis of thick tissue specimens,” Microsc. Res. Tech., vol. 59, no. 6, pp. 522–530,
+       2002, DOI: `10.1002/jemt.10233 <https://doi.org/10.1002/jemt.10233>`_.
+
+.. [4] Barber D, Hose D., “Automatic segmentation of medical images using image registration:
+       diagnostic and simulation applications,” *Journal of medical engineering & technology*,
+       **29(2)**, 2005, pp. 53-63, DOI:`10.1080/03091900412331289889 
+       <https://doi.org/10.1080/03091900412331289889>`_.
+
+.. [5] Barber DC, Oubel E, Frangi AF, Hose D., “Efficient computational fluid dynamics mesh
+       generation by image registration,” *Medical image analysis*, **11(6)**, 2007, pp. 648–662,
+       DOI:`10.1016/j.media.2007.06.011 <https://doi.org/10.1016/j.media.2007.06.011>`_.
