@@ -195,7 +195,7 @@ void Elastic::innerstep(integer inum, bool recalculate_lambda)
     CHKERRABORT(m_comm, perr);
     perr = VecCopy(m_p_map->displacements(), *disp);
     CHKERRABORT(m_comm, perr);
-    perr = VecScale(*disp, -m_lambda * lambda_mult);
+    perr = VecScale(*disp, -total_mult);
     CHKERRABORT(m_comm, perr);
 
     // calculate vecdot(lapl_2, -lambda*a) and add to rhs in one operation
