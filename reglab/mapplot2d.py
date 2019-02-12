@@ -15,9 +15,9 @@ import skimage.io as skio
 basesize = 8
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Create 2D png quiverplots "
-                                                 "from hdf5 map data.")
-    parser.add_argument("fixed", help="Path to fixed image")
+    parser = argparse.ArgumentParser(description="Show registered images with "
+                                                 "map data overlaid.")
+    parser.add_argument("registered", help="Path to registered image")
     parser.add_argument("moved", help="Path to moved image")
     parser.add_argument("map", help="Path to map file")
     parser.add_argument("output", help="Path to save output png.")
@@ -70,11 +70,11 @@ def main():
     ns_x = np.diff(nodes_x)[0]/2
     ns_y = np.diff(nodes_y)[0]/2
 
-    fixed = skio.imread(args.fixed, as_grey=True)
+    registered = skio.imread(args.registered, as_grey=True)
     moved = skio.imread(args.moved, as_grey=True)
 
-    assert fixed.ndim == 2
-    assert fixed.shape == moved.shape
+    assert registered.ndim == 2
+    assert registered.shape == moved.shape
 
     if args.invert_map:
         mapdata = reverse_mapping((nodes_x, nodes_y), mapdata)
@@ -86,8 +86,8 @@ def main():
     ax = fig.add_axes((0, 0, 1, 1))
     ax.set_axis_off()
     nnx, nny = np.meshgrid(nodes_x, nodes_y, indexing='ij')
-    ax.imshow(fixed, origin='lower',
-              extent=[0, fixed.shape[1], 0, fixed.shape[0]],
+    ax.imshow(registered, origin='lower',
+              extent=[0, registered.shape[1], 0, registered.shape[0]],
               cmap="Greys_r", alpha=1.0)
     ax.imshow(moved, origin='lower',
               extent=[0, moved.shape[1], 0, moved.shape[0]],
