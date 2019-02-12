@@ -36,6 +36,7 @@
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
     <link rel="top" title="pFIRE 0.2 documentation" href="index.html"/>
+        <link rel="next" title="pFIRE Configuration" href="cli_ref.html"/>
         <link rel="prev" title="Installing pFIRE" href="install.html"/> 
 
   
@@ -93,6 +94,8 @@
 <li class="toctree-l2"><a class="reference internal" href="#shirt-compatibility">ShIRT Compatibility</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="cli_ref.html">pFIRE Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">pFIRE Tutorial</a></li>
 </ul>
 
             
@@ -158,15 +161,43 @@
             
   <div class="section" id="running-pfire">
 <h1>Running pFIRE<a class="headerlink" href="#running-pfire" title="Permalink to this headline">¶</a></h1>
-<p>Interaction with pFIRE on the command line is achieved through the <cite>pfire</cite> executable. There are
-various subcommands available to allow interaction with images, maps, masks and various
-registration options.  All the available options are documented in the <span class="xref std std-doc">command
-reference</span>.</p>
+<p>Interaction with pFIRE on the command line is achieved through the <cite>pfire</cite> executable. Registration
+options are passed to pFIRE through a configuration file. All the available options are documented
+in the <a class="reference internal" href="cli_ref.html"><span class="doc">command reference</span></a>.</p>
 <div class="section" id="elastic-registration">
 <h2>Elastic Registration<a class="headerlink" href="#elastic-registration" title="Permalink to this headline">¶</a></h2>
 <p>pFIRE is invoked from the console:</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> pfire --help
-<span class="go">bash: line 1: pfire: command not found</span>
+<span class="go">                   .................................................   ......................</span>
+<span class="go">                   :####################::########::################:  :####################:</span>
+<span class="go">                   :####################::########::######:&quot;&quot;&quot;&quot;:#####: :####################:</span>
+<span class="go">                    :######:&quot;&quot;&quot;&quot;&quot;&quot;&quot;:####: :######:  :#####:     :#####: :######:&quot;&quot;&quot;&quot;&quot;&quot;&quot;:####:</span>
+<span class="go">.....   .........    :#####:       &quot;&quot;&quot;&quot;&quot;&quot;  :####:    :####:     :#####:  :#####:       &quot;&quot;&quot;&quot;&quot;&quot;</span>
+<span class="go">:####...#########:   :#####:               :####:    :####:     :#####:  :#####:</span>
+<span class="go">:#################:  :######:.........     :####:    :####:....:#####:   :######:.........</span>
+<span class="go">::######:&quot;&quot;&quot;:######: :###############:     :####:    :#############:     :###############:</span>
+<span class="go"> :#####:     :#####: :###############:     :####:    :####:&quot;&quot;&quot;&quot;:#####:   :###############:</span>
+<span class="go"> :#####:     :#####: :######&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;     :####:    :####:     :#####:  :######:&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;</span>
+<span class="go"> :#####:     :#####: :#####:               :####:    :####:     :#####:  :#####:</span>
+<span class="go"> :#####:    :######: :#####:               :####:    :####:     :#####:  :#####:       ......</span>
+<span class="go"> :#####:...:#######::#######:             :######:  :#####:     :#####: :######:......:#####:</span>
+<span class="go"> :################::########:            :########::######:     :#####::####################:</span>
+<span class="go"> :##############:  :########:            :########::######:     :#####::####################:</span>
+<span class="go"> :######:&quot;&quot;&quot;&quot;&quot;&quot;&quot;   &quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;            &quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;     &quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;</span>
+<span class="go"> :#####:</span>
+<span class="go"> :#####:</span>
+<span class="go">:#######:   Development version (commit:138d2f88377ad6995bcc43956a2e827a8d2cece3-dirty)</span>
+<span class="go">:#######:</span>
+<span class="go">:#######:</span>
+<span class="go">&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;</span>
+
+<span class="go">pFIRE (Parallel Framework for Image Registration)</span>
+
+<span class="go">Usage: pfire &lt;config_file&gt; [-h,--help]</span>
+
+<span class="go">Options:</span>
+<span class="go">  config_file		configuration file to read options from</span>
+<span class="go">  -h [ --help ]         print this message</span>
 </pre></div>
 </div>
 <p>It takes a single argument - the name of a configuration file.  This is a deliberate design
@@ -189,7 +220,7 @@ and <code class="docutils literal notranslate"><span class="pre">map.xdmf</span>
 </div>
 <div class="section" id="shirt-compatibility">
 <h2>ShIRT Compatibility<a class="headerlink" href="#shirt-compatibility" title="Permalink to this headline">¶</a></h2>
-<p>pFIRE is designed to be compatible with ShIRT both algorithmically and practially.  Therefore we
+<p>pFIRE is designed to be compatible with ShIRT both algorithmically and practically.  Therefore we
 provide a way to use pFIRE as a drop in replacement for <code class="docutils literal notranslate"><span class="pre">ShIRT</span> <span class="pre">Register</span></code> in existing workflows.
 If the executable is invoked with the name <cite>shirt</cite> or <cite>pfire-shirt</cite> (either by renaming or using a
 symlink) then pFIRE will interpret command line input using the ShIRT syntax.  In this mode the
@@ -215,6 +246,8 @@ $ shirt register fixed fixed.image moved moved.image mask mask.mask nodespacing 
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="cli_ref.html" class="btn btn-neutral float-right" title="pFIRE Configuration" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="install.html" class="btn btn-neutral" title="Installing pFIRE" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

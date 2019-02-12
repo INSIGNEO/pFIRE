@@ -89,6 +89,8 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installing pFIRE</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cli_quickstart.html">Running pFIRE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli_ref.html">pFIRE Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">pFIRE Tutorial</a></li>
 </ul>
 
             
@@ -154,7 +156,9 @@
             
   <div class="section" id="pfire">
 <h1>pFIRE<a class="headerlink" href="#pfire" title="Permalink to this headline">¶</a></h1>
-<p><em>pFIRE is a parallel framework for the elastic registration of large images.</em></p>
+<p>pFIRE is a parallel framework for the elastic registration of large images by the method of Barber
+and Hose <a class="footnote-reference" href="#id3" id="id1">[1]</a> <a class="footnote-reference" href="#id5" id="id2">[2]</a>. It is implemented in C++ using the PETSc scientific toolkit to
+provide parallelised mathematical routines.</p>
 <p>There are two ways to use pFIRE:</p>
 <ol class="arabic simple">
 <li>Use the provided executable tools to interact with pFIRE from the command line. These tools
@@ -193,8 +197,22 @@ determination of stress inside a deformed mechanical structure.</p>
 </ul>
 <div class="toctree-wrapper compound">
 </div>
-<p>Development of pFIRE is supported by the European Union’s Horizon 2020 research and innovation
-programme under grant agreement No 675451.</p>
+<table class="docutils footnote" frame="void" id="id3" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td>Barber D, Hose D. Automatic segmentation of medical images using image registration:
+diagnostic and simulation applications. <em>Journal of medical engineering &amp; technology</em>,
+<strong>29(2)</strong>, pp. 53-63, (2005), DOI:<a class="reference external" href="https://doi.org/10.1080/03091900412331289889">10.1080/03091900412331289889</a>.</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="id5" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id2">[2]</a></td><td>Barber DC, Oubel E, Frangi AF, Hose D. Efficient computational fluid dynamics mesh
+generation by image registration. <em>Medical image analysis</em>, <strong>11(6)</strong>, pp. 648–662, (2007),
+DOI:<a class="reference external" href="https://doi.org/10.1016/j.media.2007.06.011">10.1016/j.media.2007.06.011</a>.</td></tr>
+</tbody>
+</table>
 </div>
 </div>
 
