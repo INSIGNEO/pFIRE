@@ -52,6 +52,8 @@ Elastic::Elastic(const Image& fixed, const Image& moved, const floatvector nodes
     m_v_final_nodespacing.push_back(1);
   }
 
+  m_max_iter = configuration.grab<integer>("max_iterations"); 
+
   // not in initializer to avoid copy until we know images are compatible and we can proceed
   m_p_registered = moved.copy();
 

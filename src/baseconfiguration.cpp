@@ -29,14 +29,15 @@ const config_map ConfigurationBase::default_config = {{"verbose", "false"},
     {"lambda_mult", "1.0"}, {"with_memory", "true"}, {"save_intermediate_frames", "false"},
     {"intermediate_template", "%name%-intermediate-%s%-%i%.%ext%"},
     {"intermediate_directory", "intermediates"},
-    {"debug_frames_prefix", "debug"}};
+    {"debug_frames_prefix", "debug"},
+    {"max_iterations", "100"}};
 
 const std::vector<std::string> ConfigurationBase::required_options = {
     "fixed", "moved", "nodespacing"};
 
 const std::vector<std::string> ConfigurationBase::arg_options = {"fixed", "moved", "mask",
     "nodespacing", "registered", "map", "debug_frames_prefix", "lambda", "lambda_mult",
-    "intermediate_template", "intermediate_directory"};
+    "intermediate_template", "intermediate_directory", "max_iterations"};
 
 const std::vector<std::string> ConfigurationBase::bool_options = {
     "verbose", "debug_frames", "with_memory", "save_intermediate_frames"};
