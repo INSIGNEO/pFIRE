@@ -1,4 +1,4 @@
-#define BOOST_TEST_MODULE indexing
+#define BOOST_TEST_MODULE gradients
 #include "test_common.hpp"
 
 #include<petscerror.h>
