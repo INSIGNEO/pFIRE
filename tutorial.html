@@ -92,7 +92,9 @@
 <li class="toctree-l1"><a class="reference internal" href="cli_ref.html">pFIRE Configuration</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">pFIRE Tutorial</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#the-pfire-configuration-file">The pFIRE Configuration File</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#example-cartoon-faces">Example: Cartoon Faces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#minimum-requirements">Minimum Requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#output-files">Output Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#registration-example-cartoon-faces">Registration Example: Cartoon Faces</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#customizing-the-registration">Customizing the Registration</a><ul>
@@ -111,7 +113,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#reversing-the-mapping">Reversing the Mapping</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#the-hdf5-xdmf-output-format">The HDF5/XDMF Output Format</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#the-hdf5-xdmf-map-format">The HDF5/XDMF Map Format</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#hdf5-data-layout">HDF5 Data Layout</a></li>
 </ul>
 </li>
@@ -210,7 +212,8 @@
 begin with an example that uses the default configuration of pFIRE.  After this we will look at
 some of the more advanced options that allow us to control both how pFIRE performs its
 registration, and the output formats that can be written.</p>
-<p>All the tutorial files can be found on the <a class="reference external" href="https://github.com/INSIGNEO/pFIRE/tree/master/doc/tutorial_files">pFIRE Github</a>, or may be downloaded in a <a class="reference download internal" href="_downloads/pfire_tutorial_files.zip" download=""><code class="xref download docutils literal notranslate"><span class="pre">zip</span> <span class="pre">archive</span></code></a>.</p>
+<p>All the tutorial files can be found on the <a class="reference external" href="https://github.com/INSIGNEO/pFIRE/tree/master/doc/tutorial_files">pFIRE Github</a>, or may be downloaded in a
+<a class="reference download internal" href="_downloads/pfire_tutorial_files.zip" download=""><code class="xref download docutils literal notranslate"><span class="pre">zip</span> <span class="pre">archive</span></code></a>.</p>
 <p>In order to perform registration, pFIRE requires a pair of images: a reference image, and a second
 image that is deformed until it is the same as the reference image. These are referred to as the
 <strong>fixed</strong> and <strong>moved</strong> images respectively.  These are set in the configuration file using the
@@ -224,18 +227,66 @@ image pixels.</p>
 <h2>The pFIRE Configuration File<a class="headerlink" href="#the-pfire-configuration-file" title="Permalink to this headline">¶</a></h2>
 <p>pFIRE is run from the command line, with all the configuration options set in a configuration file.
 This file uses <code class="docutils literal notranslate"><span class="pre">.ini</span></code> syntax, with <code class="docutils literal notranslate"><span class="pre">key</span> <span class="pre">=</span> <span class="pre">value</span></code> pairs.</p>
+<div class="section" id="minimum-requirements">
+<h3>Minimum Requirements<a class="headerlink" href="#minimum-requirements" title="Permalink to this headline">¶</a></h3>
 <p>The minimum information pFIRE requires to perform a registration is a fixed image, a moved image,
 and a target nodespacing. If the parameters <code class="docutils literal notranslate"><span class="pre">fixed</span></code>, <code class="docutils literal notranslate"><span class="pre">moved</span></code> and <code class="docutils literal notranslate"><span class="pre">nodespacing</span></code> are not set in
-the configuration file, pFIRE will abort with an error.</p>
-<p># TODO ADD OUTPUT OPTION INFO</p>
+the configuration file, pFIRE will abort with an error. The two images must have the same
+dimensions in order to perform registration.  Supported image formats include typical 2D formats
+such as <code class="docutils literal notranslate"><span class="pre">.png</span></code>, <code class="docutils literal notranslate"><span class="pre">.jpeg</span></code> or <code class="docutils literal notranslate"><span class="pre">.tiff</span></code> (see the <a class="reference external" href="https://sites.google.com/site/openimageio/home">OpenImageIO</a> documentation for a full list), as
+well as 2D and 3D dicom files.</p>
 <p>A minimal configuration file will look like this:</p>
 <div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="na">fixed</span> <span class="o">=</span> <span class="s">path/to/fixed.img</span>
 <span class="na">moved</span> <span class="o">=</span> <span class="s">path/to/moved.img</span>
 <span class="na">nodespacing</span> <span class="o">=</span> <span class="s">10</span>
 </pre></div>
 </div>
-<div class="section" id="example-cartoon-faces">
-<h3>Example: Cartoon Faces<a class="headerlink" href="#example-cartoon-faces" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="output-files">
+<h3>Output Files<a class="headerlink" href="#output-files" title="Permalink to this headline">¶</a></h3>
+<p>pFIRE produces a pair of output files: the registered image, and the corresponding displacement
+map.  The registered image is generated by warping the moved image using the final displacement
+map. In the ideal case this will be identical to the fixed image. In practical usage, the
+registered image may be compared with the fixed image to determine the quality of the registration.</p>
+<p>The filename and format of the registered image may be chosen using the <code class="docutils literal notranslate"><span class="pre">registered</span> <span class="pre">=</span></code>
+configuration parameter. By default the image is be saved with the filename <code class="docutils literal notranslate"><span class="pre">registered</span> <span class="pre">=</span>
+<span class="pre">registered.xdmf</span></code>. This produces an <a class="reference external" href="http://www.xdmf.org/index.php/XDMF_Model_and_Format">XDMF</a> metadata file and an <a class="reference external" href="https://portal.hdfgroup.org/display/HDF5/HDF5">HDF5</a> binary data file which may be
+plotted with <a class="reference external" href="https://www.paraview.org/">ParaView</a>, <a class="reference external" href="https://wci.llnl.gov/simulation/computer-codes/visit/">VisIt</a> or similar scientific viewer software.  Alternatively, for 2D
+images, an image extension such as <code class="docutils literal notranslate"><span class="pre">.png</span></code> or <code class="docutils literal notranslate"><span class="pre">.jpeg</span></code>, may be specified, and the image will be
+output in this format (as with image reading, see the <a class="reference external" href="https://sites.google.com/site/openimageio/home">OpenImageIO</a> documentation for a full list).</p>
+<p>The output path for the map may also be specified using the <code class="docutils literal notranslate"><span class="pre">map</span> <span class="pre">=</span></code> parameter.  At the current time, the only
+available output format is <a class="reference external" href="https://portal.hdfgroup.org/display/HDF5/HDF5">HDF5</a>, either with or without the <a class="reference external" href="http://www.xdmf.org/index.php/XDMF_Model_and_Format">XDMF</a> metatdata file.  If the map
+filename ends with <code class="docutils literal notranslate"><span class="pre">.xdmf</span></code> both files will be created, if it ends with <code class="docutils literal notranslate"><span class="pre">.h5</span></code> only the binary
+data will be stored.</p>
+<p>As an example, the minimal configuration above can be extended to output the image to
+<code class="docutils literal notranslate"><span class="pre">myimage.png</span></code> and the map to <code class="docutils literal notranslate"><span class="pre">mymap.xdmf</span></code> with:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="na">fixed</span> <span class="o">=</span> <span class="s">path/to/fixed.img</span>
+<span class="na">moved</span> <span class="o">=</span> <span class="s">path/to/moved.img</span>
+<span class="na">nodespacing</span> <span class="o">=</span> <span class="s">10</span>
+<span class="na">registered</span> <span class="o">=</span> <span class="s">myimage.png</span>
+<span class="na">map</span> <span class="o">=</span> <span class="s">mymap.xdmf</span>
+</pre></div>
+</div>
+<p>An HDF5 file can contain many datasets, similar to the way a filesystem can can
+contain many files with different names.  In HDF5, directories are called groups and may contain
+any number of uniquely named datasets. It is therefore possible to place the registered image data
+and map data in the same file.  The name of the group that the dataset should be placed in can be
+chosen with the syntax <code class="docutils literal notranslate"><span class="pre">path/to/file:/path/to/dataset</span></code>.  Note that while the image is a single dataset,
+the map is made up of multiple datasets and only the group name can be set. (For more information
+see <a class="reference internal" href="#the-hdf5-xdmf-map-format">The HDF5/XDMF Map Format</a>)</p>
+<p>The below example would cause the image and map data to both be placed in <code class="docutils literal notranslate"><span class="pre">results.xdmf.h5</span></code>, with
+the image data in a dataset named <code class="docutils literal notranslate"><span class="pre">registered_image</span></code> and the map datasets in a group called
+<code class="docutils literal notranslate"><span class="pre">registration_map</span></code>:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="na">fixed</span> <span class="o">=</span> <span class="s">path/to/fixed.img</span>
+<span class="na">moved</span> <span class="o">=</span> <span class="s">path/to/moved.img</span>
+<span class="na">nodespacing</span> <span class="o">=</span> <span class="s">10</span>
+<span class="na">registered</span> <span class="o">=</span> <span class="s">results.xdmf:/registered_image</span>
+<span class="na">map</span> <span class="o">=</span> <span class="s">results.xdmf:/registration_map/</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="registration-example-cartoon-faces">
+<h3>Registration Example: Cartoon Faces<a class="headerlink" href="#registration-example-cartoon-faces" title="Permalink to this headline">¶</a></h3>
 <p>This example is located in the <code class="docutils literal notranslate"><span class="pre">faces_1</span></code> directory, here you will find the files <code class="docutils literal notranslate"><span class="pre">happy.png</span></code>,
 <code class="docutils literal notranslate"><span class="pre">sad.png</span></code> and <code class="docutils literal notranslate"><span class="pre">sad2happy_default.conf</span></code>.  If you open <code class="docutils literal notranslate"><span class="pre">sad2happy_default.conf</span></code> in an editor
 you will find the following:</p>
@@ -304,7 +355,7 @@ of the smoothing parameter <span class="math notranslate nohighlight">\(\lambda\
 registration.  Both of these parameters have an effect on how smooth the displacement field is.</p>
 <div class="section" id="the-smoothing-parameter">
 <h3>The Smoothing Parameter <span class="math notranslate nohighlight">\(\lambda\)</span><a class="headerlink" href="#the-smoothing-parameter" title="Permalink to this headline">¶</a></h3>
-<p>The registration equation [<a href="#id14"><span class="problematic" id="id15">ref_</span></a>] includes a smoothing constraint through the laplacian matrix,
+<p>The registration equation includes a smoothing constraint through the laplacian matrix,
 which imposes a requirement for smoothness on the solution to the equation, and therefore on the
 displacement field.  The value of the parameter <span class="math notranslate nohighlight">\(\lambda\)</span> determines the relative strength of
 the smoothing constraint relative to the registration constraint.</p>
@@ -598,13 +649,13 @@ image.</p>
 interpolating the reverse mapping at the desired points.</p>
 </div>
 </div>
-<div class="section" id="the-hdf5-xdmf-output-format">
-<h3>The HDF5/XDMF Output Format<a class="headerlink" href="#the-hdf5-xdmf-output-format" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="the-hdf5-xdmf-map-format">
+<h3>The HDF5/XDMF Map Format<a class="headerlink" href="#the-hdf5-xdmf-map-format" title="Permalink to this headline">¶</a></h3>
 <p>The primary output format that pFIRE uses for displacement maps is an <a class="reference external" href="https://portal.hdfgroup.org/display/HDF5/HDF5">HDF5</a> file, with <a class="reference external" href="http://www.xdmf.org/index.php/XDMF_Model_and_Format">XDMF</a>
-metatdata file, both of which are well known and standardised formats.  The HDF5 file is a binary format which contains the map as arrays of displacement
-field values and node locations.  The XDMF file is a small metadata file which describes the layout
-of the data within the HDF5 file, and is intended to be consumed by visualisation programs such as
-<a class="reference external" href="https://www.paraview.org/">ParaView</a> or <a class="reference external" href="https://wci.llnl.gov/simulation/computer-codes/visit/">VisIt</a>.</p>
+metatdata file, both of which are well known and standardised formats.  The HDF5 file is a binary
+format which contains the map as arrays of displacement field values and node locations.  The XDMF
+file is a small metadata file which describes the layout of the data within the HDF5 file, and is
+intended to be consumed by visualisation programs such as <a class="reference external" href="https://www.paraview.org/">ParaView</a> or <a class="reference external" href="https://wci.llnl.gov/simulation/computer-codes/visit/">VisIt</a>.</p>
 <div class="section" id="hdf5-data-layout">
 <h4>HDF5 Data Layout<a class="headerlink" href="#hdf5-data-layout" title="Permalink to this headline">¶</a></h4>
 <p>A HDF5 file may contain multiple datasets organised into groups, similar to the way that files may
@@ -862,10 +913,10 @@ the manually identified landmarks can be used to determine the goodness of the r
 </tr>
 </tbody>
 </table>
-<p>The script plots the fixed (black) and moved (red) images along with the annotated landmarks and shows the
-displacement that would be applied to each node in the moved image if warped using the pFIRE
-map.  If the registration is correct each red node should be linked directly to a black node by a
-displacement vector.  In this case the registration is poor and the displacment field does not
+<p>The script plots the fixed (black) and moved (red) images along with the annotated landmarks and
+shows the displacement that would be applied to each node in the moved image if warped using the
+pFIRE map.  If the registration is correct each red node should be linked directly to a black node
+by a displacement vector.  In this case the registration is poor and the displacment field does not
 correctly map all the nodes. Optimisation of registration parameters will likely improve the
 quality, but this is an exercise left to the dedicated reader.</p>
 <div class="section" id="dataset-information">
