@@ -15,7 +15,7 @@ zip --exclude=tutorial_files/faces_1/sad2happy.xdmf.h5 \
 export PATH="${PATH}:${basedir}/bin:${basedir}/reglab"
 sphinx-build -an . $ghpdir
 cd $ghpdir
-#git add --all
-#git commit -m "$(date)"
-#git push upstream gh-pages
+git add --all
+git commit -m "$(date)"
+git push upstream gh-pages
 )
