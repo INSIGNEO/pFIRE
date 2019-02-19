@@ -25,6 +25,8 @@
 #include "baseloader.hpp"
 #include "shirtloader.hpp"
 
+#include "exceptions.hpp"
+
 #ifdef USE_OIIO
 #include "oiioloader.hpp"
 #include "oiiowriter.hpp"
@@ -59,6 +61,8 @@ void register_plugins()
 
 void pfire_setup(const std::vector<std::string>& petsc_args)
 {
+  // Setup terminate handler
+  std::set_terminate(abort_with_unhandled_error);
 
   std::vector<char*> cstrings;
   cstrings.resize(petsc_args.size());
@@ -114,21 +118,7 @@ void print_welcome_message()
   std::ostringstream welcomess;
   welcomess << kbanner_text_upper;
 
-  if(kGitTag.empty())
-  {
-    welcomess << "Development version";
-  }
-  else
-  {
-    welcomess << "Release " << kGitTag; 
-  }
-
-  welcomess << " (commit:" << kGitSHA;
-  if (kGitDirty)
-  {
-    welcomess << "-dirty";
-  }
-  welcomess << ")";
+  welcomess << git_version_string();
 
   welcomess << kbanner_text_lower;
 
