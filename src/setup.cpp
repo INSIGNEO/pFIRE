@@ -15,6 +15,8 @@
 
 #include "setup.hpp"
 
+#include <csignal>
+
 #include <petscsys.h>
 
 #include <boost/filesystem.hpp>
@@ -63,6 +65,7 @@ void pfire_setup(const std::vector<std::string>& petsc_args)
 {
   // Setup terminate handler
   std::set_terminate(abort_with_unhandled_error);
+  std::signal(SIGTERM, sigterm_handler);
 
   std::vector<char*> cstrings;
   cstrings.resize(petsc_args.size());

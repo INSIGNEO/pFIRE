@@ -17,6 +17,8 @@
 
 #include <iostream>
 
+#include <mpi.h>
+
 #include "gitstate.hpp"
 
 constexpr std::string_view abort_info_pre = R"FATAL(!!! FATAL ERROR !!!:
@@ -45,12 +47,42 @@ constexpr std::string_view abort_info_post = R"FATAL(
 
 
 void abort_with_unhandled_error(){
-  
-  std::cout << abort_info_pre
-            << git_version_string()
-            << abort_info_post;
 
-  std::abort();
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  
+  std::exception_ptr eptr = std::current_exception();
+
+  try
+  {
+    if (eptr) {
+      std::rethrow_exception(eptr);
+    }
+  }
+  catch(const std::exception& e)
+  {
+    std::cout << "Rank " << rank << " encountered an unhandled exception: \n\"\"\"\n" 
+              << e.what() << "\n\"\"\"\n";
+  }
+
+  if(rank == 0){
+    std::cout << abort_info_pre
+              << git_version_string()
+              << abort_info_post;
+  }
+
+  MPI_Abort(MPI_COMM_WORLD, -1); 
 
 }
 
+void sigterm_handler(int signal){
+
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  if(rank == 0){
+    std::cout << abort_info_pre
+              << git_version_string()
+              << abort_info_post;
+  }
+}

@@ -19,6 +19,7 @@
 #include <sstream>
 
 void abort_with_unhandled_error();
+void sigterm_handler(int signal);
 
 class InvalidLoaderError : public std::runtime_error {
 public:
