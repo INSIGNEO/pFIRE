@@ -31,7 +31,7 @@ void OIIOWriter::write_image(const Image& image)
 {
   Vec_unique imgvec = image.scatter_to_zero();
 
-  integer rank;
+  int rank;
   MPI_Comm_rank(_comm, &rank);
   if (rank == 0)
   {
