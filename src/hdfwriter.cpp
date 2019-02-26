@@ -38,6 +38,57 @@ HDFWriter::~HDFWriter()
   H5Fclose(_file_h);
 }
 
+void HDFWriter::write_3d_dataset_parallel(uinteger ndim, const std::vector<hsize_t>& fullshape,
+    const std::vector<hsize_t>& chunkshape, const std::vector<hsize_t> &offset,
+    const std::string& groupname, Vec& datavec)
+{
+  PetscPrintf(_comm, "Writing dataset: %s:%s\n", h5_filename.c_str(), groupname.c_str());
+  // No need to set max size as want it to be same as given size.
+  hid_t fspace_h = H5Screate_simple(ndim, fullshape.data(), nullptr);
+
+  hid_t dset_h = H5Dcreate(_file_h, groupname.c_str(), H5T_NATIVE_DOUBLE, fspace_h, H5P_DEFAULT,
+      H5P_DEFAULT, H5P_DEFAULT);
+
+  H5Sselect_hyperslab(fspace_h, H5S_SELECT_SET, offset.data(), nullptr, chunkshape.data(), nullptr);
+
+  hid_t plist_h = H5Pcreate(H5P_DATASET_XFER);
+  H5Pset_dxpl_mpio(plist_h, H5FD_MPIO_COLLECTIVE);
+
+  hid_t dspace_h = H5Screate_simple(ndim, chunkshape.data(), nullptr);
+
+  const floating* imgdata;
+  PetscErrorCode perr = VecGetArrayRead(datavec, &imgdata);
+  CHKERRABORT(_comm, perr);
+  H5Dwrite(dset_h, H5T_NATIVE_DOUBLE, dspace_h, fspace_h, plist_h, imgdata);
+  perr = VecRestoreArrayRead(datavec, &imgdata);
+  CHKERRABORT(_comm, perr);
+
+  H5Dclose(dset_h);
+  H5Sclose(fspace_h);
+  H5Sclose(dspace_h);
+  H5Pclose(plist_h);
+}
+
+void HDFWriter::write_1d_dataset_rank0(hsize_t nval, const std::string& groupname, const floating* databuf)
+{
+  PetscPrintf(_comm, "Writing dataset: %s:%s\n", h5_filename.c_str(), groupname.c_str());
+  int rank;
+  MPI_Comm_rank(_comm, &rank);
+  // No need to set max size as want it to be same as given size.
+  hid_t fspace_h = H5Screate_simple(1, &nval, nullptr);
+
+  hid_t dset_h = H5Dcreate(_file_h, groupname.c_str(), H5T_NATIVE_DOUBLE, fspace_h, H5P_DEFAULT,
+      H5P_DEFAULT, H5P_DEFAULT);
+
+  if(rank == 0)
+  {
+    H5Dwrite(dset_h, H5T_NATIVE_DOUBLE, H5S_ALL, fspace_h, H5P_DEFAULT, databuf);
+  }
+
+  H5Dclose(dset_h);
+  H5Sclose(fspace_h);
+}
+
 void HDFWriter::write_image(const Image& image)
 {
   // Sanity check communicators
@@ -49,38 +100,19 @@ void HDFWriter::write_image(const Image& image)
     throw std::runtime_error(errss.str());
   }
 
+  std::string groupname = h5_groupname;
+  if(groupname.empty())
+  {
+    groupname = "/registered";
+  }
+
   int rank;
   MPI_Comm_rank(comm, &rank);
 
-  // No need to set max size as want it to be same as given size.
-  std::vector<hsize_t> imshape(image.shape().cbegin(), image.shape().cend());
-  hid_t fspace_h = H5Screate_simple(image.ndim(), imshape.data(), nullptr);
+  std::vector<hsize_t> imgsizehsizet(image.shape().cbegin(), image.shape().cend());
 
-  hid_t dset_h = H5Dcreate(_file_h, h5_groupname.c_str(), H5T_NATIVE_DOUBLE, fspace_h, H5P_DEFAULT,
-      H5P_DEFAULT, H5P_DEFAULT);
-
-  std::vector<hsize_t> offset = image.mpi_get_offset<hsize_t>();
-  std::vector<hsize_t> chunksize = image.mpi_get_chunksize<hsize_t>();
-
-  H5Sselect_hyperslab(fspace_h, H5S_SELECT_SET, offset.data(), nullptr, chunksize.data(), nullptr);
-
-  hid_t plist_h = H5Pcreate(H5P_DATASET_XFER);
-  H5Pset_dxpl_mpio(plist_h, H5FD_MPIO_COLLECTIVE);
-
-  hid_t dspace_h = H5Screate_simple(image.ndim(), chunksize.data(), nullptr);
-
-  Vec_unique rm_data = image.get_raw_data_row_major();
-  const floating* imgdata;
-  PetscErrorCode perr = VecGetArrayRead(*rm_data, &imgdata);
-  CHKERRABORT(_comm, perr);
-  H5Dwrite(dset_h, H5T_NATIVE_DOUBLE, dspace_h, fspace_h, plist_h, imgdata);
-  perr = VecRestoreArrayRead(*rm_data, &imgdata);
-  CHKERRABORT(_comm, perr);
-
-  H5Dclose(dset_h);
-  H5Sclose(fspace_h);
-  H5Sclose(dspace_h);
-  H5Pclose(plist_h);
+  write_3d_dataset_parallel(image.ndim(), imgsizehsizet, image.mpi_get_chunksize<hsize_t>(),
+      image.mpi_get_offset<hsize_t>(), groupname, *image.get_raw_data_row_major());
 }
 
 void HDFWriter::write_map(const Map& map)
@@ -94,19 +126,16 @@ void HDFWriter::write_map(const Map& map)
     throw std::runtime_error(errss.str());
   }
 
+  std::string groupname = h5_groupname;
+  if(groupname.empty())
+  {
+    groupname = "/map";
+  }
+
   int rank;
   MPI_Comm_rank(comm, &rank);
 
-  // No need to set max size as want it to be same as given size.
-  std::vector<hsize_t> mapshape(map.shape().cbegin(), map.shape().cend());
-  //  mapshape.resize(map.ndim());
-  //  std::reverse(mapshape.begin(), mapshape.end());
-
-  // Set up for collective writes
-  hid_t plist_h = H5Pcreate(H5P_DATASET_XFER);
-  H5Pset_dxpl_mpio(plist_h, H5FD_MPIO_COLLECTIVE);
-
-  hid_t mgroup_h = H5Gcreate(_file_h, h5_groupname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  hid_t mgroup_h = H5Gcreate(_file_h, groupname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   if (mgroup_h < 0)
   {
     std::ostringstream errstr;
@@ -116,46 +145,32 @@ void HDFWriter::write_map(const Map& map)
 
   for (uinteger idx = 0; idx < map.ndim(); idx++)
   {
-    // Maps contained in group
-    std::ostringstream dsetstr;
-    dsetstr << h5_groupname << "/" << _components[idx];
-    std::string dsetname = dsetstr.str();
-    // TODO: verbose printout
-    // PetscPrintf(_comm, "%s\n", dsetname.c_str());
-    // Create dataspace and dataset to hold full data
-    hid_t fspace_h = H5Screate_simple(map.ndim(), mapshape.data(), nullptr);
-    hid_t dset_h = H5Dcreate(_file_h, dsetname.c_str(), H5T_NATIVE_DOUBLE, fspace_h, H5P_DEFAULT,
-        H5P_DEFAULT, H5P_DEFAULT);
-
+    // Get dataset local dimensions
     auto corners = map.get_dmda_local_extents();
     std::vector<hsize_t> offset(corners.first.cbegin(), corners.first.cend());
     std::vector<hsize_t> chunksize(corners.second.cbegin(), corners.second.cend());
-    Vec_unique dimdata = map.get_dim_data_dmda_blocked(idx);
+    /*
+    PetscSynchronizedPrintf(_comm, "Rank %i: ofs: %i %i %i, shp %i %i %i\n", rank, offset[0], offset[1], offset[2],
+                            chunksize[0], chunksize[1], chunksize[2]);
+    PetscSynchronizedFlush(_comm, PETSC_STDOUT);
+    */
+    std::ostringstream dsetss;
+    dsetss << groupname << "/" << _components[idx];
+    std::string dsetname = dsetss.str();
 
-    std::ostringstream ofs;
-    std::copy(offset.cbegin(), offset.cend(), infix_ostream_iterator<integer>(ofs, ", "));
-    std::ostringstream cks;
-    std::copy(chunksize.cbegin(), chunksize.cend(), infix_ostream_iterator<integer>(cks, ", "));
-    int rank;
-    MPI_Comm_rank(_comm, &rank);
+    std::vector<hsize_t> mapsizehsizet(map.shape().cbegin(), map.shape().cend());
 
-    H5Sselect_hyperslab(
-        fspace_h, H5S_SELECT_SET, offset.data(), nullptr, chunksize.data(), nullptr);
+    write_3d_dataset_parallel(map.ndim(), mapsizehsizet, chunksize, offset, dsetname,
+        *map.get_raw_data_row_major(idx));
 
-    hid_t dspace_h = H5Screate_simple(map.ndim(), chunksize.data(), nullptr);
+    dsetss.clear();
+    dsetss.str(std::string());
+    dsetss << groupname << "/nodes_" << _components[idx];
+    dsetname = dsetss.str();
 
-    const floating* mapdata;
-    PetscErrorCode perr = VecGetArrayRead(*dimdata, &mapdata);
-    CHKERRABORT(_comm, perr);
-    H5Dwrite(dset_h, H5T_NATIVE_DOUBLE, dspace_h, fspace_h, plist_h, mapdata);
-    perr = VecRestoreArrayRead(*dimdata, &mapdata);
-
-    H5Dclose(dset_h);
-    H5Sclose(fspace_h);
-    H5Sclose(dspace_h);
+    write_1d_dataset_rank0(map.shape()[idx], dsetname, map.node_locs()[idx].data());
   }
   H5Gclose(mgroup_h);
-  H5Pclose(plist_h);
 }
 
 void HDFWriter::open_or_create_h5()
@@ -194,6 +209,6 @@ void HDFWriter::open_or_create_h5()
   }
   // Reset HDF5 error handling
   H5Eset_auto1(old_err, old_err_data);
-
+  // Clean up old fileprops
   H5Pclose(file_props);
 }

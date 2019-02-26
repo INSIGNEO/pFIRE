@@ -15,6 +15,8 @@
 
 #include "setup.hpp"
 
+#include <csignal>
+
 #include <petscsys.h>
 
 #include <boost/filesystem.hpp>
@@ -24,6 +26,8 @@
 #include "gitstate.hpp"
 #include "baseloader.hpp"
 #include "shirtloader.hpp"
+
+#include "exceptions.hpp"
 
 #ifdef USE_OIIO
 #include "oiioloader.hpp"
@@ -59,6 +63,9 @@ void register_plugins()
 
 void pfire_setup(const std::vector<std::string>& petsc_args)
 {
+  // Setup terminate handler
+  std::set_terminate(abort_with_unhandled_error);
+  std::signal(SIGTERM, sigterm_handler);
 
   std::vector<char*> cstrings;
   cstrings.resize(petsc_args.size());
@@ -79,26 +86,32 @@ void pfire_setup(const std::vector<std::string>& petsc_args)
     print_welcome_message();
   }
 
-  check_and_warn_odd_comm();
+  check_comm_size_and_warn_odd();
 
   register_plugins();
 }
 
-void check_and_warn_odd_comm()
+void check_comm_size_and_warn_odd()
 {
   // Check for even number of processors, warn on oddness
   int comm_size, rank;
   MPI_Comm_size(PETSC_COMM_WORLD, &comm_size);
   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-  if (comm_size > 2 && comm_size % 2 == 1 && rank == 0)
+
+  if(rank == 0)
   {
-    std::cout << "!!!! WARNING !!!!\n"
-              << "Using an odd number of processors is not recommended.\n"
-              << "This makes efficient subdivision of the problem much harder and will likely "
-              << "lead to reduced performance.\n"
-              << "Extreme cases may make viable partitioning impossible and cause job failure. "
-              << "You have been warned!\n\n"
-              << std::flush;
+    std::cout << "Running on " << comm_size << " processes" << std::endl;
+
+    if (comm_size > 2 && comm_size % 2 == 1)
+    {
+      std::cout << "!!!! WARNING !!!!\n"
+                << "Using an odd number of processors is not recommended.\n"
+                << "This makes efficient subdivision of the problem much harder and will likely "
+                << "lead to reduced performance.\n"
+                << "Extreme cases may make viable partitioning impossible and cause job failure. "
+                << "You have been warned!\n\n"
+                << std::flush;
+    }
   }
 }
 
@@ -114,21 +127,7 @@ void print_welcome_message()
   std::ostringstream welcomess;
   welcomess << kbanner_text_upper;
 
-  if(kGitTag.empty())
-  {
-    welcomess << "Development version";
-  }
-  else
-  {
-    welcomess << "Release " << kGitTag; 
-  }
-
-  welcomess << " (commit:" << kGitSHA;
-  if (kGitDirty)
-  {
-    welcomess << "-dirty";
-  }
-  welcomess << ")";
+  welcomess << git_version_string();
 
   welcomess << kbanner_text_lower;
 

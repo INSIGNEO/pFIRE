@@ -76,3 +76,11 @@ Default values exist for these parameters, but they may be overridden by the use
    Allows manual control of smoothing parameter.  Can be set to a floating point number to control
    smoothing, defaults to "auto" which causes pFIRE to choose a smoothing parameter which maximises
    stability of the algorithm.
+
+.. option:: max_iterations
+
+   *default: 100*
+
+   Maximum number of iterations to perform at each node spacing before continuing to next
+   nodespacing.  Default is a reasonable tradeoff between allowing convergence and wasting time due
+   to algorithmic jitter.

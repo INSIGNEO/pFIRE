@@ -31,11 +31,12 @@ void OIIOWriter::write_image(const Image& image)
 {
   Vec_unique imgvec = image.scatter_to_zero();
 
-  integer rank;
+  int rank;
   MPI_Comm_rank(_comm, &rank);
   if (rank == 0)
   {
-    OIIO::ImageOutput* img = OIIO::ImageOutput::create(filename);
+    // This will be either a smart_ptr or a ImageOutput* depending on oiio version
+    auto img = OIIO::ImageOutput::create(filename);
     if (img == nullptr)
     {
       throw std::runtime_error("Failed to open image output file");
@@ -51,7 +52,10 @@ void OIIOWriter::write_image(const Image& image)
     perr = VecRestoreArray(*imgvec, &pixdata);
     CHKERRABORT(_comm, perr);
 
+    //Manual ptr management if needed
+#if OIIO_VERSION < 10903
     OIIO::ImageOutput::destroy(img);
+#endif //OIIO_VERSION < 10903
   }
   MPI_Barrier(_comm);
 }

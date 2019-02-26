@@ -68,6 +68,11 @@ public:
 
   void validate_config();
 
+  static const std::string k_stem_token;
+  static const std::string k_extension_token;
+  static const std::string k_outer_token;
+  static const std::string k_inner_token;
+
 protected:
   ConfigurationBase(const int& argc, char const* const* argv);
 

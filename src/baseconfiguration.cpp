@@ -19,20 +19,28 @@
 
 #include "infix_iterator.hpp"
 
+const std::string ConfigurationBase::k_stem_token = "%name%";
+const std::string ConfigurationBase::k_extension_token = "%ext%";
+const std::string ConfigurationBase::k_outer_token = "%s%";
+const std::string ConfigurationBase::k_inner_token = "%i%";
+
 const config_map ConfigurationBase::default_config = {{"verbose", "false"},
-                                                      {"registered", "registered.xdmf:/registered"},
-                                                      {"map", "map.xdmf:/map"},
-                                                      {"lambda", "auto"},
-                                                      {"debug_frames", "false"},
-                                                      {"debug_frames_prefix", "debug"}};
+    {"registered", "registered.xdmf:/registered"}, {"map", "map.xdmf:/map"}, {"lambda", "auto"},
+    {"lambda_mult", "1.0"}, {"with_memory", "true"}, {"save_intermediate_frames", "false"},
+    {"intermediate_template", "%name%-intermediate-%s%-%i%.%ext%"},
+    {"intermediate_directory", "intermediates"},
+    {"debug_frames_prefix", "debug"},
+    {"max_iterations", "100"}};
 
-const std::vector<std::string> ConfigurationBase::required_options = {"fixed", "moved",
-                                                                      "nodespacing"};
+const std::vector<std::string> ConfigurationBase::required_options = {
+    "fixed", "moved", "nodespacing"};
 
-const std::vector<std::string> ConfigurationBase::arg_options = {
-    "fixed", "moved", "mask", "nodespacing", "registered", "map", "debug_frames_prefix", "lambda"};
+const std::vector<std::string> ConfigurationBase::arg_options = {"fixed", "moved", "mask",
+    "nodespacing", "registered", "map", "debug_frames_prefix", "lambda", "lambda_mult",
+    "intermediate_template", "intermediate_directory", "max_iterations"};
 
-const std::vector<std::string> ConfigurationBase::bool_options = {"verbose", "debug_frames"};
+const std::vector<std::string> ConfigurationBase::bool_options = {
+    "verbose", "debug_frames", "with_memory", "save_intermediate_frames"};
 
 ConfigurationBase::ConfigurationBase(const int &argc, char const *const *argv)
   : config(default_config), arguments(argv + 1, argv + argc),

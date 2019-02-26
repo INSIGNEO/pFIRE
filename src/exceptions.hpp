@@ -18,13 +18,19 @@
 
 #include <sstream>
 
-class InvalidLoaderError : public std::runtime_error {
+#include "types.hpp"
+
+void abort_with_unhandled_error();
+void sigterm_handler(int signal);
+
+class InvalidLoaderError: public std::runtime_error {
 public:
-  InvalidLoaderError(const std::string& filepath)
-  : std::runtime_error(file_to_string(filepath)) {}
+  InvalidLoaderError(const std::string& filepath) : std::runtime_error(build_errstring(filepath))
+  {
+  }
 
 protected:
-  static std::string file_to_string(const std::string& path)
+  static std::string build_errstring(const std::string& path)
   {
     std::ostringstream errss;
     errss << "Failed to read data from " << path << ", wrong loader or file corrupt.";
@@ -32,16 +38,32 @@ protected:
   }
 };
 
-class FileNotFoundError : public std::runtime_error {
+class FileNotFoundError: public std::runtime_error {
 public:
-  FileNotFoundError(const std::string& filepath)
-  : std::runtime_error(file_to_string(filepath)) {}
+  FileNotFoundError(const std::string& filepath) : std::runtime_error(build_errstring(filepath)) {}
 
 protected:
-  static std::string file_to_string(const std::string& path)
+  static std::string build_errstring(const std::string& path)
   {
     std::ostringstream errss;
     errss << "Failed to open " << path << ", wrong permissions or file does not exist.";
+    return errss.str();
+  }
+};
+
+class InternalError: public std::runtime_error {
+public:
+  InternalError(const std::string& what, std::string file = "unknown", integer line = 0)
+    : std::runtime_error(build_errstring(what, file, line))
+  {
+  }
+
+protected:
+  static std::string build_errstring(
+      const std::string& what, std::string file, integer line)
+  {
+    std::ostringstream errss;
+    errss << "Internal error at " << file << ":" << line << " \"" << what << "\"";
     return errss.str();
   }
 };
