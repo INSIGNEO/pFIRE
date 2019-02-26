@@ -16,3 +16,10 @@ add_definitions(-DBOOST_TEST_DYN_LINK=1)
 add_executable(test_gradients test_gradients.cpp)
 target_link_libraries(test_gradients libpfire ${Boost_LIBRARIES})
 add_test(NAME Gradients COMMAND test_gradients)
+
+add_definitions(-DBOOST_TEST_DYN_LINK=1)
+add_executable(test_hdfwriter test_hdfwriter.cpp)
+target_link_libraries(test_hdfwriter libpfire ${Boost_LIBRARIES})
+add_test(NAME HDFWriter COMMAND test_hdfwriter)
+
+
