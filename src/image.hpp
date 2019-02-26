@@ -35,34 +35,13 @@ public:
 
   // Allow RO access to member variables
   // Note that datavec and dmda remain mutable in this way
-  MPI_Comm comm() const
-  {
-    return m_comm;
-  }
-  uinteger ndim() const
-  {
-    return m_ndim;
-  }
-  const intvector& shape() const
-  {
-    return m_shape;
-  }
-  integer size() const
-  {
-    return m_shape[0] * m_shape[1] * m_shape[2];
-  }
-  std::shared_ptr<const Vec> global_vec() const
-  {
-    return m_globalvec;
-  }
-  std::shared_ptr<const Vec> local_vec() const
-  {
-    return m_localvec;
-  }
-  std::shared_ptr<DM> dmda() const
-  {
-    return m_dmda;
-  }
+  MPI_Comm comm() const { return m_comm; }
+  uinteger ndim() const { return m_ndim; }
+  const intvector& shape() const { return m_shape; }
+  integer size() const { return m_shape[0] * m_shape[1] * m_shape[2]; }
+  std::shared_ptr<const Vec> global_vec() const { return m_globalvec; }
+  std::shared_ptr<const Vec> local_vec() const { return m_localvec; }
+  std::shared_ptr<DM> dmda() const { return m_dmda; }
 
   const floating* get_raw_data_ro() const;
   void release_raw_data_ro(const floating*& ptr) const;
@@ -80,9 +59,8 @@ public:
 
   void update_local_from_global();
 
-  static std::unique_ptr<Image> load_file(
-      const std::string& filename, const Image* existing = nullptr,
-      MPI_Comm comm = PETSC_COMM_WORLD);
+  static std::unique_ptr<Image> load_file(const std::string& filename,
+      const Image* existing = nullptr, MPI_Comm comm = PETSC_COMM_WORLD);
 
   Vec_unique scatter_to_zero() const;
 
@@ -99,7 +77,6 @@ protected:
 
   void initialize_dmda();
   void initialize_vectors();
-
 
   integer instance_id;
 
