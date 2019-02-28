@@ -247,6 +247,20 @@ void Image::release_raw_data_ro(const floating*& ptr) const
   CHKERRABORT(m_comm, perr);
 }
 
+Vec_unique Image::get_raw_data_natural() const
+{
+  Vec_unique natvector = create_unique_vec();
+  PetscErrorCode perr = DMDACreateNaturalVector(*m_dmda, natvector.get());
+  CHKERRXX(perr);
+
+  perr = DMDAGlobalToNaturalBegin(*m_dmda, *m_globalvec, INSERT_VALUES, *natvector);
+  CHKERRXX(perr);
+  perr = DMDAGlobalToNaturalEnd(*m_dmda, *m_globalvec, INSERT_VALUES, *natvector);
+  CHKERRXX(perr);
+
+  return natvector;
+}
+
 Vec_unique Image::get_raw_data_row_major() const
 {
   Vec_unique rmlocalpart = create_unique_vec();

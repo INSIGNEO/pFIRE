@@ -46,6 +46,7 @@ public:
   const floating* get_raw_data_ro() const;
   void release_raw_data_ro(const floating*& ptr) const;
   Vec_unique get_raw_data_row_major() const;
+  Vec_unique get_raw_data_natural() const;
 
   floating normalize();
 
