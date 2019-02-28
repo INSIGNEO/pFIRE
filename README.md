@@ -1,5 +1,9 @@
-# pFIRE
-## The Parallel Framework for Image Registration
+# pFIRE - The Parallel Framework for Image Registration
+[![Build Status](https://travis-ci.org/INSIGNEO/pFIRE.svg?branch=master)](https://travis-ci.org/INSIGNEO/pFIRE)
+
+Online Documentation: [ https://insigneo.github.io/pFIRE/]( https://insigneo.github.io/pFIRE/)
+
+## About pFIRE
 
 pFIRE performs elastic registration of 2- and 3-dimensional images by the method of Barber and
 Hose&#91;[1](#note1)&#93;. It is implemented in C++ using the
