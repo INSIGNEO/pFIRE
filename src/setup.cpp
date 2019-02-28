@@ -61,7 +61,7 @@ void register_plugins()
   BaseWriter::register_writer<XDMFWriter>();
 }
 
-void pfire_setup(const std::vector<std::string>& petsc_args)
+void pfire_setup(const std::vector<std::string>& petsc_args, bool silent)
 {
   // Setup terminate handler
   std::set_terminate(abort_with_unhandled_error);
@@ -81,7 +81,7 @@ void pfire_setup(const std::vector<std::string>& petsc_args)
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
-  if(rank == 0)
+  if(rank == 0 && !silent)
   {
     print_welcome_message();
   }

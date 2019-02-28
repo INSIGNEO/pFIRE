@@ -16,8 +16,7 @@ matrix:
           packages:
             - gcc-7
             - g++-7
-            - cmake
-            - libboost-dev
+            - libboost-all-dev
             - libopenimageio-dev
             - openmpi-bin
             - libopenmpi-dev
@@ -35,8 +34,7 @@ matrix:
           packages:
             - gcc-8
             - g++-8
-            - cmake
-            - libboost-dev
+            - libboost-all-dev
             - libopenimageio-dev
             - mpich
             - libmpich-dev
