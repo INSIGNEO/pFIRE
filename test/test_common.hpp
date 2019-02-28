@@ -3,13 +3,13 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include<petscsys.h>
+#include "setup.hpp"
 
-struct PetscSetup {
-  PetscSetup() { PetscInitialize(nullptr, nullptr, nullptr, nullptr);}
-  ~PetscSetup() { PetscFinalize();}
+struct pFIRESetup {
+  pFIRESetup() { pfire_setup({}, true);}
+  ~pFIRESetup() { pfire_teardown();}
 };
 
-BOOST_GLOBAL_FIXTURE(PetscSetup);
+BOOST_GLOBAL_FIXTURE(pFIRESetup);
 
 #endif
