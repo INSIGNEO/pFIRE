@@ -22,7 +22,7 @@ struct im
   int commsize;
 };
 
-BOOST_FIXTURE_TEST_SUITE(indexing, im)
+BOOST_FIXTURE_TEST_SUITE(indexing, im, *butf::enabled())
 
   BOOST_AUTO_TEST_CASE(test_ravelling)
   {
@@ -70,7 +70,7 @@ BOOST_FIXTURE_TEST_SUITE(indexing, im)
 
   }
 
-  BOOST_AUTO_TEST_CASE(test_unravelling)
+  BOOST_AUTO_TEST_CASE(test_unravelling, *butf::disabled())
   {
     integer imlo, imhi;
     VecGetOwnershipRange(*image.global_vec(), &imlo, &imhi);

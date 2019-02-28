@@ -4,9 +4,13 @@ set(EXTRA_LIBS ${EXTRA_LIBS} ${Boost_LIBRARIES})
 add_definitions(-DBOOST_TEST_DYN_LINK=1)
 
 function(add_mpi_test name executable nprocs)
-  set(test_params -np ${nprocs} $<TARGET_FILE:${executable}>)
-  add_test(NAME ${name} COMMAND mpirun ${test_params}
+  set(mpi_test_params -np ${nprocs} $<TARGET_FILE:${executable}>)
+  add_test(NAME ${name}-mpi COMMAND mpirun ${mpi_test_params}
            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+  set_tests_properties(${name}-mpi PROPERTIES LABELS mpi)
+  add_test(NAME ${name}-serial COMMAND $<TARGET_FILE:${executable}>
+           WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+  set_tests_properties(${name}-serial PROPERTIES LABELS serial)
 endfunction(add_mpi_test)
 
 add_executable(test_indexing test_indexing.cpp)

@@ -1,55 +1,29 @@
+dist: xenial
+language: minimal
 sudo: require
+
 branches:
   except:
     - gh-pages
-dist: xenial
-language:
-  - cpp
 
-matrix:
-  include:
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-7
-            - g++-7
-            - libboost-all-dev
-            - libopenimageio-dev
-            - openmpi-bin
-            - libopenmpi-dev
-            - libhdf5-openmpi-dev
-            - libdcmtk-dev
-            - petsc-dev
-      env:
-        - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
-
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-8
-            - g++-8
-            - libboost-all-dev
-            - libopenimageio-dev
-            - mpich
-            - libmpich-dev
-            - libhdf5-openmpi-dev
-            - libdcmtk-dev
-            - libpetsc3.6.2-dev
-      env:
-        - MATRIX_EVAL="CC=gcc-8 && CXX=g++-8"
-
+env:
+  global:
+    - docker_image="ubuntu-img"
+    - CTEST_EXT_COLOR_OUTPUT=TRUE
+    - SH="docker exec -t ${docker_image} bash -c"
+    - OMPI_MCA_btl_base_warn_component_unused=0
 
 before_install:
-  - eval "${MATRIX_EVAL}"
+  - docker run -d --name ${docker_image} --env OMPI_MCA_btl_base_warn_component_unused=0 --volume ${TRAVIS_BUILD_DIR}:/home/travis --workdir /home/travis ubuntu:18.04 tail -f /dev/null
+  - docker ps
+  - $SH "pwd"
+  - $SH "ls"
+  - $SH "apt-get update"
+  - $SH "apt-get install --yes build-essential cmake pkg-config git"
+  - $SH "apt-get install --yes petsc-dev libboost-all-dev libhdf5-openmpi-dev libdcmtk-dev openmpi-bin"
+
+install:
+  - $SH "mkdir build && cd build && cmake -DPETSC_EXECUTABLE_RUNS:BOOL=Yes .. && make"
 
 script:
-  - mkdir build
-  -  cd build
-  - cmake -DPETSC_EXECUTABLE_RUNS:BOOL=Yes ..
-  - make
+  - $SH "cd build && ctest -V -L serial"

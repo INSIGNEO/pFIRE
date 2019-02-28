@@ -5,6 +5,8 @@
 
 #include "setup.hpp"
 
+namespace butf = boost::unit_test;
+
 struct pFIRESetup {
   pFIRESetup() { pfire_setup({}, true);}
   ~pFIRESetup() { pfire_teardown();}
