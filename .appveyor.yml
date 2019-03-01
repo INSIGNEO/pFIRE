@@ -1,0 +1,28 @@
+version: "{build}"
+image: Ubuntu1804
+
+platform: x64
+
+pull_requests:
+  do_not_increment_build_number: true
+
+environment:
+  OMPI_MCA_btl_base_warn_component_unused: 0
+
+configuration:
+  - RelWithDebInfo
+
+install:
+  - sh: sudo apt-get update
+  - sh: sudo apt-get install --yes build-essential cmake pkg-config git
+  - sh: sudo apt-get install --yes petsc-dev libboost-all-dev libhdf5-openmpi-dev libdcmtk-dev openmpi-bin
+
+build_script:
+  - sh: mkdir build && cd build
+  - sh: cmake -DPETSC_EXECUTABLE_RUNS:BOOL=Yes -DCMAKE_BUILD_TYPE=${configuration} ..
+  - sh: make -j2
+
+test_script:
+- sh: ctest -VV -L serial
+
+deploy: off
