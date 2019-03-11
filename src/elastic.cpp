@@ -139,7 +139,11 @@ void Elastic::innerloop(integer outer_count)
     CHKERRABORT(m_comm, perr);
     floating amax = std::max(std::fabs(posmax), std::fabs(negmax));
     PetscPrintf(m_comm, "Maximum displacement: %.2f\n", amax);
-    if (amax < m_convergence_thres)
+    floating aavg;
+    perr = VecNorm(*m_workspace->m_delta, NORM_2, &aavg);
+    aavg /= m_p_map->size();
+    PetscPrintf(m_comm, "Average displacement: %.2f\n", aavg);
+    if (aavg < m_convergence_thres)
     {
       PetscPrintf(m_comm, "Generation %i converged after %i iterations.\n\n", outer_count, inum);
       break;
