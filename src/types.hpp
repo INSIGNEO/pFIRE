@@ -16,6 +16,7 @@
 #ifndef TYPEDEFS_HPP
 #define TYPEDEFS_HPP
 
+#include <array>
 #include <iostream>
 #include <memory>
 #include <set>
@@ -41,13 +42,18 @@ class BaseWriter;
 
 // Useful typedefs
 using integer = PetscInt;
+using floating = PetscScalar;
+
+using intloc = std::array<integer, 3>;
+using floatloc = std::array<floating, 3>;
+
 using intvector = std::vector<integer>;
 using intvector2d = std::vector<intvector>;
+using intvector3d = std::vector<intvector2d>;
 
 using uinteger = unsigned integer;
 using uintvector = std::vector<uinteger>;
 
-using floating = PetscScalar;
 using floatvector = std::vector<floating>;
 using floatvector2d = std::vector<floatvector>;
 

@@ -50,15 +50,15 @@ public:
 
   floating normalize();
 
+  integer get_rank_of_loc(const floatloc& loc) const;
+  floating interpolate_local_value(const floatloc& loc) const;
+
   template <typename inttype>
   std::vector<inttype> mpi_get_offset() const;
   template <typename inttype>
   std::vector<inttype> mpi_get_chunksize() const;
 
-  //  void set_mask(std::shared_ptr<Mask>);
-  //  void masked_normalize(const Mask& mask);
-
-  void update_local_from_global();
+  void update_local_from_global() const;
 
   static std::unique_ptr<Image> load_file(const std::string& filename,
       const Image* existing = nullptr, MPI_Comm comm = PETSC_COMM_WORLD);
@@ -66,15 +66,20 @@ public:
   Vec_unique scatter_to_zero() const;
 
 protected:
+  
+  friend class ImageInterpolator;
+
   explicit Image(const Image& image);
   Image& operator=(const Image& image);
 
   MPI_Comm m_comm;
+  integer rank;
   uinteger m_ndim;
   intvector m_shape;
   Vec_shared m_localvec, m_globalvec;
   DM_shared m_dmda;
-  //  std::shared_ptr<Mask> mask;
+  intvector strides, ranks_per_dim;
+  intvector rankmapping;
 
   void initialize_dmda();
   void initialize_vectors();
@@ -115,5 +120,19 @@ std::vector<inttype> Image::mpi_get_offset() const
 
   return out;
 }
+
+class ImageInterpolator
+{
+public:
+  ImageInterpolator(const Image& image);
+
+  ~ImageInterpolator();
+
+  floating operator()(floatloc loc) const;
+
+protected:
+  const Image& image;
+  floating ***localdata;
+};
 
 #endif

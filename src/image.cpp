@@ -16,6 +16,7 @@
 #include "image.hpp"
 
 #include <algorithm>
+#include <iterator>
 #include <memory>
 #include <string>
 #include <vector>
@@ -23,10 +24,12 @@
 #include <petscdmda.h>
 #include <petscvec.h>
 
+#include "basis.hpp"
 #include "fd_routines.hpp"
+#include "indexing.hpp"
+#include "infix_iterator.hpp"
 #include "iterator_routines.hpp"
 #include "map.hpp"
-#include "indexing.hpp"
 
 #include "baseloader.hpp"
 
@@ -40,6 +43,7 @@ Image::Image(const intvector& shape, MPI_Comm comm)
     m_localvec(create_unique_vec()), m_globalvec(create_unique_vec()), m_dmda(create_shared_dm()),
     instance_id(instance_id_counter++)
 {
+  MPI_Comm_rank(comm, &rank);
   if (m_shape.size() != 3)
   {
     if (m_shape.size() == 2)
@@ -79,8 +83,8 @@ std::unique_ptr<Image> Image::copy() const
   return new_img;
 }
 
-std::unique_ptr<Image>
-Image::load_file(const std::string& path, const Image* existing, MPI_Comm comm)
+std::unique_ptr<Image> Image::load_file(
+    const std::string& path, const Image* existing, MPI_Comm comm)
 {
   BaseLoader_unique loader = BaseLoader::find_loader(path, comm);
 
@@ -89,8 +93,7 @@ Image::load_file(const std::string& path, const Image* existing, MPI_Comm comm)
   if (existing != nullptr)
   {
     comm = existing->comm();
-    if (!all_true(
-            loader->shape().begin(), loader->shape().end(), existing->shape().begin(),
+    if (!all_true(loader->shape().begin(), loader->shape().end(), existing->shape().begin(),
             existing->shape().end(), std::equal_to<>()))
     {
       throw std::runtime_error("New image must have same shape as existing");
@@ -128,31 +131,6 @@ floating Image::normalize()
   CHKERRABORT(m_comm, perr);
   return norm;
 }
-/*
-void Image::set_mask(std::shared_ptr<Mask> mask)
-{
-  //TODO iscompat()
-  this->mask = mask;
-}
-
-void Image::masked_normalize()
-{
-  if(m_mask.get() == nullptr)
-  {
-    throw std::runtime_error("mask must be set first")
-  }
-
-  Vec_unique tmp = create_unique_vec();
-  PetscErrorcode perr = VecDuplicate(*m_globalvec, tmp.get());CHKERRABORT(m_comm, perr);
-  perr = VecPointwiseMult(*tmp, *this->mask->global_vec(), *m_globalvec);CHKERRABORT(m_comm, perr);
-
-  floating norm;
-  perr = VecSum(*tmp, &norm);CHKERRABORT(m_comm, perr);
-  norm = this->mask->npoints() / norm;
-  perr = VecScale(*m_globalvec, norm);CHKERRABORT(m_comm, perr);
-
-  return norm;
-}*/
 
 // Protected Methods
 
@@ -166,24 +144,113 @@ Image::Image(const Image& image)
 
 void Image::initialize_dmda()
 {
-  integer dof_per_node = 1;
+  // Should never change
+  DMBoundaryType btype = DM_BOUNDARY_MIRROR; // mirror with 1 point means zero gradient at edges
+  DMDAStencilType stype = DMDA_STENCIL_STAR;
   integer stencil_width = 1;
-  PetscErrorCode perr;
+  integer dof_per_node = 1;
 
-  // Make sure things get gracefully cleaned up
+  // Calculate rank distribution
+  int comm_size, rank;
+  MPI_Comm_size(m_comm, &comm_size);
+  MPI_Comm_rank(m_comm, &rank);
+  auto splitinfo = find_proc_split(m_shape, comm_size);
+  ranks_per_dim = splitinfo.first;
+  strides = splitinfo.second;
+
+  if (rank == 0)
+  {
+    std::cout << "Found proc split (";
+    std::copy(ranks_per_dim.cbegin(), ranks_per_dim.cend(),
+        infix_ostream_iterator<integer>(std::cout, ", "));
+    std::cout << ") with strides (";
+    std::copy(strides.cbegin(), strides.cend(), infix_ostream_iterator<integer>(std::cout, ", "));
+    std::cout << ").\n";
+  }
+
+  // Calculate nodes per cell explicitly
+  intvector2d nodes_per_cell(0);
+  nodes_per_cell.reserve(3);
+  // Construct nodes per cell info for DMDACreate3D
+  for (integer ridx = 0; ridx < 3; ridx++)
+  {
+    intvector nodes(ranks_per_dim[ridx], 0);
+    std::fill(nodes.begin(), nodes.end(), strides[ridx]);
+    *nodes.rbegin() +=
+        m_shape[ridx]
+        - (ranks_per_dim[ridx] * strides[ridx]); // last cell contains small remainder
+    nodes_per_cell.emplace_back(nodes);
+  }
+
+  // use a shared ptr to create dmda
   m_dmda = create_shared_dm();
-  perr = DMDACreate3d(
-      m_comm, DM_BOUNDARY_GHOSTED, DM_BOUNDARY_GHOSTED, DM_BOUNDARY_GHOSTED, // BCs
-      DMDA_STENCIL_STAR,                                                     // stencil shape
-      m_shape[0], m_shape[1], m_shape[2],                                    // global mesh shape
-      PETSC_DECIDE, PETSC_DECIDE, PETSC_DECIDE,                              // ranks per dim
-      dof_per_node, stencil_width, // dof per node, stencil size
-      nullptr, nullptr, nullptr,   // partition sizes nullptr -> petsc chooses
+  PetscErrorCode perr;
+  perr = DMDACreate3d(m_comm, btype, btype, btype, stype,   // BCs, stencil shape
+      m_shape[0], m_shape[1], m_shape[2],                   // global mesh shape
+      ranks_per_dim[0], ranks_per_dim[1], ranks_per_dim[2], // ranks per dim
+      dof_per_node, stencil_width,                          // dof per node, stencil size
+      nodes_per_cell[0].data(), nodes_per_cell[1].data(),
+      nodes_per_cell[2].data(), // partition sizes
       m_dmda.get());
   CHKERRABORT(m_comm, perr);
 
   perr = DMSetUp(*(m_dmda));
   CHKERRABORT(m_comm, perr);
+
+  // finally, map edges to ranks:
+  intvector rankloc(3, 0);
+  perr = DMDAGetCorners(*m_dmda, &rankloc[0], &rankloc[1], &rankloc[2], nullptr, nullptr, nullptr);
+  CHKERRABORT(m_comm, perr);
+
+  rankloc[0] = rankloc[0] / strides[0];
+  rankloc[1] = rankloc[1] / strides[1];
+  rankloc[2] = rankloc[2] / strides[2];
+
+  // TODO: improve me
+  rankmapping.resize(comm_size);
+  std::fill(rankmapping.begin(), rankmapping.end(), 0);
+  intvector tmpmapping(comm_size, 0);
+  PetscSynchronizedPrintf(m_comm, "Rank: %d - Loc: %d\n", rank, ravel(rankloc, ranks_per_dim));
+  PetscSynchronizedFlush(m_comm, PETSC_STDOUT);
+  tmpmapping[ravel(rankloc, ranks_per_dim)] = rank;
+
+  MPI_Allreduce(
+      tmpmapping.data(), rankmapping.data(), rankmapping.size(), MPIU_INT, MPI_SUM, m_comm);
+  if (rank == 0)
+  {
+    std::copy(
+        rankmapping.cbegin(), rankmapping.cend(), std::ostream_iterator<integer>(std::cout, " "));
+  }
+}
+
+/**
+ * Return mpi rank of process with region containing "loc"
+ * Locations outside of the image bounds return the rank containing the closest valid pixel
+ *
+ * @param loc location with in image (pixel units)
+ *
+ * @return rank of process containing "loc"
+ */
+integer Image::get_rank_of_loc(const floatloc& loc) const
+{
+  intvector intloc(3, 0);
+  n_ary_transform([](floating coord, integer stride) -> integer { return coord / stride; },
+      intloc.begin(), loc.cbegin(), loc.cend(), strides.cbegin());
+
+  // Clamp out of bounds values to edge ranks
+  for (size_t idx = 0; idx < loc.size(); idx++)
+  {
+    if (intloc[idx] < 0)
+    {
+      intloc[idx] = 0;
+    }
+    else if (intloc[idx] >= ranks_per_dim[idx])
+    {
+      intloc[idx] = ranks_per_dim[idx] - 1;
+    }
+  }
+
+  return ravel(intloc, ranks_per_dim);
 }
 
 void Image::initialize_vectors()
@@ -199,7 +266,7 @@ void Image::initialize_vectors()
   debug_creation(*m_localvec, std::string("image_local_") + std::to_string(instance_id));
 }
 
-void Image::update_local_from_global()
+void Image::update_local_from_global() const
 {
   PetscErrorCode perr = DMGlobalToLocalBegin(*m_dmda, *m_globalvec, INSERT_VALUES, *m_localvec);
   CHKERRABORT(PETSC_COMM_WORLD, perr);
@@ -278,10 +345,12 @@ Vec_unique Image::get_raw_data_row_major() const
   intvector cmidxn(localsize);
   std::iota(cmidxn.begin(), cmidxn.end(), 0);
 
-  std::transform(cmidxn.begin(), cmidxn.end(), cmidxn.begin(),
-                 [widths, ownedlo](integer idx) -> integer {return idx_cmaj_to_rmaj(idx, widths) + ownedlo;});
+  std::transform(
+      cmidxn.begin(), cmidxn.end(), cmidxn.begin(), [widths, ownedlo](integer idx) -> integer {
+        return idx_cmaj_to_rmaj(idx, widths) + ownedlo;
+      });
 
-  IS_unique src_is = create_unique_is(); 
+  IS_unique src_is = create_unique_is();
   perr = ISCreateStride(m_comm, localsize, ownedlo, 1, src_is.get());
   CHKERRABORT(m_comm, perr);
   IS_unique tgt_is = create_unique_is();
@@ -297,4 +366,52 @@ Vec_unique Image::get_raw_data_row_major() const
   CHKERRABORT(m_comm, perr);
 
   return rmlocalpart;
+}
+
+ImageInterpolator::ImageInterpolator(const Image& image) : image(image)
+{
+  image.update_local_from_global();
+  PetscErrorCode perr = DMDAVecGetArrayRead(*image.dmda(), *image.local_vec(), &localdata);
+  CHKERRXX(perr);
+}
+
+ImageInterpolator::~ImageInterpolator()
+{
+  PetscErrorCode perr = DMDAVecRestoreArrayRead(*image.dmda(), *image.local_vec(), &localdata);
+  CHKERRXX(perr);
+}
+
+floating ImageInterpolator::operator()(floatloc loc) const
+{
+  // Check if image is 2D and limit to 2D interpolation if so
+  integer npoints = 8;
+  if (image.ndim() == 2)
+  {
+    npoints = 4;
+  }
+
+  n_ary_transform([](floating x, integer w) -> floating { return clamp_to_edge(x, w); },
+      loc.begin(), loc.cbegin(), loc.cend(), image.shape().cbegin());
+  // find low corner
+  intloc loc_floor;
+  std::transform(loc.cbegin(), loc.cend(), loc_floor.begin(),
+      [](floating x) -> integer { return static_cast<integer>(std::floor(x)); });
+
+  // iterate over all corners and add coeff*val to result
+  floating result = 0;
+  for (integer ipoint = 0; ipoint < npoints; ipoint++)
+  {
+    intloc ploc = loc_floor;
+    for (uinteger idim = 0; idim < image.ndim(); idim++)
+    {
+      if ((1 << idim) & ipoint)
+      {
+        ploc[idim] += 1;
+      }
+    }
+    floating coeff = calculate_basis_coefficient(loc.cbegin(), loc.cend(), ploc.cbegin());
+    result += coeff * localdata[ploc[2]][ploc[1]][ploc[0]];
+  }
+
+  return result;
 }
