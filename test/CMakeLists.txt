@@ -21,9 +21,9 @@ add_executable(test_workspace test_workspace.cpp)
 target_link_libraries(test_workspace libpfire ${Boost_LIBRARIES})
 add_mpi_test(Workspace test_workspace 4)
 
-add_executable(test_gradients test_gradients.cpp)
-target_link_libraries(test_gradients libpfire ${Boost_LIBRARIES})
-add_mpi_test(Gradients test_gradients 4)
+add_executable(test_image test_image.cpp)
+target_link_libraries(test_image libpfire ${Boost_LIBRARIES})
+add_mpi_test(Image test_image 4)
 
 add_executable(test_hdfwriter test_hdfwriter.cpp)
 target_link_libraries(test_hdfwriter libpfire ${Boost_LIBRARIES})

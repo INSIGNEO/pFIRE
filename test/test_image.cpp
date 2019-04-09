@@ -1,4 +1,4 @@
-#define BOOST_TEST_MODULE indexing
+#define BOOST_TEST_MODULE image
 #include "test_common.hpp"
 
 #include<petscdmda.h>
@@ -11,13 +11,20 @@
 
 struct im
 {
-  im() : image(imgshape) {BOOST_TEST_MESSAGE("setup image");}
+  im() : image(imgshape)
+  {
+    MPI_Comm_size(PETSC_COMM_WORLD, &commsize);
+    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+  }
 
-  intvector imgshape = {3, 3, 3};
+  int rank;
+  int commsize;
+
+  intvector imgshape = {30, 30, 30};
   Image image;
 };
 
-BOOST_FIXTURE_TEST_SUITE(indexing, im)
+BOOST_FIXTURE_TEST_SUITE(image, im)
 
   BOOST_AUTO_TEST_CASE(test_xgradient)
   {
@@ -163,6 +170,35 @@ BOOST_FIXTURE_TEST_SUITE(indexing, im)
     }
     perr = DMDAVecRestoreArray(*image.dmda(), *image.global_vec(), &ptr);CHKERRXX(perr);
     }//gradient checking enclosure
+  }
+
+  BOOST_AUTO_TEST_CASE(test_get_rank_of_loc)
+  {
+    // Access data via dmda and insert value
+    integer xlo, xhi, ylo, yhi, zlo, zhi;
+    PetscErrorCode perr;
+    perr = DMDAGetCorners(*image.dmda(), &xlo, &ylo, &zlo, &xhi, &yhi, &zhi);CHKERRXX(perr);
+    xhi += xlo;
+    yhi += ylo;
+    zhi += zlo;
+
+    floatvector xlocs = {double(xlo), xhi-1.1};
+    floatvector ylocs = {double(ylo), yhi-1.1};
+    floatvector zlocs = {double(zlo), zhi-1.1};
+
+    for(const auto &xx: xlocs)
+    {
+      for(const auto &yy: ylocs)
+      {
+        for(const auto &zz: zlocs)
+        {
+          std::cout << rank;
+          integer rl = image.get_rank_of_loc({xx, yy, zz});
+          BOOST_CHECK(rl == rank);
+        }
+      }
+    }
+
   }
 
 BOOST_AUTO_TEST_SUITE_END()
