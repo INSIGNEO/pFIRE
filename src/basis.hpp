@@ -36,12 +36,17 @@ template <
     class Input1, class Input2, class Rtype = typename std::iterator_traits<Input1>::value_type>
 Rtype calculate_basis_coefficient(Input1 first1, Input1 last1, Input2 first2)
 {
-  Rtype res = 1;
+  Rtype res = 1.;
   auto it1 = first1;
   auto it2 = first2;
   for (; it1 != last1;)
   {
-    res *= 1 - std::abs(*it1++ - *it2++);
+    floating diff = std::abs(*it1++ - *it2++);
+    if(diff >= 1.)
+    {
+      return 0.;
+    }
+    res *= 1. - diff;
   }
   return res;
 }
