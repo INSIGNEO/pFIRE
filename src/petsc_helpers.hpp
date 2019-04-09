@@ -16,7 +16,7 @@
 #ifndef PETSC_HELPERS_HPP
 #define PETSC_HELPERS_HPP
 
-#include <petscvec.h>
+#include <petscmat.h>
 
 #include "types.hpp"
 
@@ -30,4 +30,7 @@ floating get_condnum_by_poweriter(const Mat& matrix, floating conv_thres, intege
 
 floating get_eigenvalue_by_poweriter(const Mat& matrix, floating conv_thres, integer max_iter);
 
-#endif
+std::pair<intvector, intvector> find_proc_split(
+    const intvector& griddims, const integer& comm_size);
+
+#endif // PETSC_HELPERS_HPP

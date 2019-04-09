@@ -35,7 +35,7 @@ floating diagonal_sum(const Mat& matrix)
   return diagsum;
 }
 
-bool vecs_equivalent(const Vec &vec1, const Vec &vec2)
+bool vecs_equivalent(const Vec& vec1, const Vec& vec2)
 {
   // Ensure two vectors have the same local size, global size. and comm.
   MPI_Comm comm1, comm2;
@@ -155,7 +155,7 @@ floating get_condnum_by_poweriter(const Mat& matrix, floating conv_thres, intege
   eigen_lo = eigenpair.first;
   eigen_hi = eigenpair.second;
 
-  return eigen_hi/eigen_lo;
+  return eigen_hi / eigen_lo;
 }
 
 floating get_eigenvalue_by_poweriter(const Mat& matrix, floating conv_thres, integer max_iter)
@@ -214,4 +214,68 @@ floating get_eigenvalue_by_poweriter(const Mat& matrix, floating conv_thres, int
   }
 
   return lambda;
+}
+
+// Determine suitable grid decomposition by minimizing chunk surface area
+std::pair<intvector, intvector> find_proc_split(
+    const intvector& griddims, const integer& comm_size)
+{
+  intvector gridsplit(3, 0);
+  intvector procsplit(3, 0);
+
+  integer minarea =
+      griddims[0] * griddims[1] + griddims[1] * griddims[2] + griddims[2] * griddims[0];
+
+  integer zcomm_eff_size = comm_size;
+  if (griddims[2] == 1)
+  {
+    zcomm_eff_size = 1;
+  }
+  // Iterate over the comm and find suitable size
+  for (integer iz = 1; iz <= zcomm_eff_size; iz++)
+  {
+    integer nprocxy = comm_size / iz;
+    if (iz * nprocxy != comm_size)
+      continue;
+
+    // If the splitting is too fine no point in increasing rank in z dir
+    integer zsplit = griddims[2] / iz;
+    if (zsplit < 1 && iz > 1)
+      break;
+
+    // Now find y and x size
+    for (integer iy = 1; iy <= nprocxy; iy++)
+    {
+      integer ix = nprocxy / iy;
+      if (iy * ix != nprocxy)
+        continue;
+
+      integer ysplit = griddims[1] / iy;
+      integer xsplit = griddims[0] / ix;
+
+      // Skip if splitting too fine
+      if (xsplit < 1 || ysplit < 1)
+        continue;
+
+      // If best yet, save result as potential winner
+      integer area = xsplit * ysplit + ysplit * zsplit + zsplit * xsplit;
+      if (area <= minarea)
+      {
+        gridsplit[0] = xsplit;
+        gridsplit[1] = ysplit;
+        gridsplit[2] = zsplit;
+        procsplit[0] = ix;
+        procsplit[1] = iy;
+        procsplit[2] = iz;
+      }
+    }
+  }
+
+  if (gridsplit[0] > 0)
+  {
+    return std::make_pair(procsplit, gridsplit);
+  }
+
+  // We could *try* making a new comm here, but it makes a mess of everything else
+  throw std::runtime_error("Unable to partition image appropriately");
 }
