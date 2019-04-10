@@ -305,11 +305,11 @@ void Elastic::save_debug_frame(integer outer_count, integer inner_count)
   boost::format pad3("%03d");
   replace_token(file_str, ConfigurationBase::k_inner_token, (pad3 % inner_count).str());
 
-  replace_token(
-      file_str, ConfigurationBase::k_stem_token, registered_path.filename().stem().string());
+  replace_token(file_str, ConfigurationBase::k_stem_token, 
+                registered_path.filename().stem().string());
 
   replace_token(file_str, ConfigurationBase::k_extension_token,
-      registered_path.extension().string().substr(1, std::string::npos));
+                registered_path.extension().string());
 
   bf::path output_path(registered_path.parent_path());
 
@@ -342,11 +342,13 @@ void Elastic::save_debug_frame(integer outer_count, integer inner_count)
     bf::create_directories(output_path);
   }
 
-  // Finally append filename
+  // Finally append filename and any group extension
   output_path /= file_str;
+  std::string output_path_str(output_path.string());
+  output_path_str.append(":");
+  output_path_str.append(configuration.grab<std::string>("registered_h5_path"));
 
-  PetscPrintf(m_comm, "Saving debug frame %s.\n", output_path.string().c_str());
-  BaseWriter_unique wtr = BaseWriter::get_writer_for_filename(output_path.string(), m_comm);
+  BaseWriter_unique wtr = BaseWriter::get_writer_for_filename(output_path_str, m_comm);
   wtr->write_image(*m_p_registered);
 }
 

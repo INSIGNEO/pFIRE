@@ -111,10 +111,14 @@ void mainflow(std::shared_ptr<ConfigurationBase> config)
   reg.autoregister();
 
   std::string outfile = config->grab<std::string>("registered");
-  BaseWriter_unique wtr = BaseWriter::get_writer_for_filename(outfile, fixed->comm());
+  std::string h5group = config->grab<std::string>("registered_h5_path");
+  std::string output_path = outfile + ":" + h5group;
+  BaseWriter_unique wtr = BaseWriter::get_writer_for_filename(output_path, fixed->comm());
   wtr->write_image(*reg.registered());
 
   outfile = config->grab<std::string>("map");
-  wtr = BaseWriter::get_writer_for_filename(outfile, fixed->comm());
+  h5group = config->grab<std::string>("map_h5_path");
+  output_path = outfile + ":" + h5group;
+  wtr = BaseWriter::get_writer_for_filename(output_path, fixed->comm());
   wtr->write_map(*reg.m_p_map);
 }
