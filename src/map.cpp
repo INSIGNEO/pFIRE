@@ -138,7 +138,7 @@ std::unique_ptr<Image> Map::warp(const Image& image, WorkSpace& wksp)
   // interpolate map to image nodes with basis
   PetscErrorCode perr = MatMult(*m_basis, *m_displacements, *wksp.m_stacktmp);
   CHKERRABORT(m_comm, perr);
-  wksp.scatter_stacked_to_grads();
+  wksp.scatter_stacked_to_grads_noreorder();
 
   // build warp matrix
   std::vector<Vec*> tmps(0);
