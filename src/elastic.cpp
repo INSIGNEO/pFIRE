@@ -108,6 +108,7 @@ void Elastic::innerloop(integer outer_count)
   if (configuration.grab<bool>("save_intermediate_frames"))
   {
     save_debug_frame(outer_count, 0);
+    save_debug_map(outer_count, 0);
   }
 
   bool recalculate_lambda = false;
@@ -129,6 +130,7 @@ void Elastic::innerloop(integer outer_count)
     if (configuration.grab<bool>("save_intermediate_frames"))
     {
       save_debug_frame(outer_count, inum);
+      save_debug_map(outer_count, inum);
     }
 
     // check convergence and break if below threshold
@@ -293,6 +295,64 @@ void Elastic::calculate_tmat(integer iternum __attribute__((unused)))
   CHKERRABORT(m_comm, perr);
 }
 
+void Elastic::save_debug_map(integer outer_count, integer inner_count)
+{
+  std::ostringstream outname;
+  std::string file_str(configuration.grab<std::string>("intermediate_map_template"));
+  bf::path map_path(configuration.grab<std::string>("map"));
+
+  boost::format pad2("%02d");
+  replace_token(file_str, ConfigurationBase::k_outer_token, (pad2 % outer_count).str());
+
+  boost::format pad3("%03d");
+  replace_token(file_str, ConfigurationBase::k_inner_token, (pad3 % inner_count).str());
+
+  replace_token(file_str, ConfigurationBase::k_stem_token, 
+                map_path.filename().stem().string());
+
+  replace_token(file_str, ConfigurationBase::k_extension_token,
+                map_path.extension().string());
+
+  bf::path output_path(map_path.parent_path());
+
+  bf::path intermediates_path(configuration.grab<std::string>("intermediate_directory"));
+  if(intermediates_path.is_absolute())
+  {
+    if (!bf::exists(intermediates_path))
+    {
+      std::ostringstream errss;
+      errss << "Intermediate frame output path " << intermediates_path << " does not exist.";
+      throw std::runtime_error(errss.str());
+    }
+    output_path = intermediates_path;
+  }
+  else
+  {
+    // Don't create directories we don't say we will, error instead
+    // (Pre-flight checks mean this should never throw)
+    if (!output_path.empty() && !bf::exists(output_path))
+    {
+      std::ostringstream errss;
+      errss << "Output path " << output_path << " does not exist.";
+      throw std::runtime_error(errss.str());
+    }
+
+    // Append intermediates dir
+    output_path /= configuration.grab<std::string>("intermediate_directory");
+
+    // Create intermediates dir as needed
+    bf::create_directories(output_path);
+  }
+
+  // Finally append filename and any group extension
+  output_path /= file_str;
+  std::string output_path_str(output_path.string());
+  output_path_str.append(":");
+  output_path_str.append(configuration.grab<std::string>("map_h5_path"));
+
+  BaseWriter_unique wtr = BaseWriter::get_writer_for_filename(output_path_str, m_comm);
+  wtr->write_map(*m_p_map);
+}
 void Elastic::save_debug_frame(integer outer_count, integer inner_count)
 {
   std::ostringstream outname;

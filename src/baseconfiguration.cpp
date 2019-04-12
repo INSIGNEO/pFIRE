@@ -29,6 +29,7 @@ const config_map ConfigurationBase::default_config = {{"verbose", "false"},
     {"registered_h5_path", "/registered"}, {"map_h5_path", "/map"}, {"lambda_mult", "1.0"},
     {"with_memory", "true"}, {"save_intermediate_frames", "false"},
     {"intermediate_template", "%name%-intermediate-%s%-%i%%ext%"},
+    {"intermediate_map_template", "%name%-intermediate-map-%s%-%i%%ext%"},
     {"intermediate_directory", "intermediates"}, {"max_iterations", "100"}};
 
 const std::vector<std::string> ConfigurationBase::required_options = {

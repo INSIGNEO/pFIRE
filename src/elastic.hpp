@@ -68,6 +68,7 @@ public:
   Mat_unique normmat;
 
   void save_debug_frame(integer ocount, integer icount);
+  void save_debug_map(integer ocount, integer icount);
   void innerloop(integer outer_count);
   void innerstep(integer inum, bool recalculate_lambda);
 
