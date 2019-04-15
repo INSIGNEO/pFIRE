@@ -26,7 +26,7 @@
 
 class Image {
 public:
-  explicit Image(const intvector& shape, MPI_Comm comm = PETSC_COMM_WORLD);
+  explicit Image(const intvector &shape, MPI_Comm comm = PETSC_COMM_WORLD);
 
   Vec_unique gradient(integer dim);
 
@@ -37,14 +37,14 @@ public:
   // Note that datavec and dmda remain mutable in this way
   MPI_Comm comm() const { return m_comm; }
   uinteger ndim() const { return m_ndim; }
-  const intvector& shape() const { return m_shape; }
+  const intvector &shape() const { return m_shape; }
   integer size() const { return m_shape[0] * m_shape[1] * m_shape[2]; }
   std::shared_ptr<const Vec> global_vec() const { return m_globalvec; }
   std::shared_ptr<const Vec> local_vec() const { return m_localvec; }
   std::shared_ptr<DM> dmda() const { return m_dmda; }
 
-  const floating* get_raw_data_ro() const;
-  void release_raw_data_ro(const floating*& ptr) const;
+  const floating *get_raw_data_ro() const;
+  void release_raw_data_ro(const floating *&ptr) const;
   Vec_unique get_raw_data_row_major() const;
   Vec_unique get_raw_data_natural() const;
 
@@ -60,14 +60,24 @@ public:
 
   void update_local_from_global();
 
-  static std::unique_ptr<Image> load_file(const std::string& filename,
-      const Image* existing = nullptr, MPI_Comm comm = PETSC_COMM_WORLD);
+  static std::unique_ptr<Image> load_file(const std::string &filename,
+      const Image *existing = nullptr, MPI_Comm comm = PETSC_COMM_WORLD);
 
   Vec_unique scatter_to_zero() const;
 
+  /*!
+   * Calculate mutual information between this and a second image.
+   *
+   * The two images must share a DMDA.
+   *
+   * @param other the second image for mutual information calculation
+   * @return The mutual information between images
+   */
+  floating mutual_information(const Image &other);
+
 protected:
-  explicit Image(const Image& image);
-  Image& operator=(const Image& image);
+  explicit Image(const Image &image);
+  Image &operator=(const Image &image);
 
   MPI_Comm m_comm;
   uinteger m_ndim;
@@ -82,6 +92,9 @@ protected:
   integer instance_id;
 
   static integer instance_id_counter;
+
+private:
+  const size_t mi_resolution = 100;
 };
 
 template <typename inttype>

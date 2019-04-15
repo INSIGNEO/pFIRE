@@ -24,9 +24,9 @@
 #include <petscvec.h>
 
 #include "fd_routines.hpp"
+#include "indexing.hpp"
 #include "iterator_routines.hpp"
 #include "map.hpp"
-#include "indexing.hpp"
 
 #include "baseloader.hpp"
 
@@ -34,7 +34,7 @@ integer Image::instance_id_counter = 0;
 
 // Public Methods
 
-Image::Image(const intvector& shape, MPI_Comm comm)
+Image::Image(const intvector &shape, MPI_Comm comm)
   : m_comm(comm), m_ndim(shape.size()),
     m_shape(shape), // const on shape causes copy assignment (c++11)
     m_localvec(create_unique_vec()), m_globalvec(create_unique_vec()), m_dmda(create_shared_dm()),
@@ -79,8 +79,8 @@ std::unique_ptr<Image> Image::copy() const
   return new_img;
 }
 
-std::unique_ptr<Image>
-Image::load_file(const std::string& path, const Image* existing, MPI_Comm comm)
+std::unique_ptr<Image> Image::load_file(
+    const std::string &path, const Image *existing, MPI_Comm comm)
 {
   BaseLoader_unique loader = BaseLoader::find_loader(path, comm);
 
@@ -89,8 +89,7 @@ Image::load_file(const std::string& path, const Image* existing, MPI_Comm comm)
   if (existing != nullptr)
   {
     comm = existing->comm();
-    if (!all_true(
-            loader->shape().begin(), loader->shape().end(), existing->shape().begin(),
+    if (!all_true(loader->shape().begin(), loader->shape().end(), existing->shape().begin(),
             existing->shape().end(), std::equal_to<>()))
     {
       throw std::runtime_error("New image must have same shape as existing");
@@ -108,7 +107,7 @@ Image::load_file(const std::string& path, const Image* existing, MPI_Comm comm)
   CHKERRABORT(comm, perr);
   // std::transform(shape.cbegin(), shape.cend(), offset.cbegin(), shape.begin(), std::minus<>());
 
-  floating*** vecptr(nullptr);
+  floating ***vecptr(nullptr);
   perr = DMDAVecGetArray(*new_image->dmda(), *new_image->global_vec(), &vecptr);
   CHKERRABORT(comm, perr);
   loader->copy_scaled_chunk(vecptr, shape, offset);
@@ -121,9 +120,10 @@ Image::load_file(const std::string& path, const Image* existing, MPI_Comm comm)
 floating Image::normalize()
 {
   floating norm;
-  PetscErrorCode perr = VecSum(*m_globalvec, &norm);
+  PetscErrorCode perr = VecMax(*m_globalvec, nullptr, &norm);
   CHKERRABORT(m_comm, perr);
-  norm = this->size() / norm;
+  //norm = this->size() / norm;
+  norm = 1.0 / norm;
   perr = VecScale(*m_globalvec, norm);
   CHKERRABORT(m_comm, perr);
   return norm;
@@ -156,7 +156,7 @@ void Image::masked_normalize()
 
 // Protected Methods
 
-Image::Image(const Image& image)
+Image::Image(const Image &image)
   : m_comm(image.m_comm), m_ndim(image.m_ndim), m_shape(image.m_shape),
     m_localvec(create_shared_vec()), m_globalvec(create_shared_vec()), m_dmda(image.m_dmda),
     instance_id(instance_id_counter++)
@@ -172,13 +172,12 @@ void Image::initialize_dmda()
 
   // Make sure things get gracefully cleaned up
   m_dmda = create_shared_dm();
-  perr = DMDACreate3d(
-      m_comm, DM_BOUNDARY_GHOSTED, DM_BOUNDARY_GHOSTED, DM_BOUNDARY_GHOSTED, // BCs
-      DMDA_STENCIL_STAR,                                                     // stencil shape
-      m_shape[0], m_shape[1], m_shape[2],                                    // global mesh shape
-      PETSC_DECIDE, PETSC_DECIDE, PETSC_DECIDE,                              // ranks per dim
-      dof_per_node, stencil_width, // dof per node, stencil size
-      nullptr, nullptr, nullptr,   // partition sizes nullptr -> petsc chooses
+  perr = DMDACreate3d(m_comm, DM_BOUNDARY_GHOSTED, DM_BOUNDARY_GHOSTED, DM_BOUNDARY_GHOSTED, // BCs
+      DMDA_STENCIL_STAR,                        // stencil shape
+      m_shape[0], m_shape[1], m_shape[2],       // global mesh shape
+      PETSC_DECIDE, PETSC_DECIDE, PETSC_DECIDE, // ranks per dim
+      dof_per_node, stencil_width,              // dof per node, stencil size
+      nullptr, nullptr, nullptr,                // partition sizes nullptr -> petsc chooses
       m_dmda.get());
   CHKERRABORT(m_comm, perr);
 
@@ -233,15 +232,15 @@ Vec_unique Image::scatter_to_zero() const
   return new_vec;
 }
 
-const floating* Image::get_raw_data_ro() const
+const floating *Image::get_raw_data_ro() const
 {
-  const floating* ptr;
+  const floating *ptr;
   PetscErrorCode perr = VecGetArrayRead(*m_globalvec, &ptr);
   CHKERRABORT(m_comm, perr);
   return ptr;
 }
 
-void Image::release_raw_data_ro(const floating*& ptr) const
+void Image::release_raw_data_ro(const floating *&ptr) const
 {
   PetscErrorCode perr = VecRestoreArrayRead(*m_globalvec, &ptr);
   CHKERRABORT(m_comm, perr);
@@ -278,10 +277,12 @@ Vec_unique Image::get_raw_data_row_major() const
   intvector cmidxn(localsize);
   std::iota(cmidxn.begin(), cmidxn.end(), 0);
 
-  std::transform(cmidxn.begin(), cmidxn.end(), cmidxn.begin(),
-                 [widths, ownedlo](integer idx) -> integer {return idx_cmaj_to_rmaj(idx, widths) + ownedlo;});
+  std::transform(
+      cmidxn.begin(), cmidxn.end(), cmidxn.begin(), [widths, ownedlo](integer idx) -> integer {
+        return idx_cmaj_to_rmaj(idx, widths) + ownedlo;
+      });
 
-  IS_unique src_is = create_unique_is(); 
+  IS_unique src_is = create_unique_is();
   perr = ISCreateStride(m_comm, localsize, ownedlo, 1, src_is.get());
   CHKERRABORT(m_comm, perr);
   IS_unique tgt_is = create_unique_is();
@@ -297,4 +298,87 @@ Vec_unique Image::get_raw_data_row_major() const
   CHKERRABORT(m_comm, perr);
 
   return rmlocalpart;
+}
+
+floating Image::mutual_information(const Image &other)
+{
+  // Mutual information is given by integrating P(X, Y)log(P(X,Y)/(P(X)P(Y)) over all X and all Y,
+  // In this case the probabilities can be calculated from a 2D histogram of X against Y.
+
+  // Could also just find 2D and perform summations after comm, but for now do it this way
+  floatvector xhist(mi_resolution, 0);
+  floatvector yhist(mi_resolution, 0);
+  floatvector2d xyhist(mi_resolution, floatvector(mi_resolution, 0));
+
+  integer img_localsize;
+  PetscErrorCode perr = VecGetLocalSize(*m_globalvec, &img_localsize);
+  CHKERRABORT(m_comm, perr);
+
+  // Only need RO data from PETSc vecs
+  floating const *x_data, *y_data;
+  perr = VecGetArrayRead(*m_globalvec, &x_data);
+  CHKERRABORT(m_comm, perr);
+  perr = VecGetArrayRead(*other.global_vec(), &y_data);
+  CHKERRABORT(m_comm, perr);
+
+  for (integer idx = 0; idx < img_localsize; idx++)
+  {
+    integer x = std::lround(x_data[idx] * (mi_resolution-1));
+    integer y = std::lround(y_data[idx] * (mi_resolution-1));
+    xhist[x] += 1;
+    yhist[y] += 1;
+    xyhist[x][y] += 1;
+  }
+
+  int rank;
+  MPI_Comm_rank(m_comm, &rank);
+  if(rank == 0)
+  {
+    MPI_Reduce(MPI_IN_PLACE, xhist.data(), xhist.size(), MPIU_SCALAR, MPI_SUM, 0, m_comm);
+    MPI_Reduce(MPI_IN_PLACE, yhist.data(), yhist.size(), MPIU_SCALAR, MPI_SUM, 0, m_comm);
+    MPI_Reduce(MPI_IN_PLACE, xyhist.data(), xyhist.size(), MPIU_SCALAR, MPI_SUM, 0, m_comm);
+  } 
+  else
+  {
+    MPI_Reduce(xhist.data(), xhist.data(), xhist.size(), MPIU_SCALAR, MPI_SUM, 0, m_comm);
+    MPI_Reduce(yhist.data(), yhist.data(), yhist.size(), MPIU_SCALAR, MPI_SUM, 0, m_comm);
+    MPI_Reduce(xyhist.data(), xyhist.data(), xyhist.size(), MPIU_SCALAR, MPI_SUM, 0, m_comm);
+  }
+
+  // Need all probability distributions to sum to 1.0
+  integer pix_tot = this->size();
+  std::transform(xhist.cbegin(), xhist.cend(), xhist.begin(),
+                 [pix_tot](floating x) -> floating {return x/pix_tot;});
+  std::transform(xhist.cbegin(), xhist.cend(), xhist.begin(),
+                 [pix_tot](floating y) -> floating {return y/pix_tot;});
+  for(auto &vec1d: xyhist)
+  {
+    std::transform(vec1d.cbegin(), vec1d.cend(), vec1d.begin(),
+                   [pix_tot](floating y) -> floating {return y/pix_tot;});
+  }
+
+  // Use Kahan summation to try to minimize error
+  floating mi_total(0);
+  floating mi_err(0);
+  if(rank == 0)
+  {
+    for(size_t ix(0); ix < xhist.size(); ix++)
+    {
+      for(size_t iy(0); iy < yhist.size(); iy++)
+      {
+        if(xyhist[ix][iy] > 0)
+        {
+          floating mi_part = xyhist[ix][iy] * std::log(xyhist[ix][iy]/(xhist[ix]*yhist[iy]));
+          mi_part -= mi_err;
+          floating tmp = mi_total + mi_part;
+          mi_err = (tmp - mi_total) - mi_part;
+          mi_total = tmp;
+        }
+      }
+    }
+  }
+
+  MPI_Bcast(&mi_total, 1, MPIU_SCALAR, 0, m_comm);
+
+  return mi_total;
 }

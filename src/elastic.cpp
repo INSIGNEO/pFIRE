@@ -103,6 +103,8 @@ void Elastic::autoregister()
 
 void Elastic::innerloop(integer outer_count)
 {
+  floating prev_mi = m_p_registered->mutual_information(m_fixed);
+
   // setup map resolution specific solution storage (tmat, delta a, rvec)
   // calculate lambda for loop
   if (configuration.grab<bool>("save_intermediate_frames"))
@@ -145,11 +147,14 @@ void Elastic::innerloop(integer outer_count)
     perr = VecNorm(*m_workspace->m_delta, NORM_2, &aavg);
     aavg /= m_p_map->size();
     PetscPrintf(m_comm, "Average displacement: %.2f\n", aavg);
-    if (aavg < m_convergence_thres)
+    floating curr_mi = m_p_registered->mutual_information(m_fixed);
+    PetscPrintf(m_comm, "Mutual information: %f\n", curr_mi);
+    if (aavg < m_convergence_thres || curr_mi <= prev_mi)
     {
       PetscPrintf(m_comm, "Generation %i converged after %i iterations.\n\n", outer_count, inum);
       break;
     }
+    prev_mi = curr_mi;
   }
 }
 
