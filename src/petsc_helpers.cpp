@@ -16,6 +16,7 @@
 #include "petsc_helpers.hpp"
 
 #include <algorithm>
+#include <fenv.h>
 
 floating diagonal_sum(const Mat& matrix)
 {
@@ -137,6 +138,7 @@ void block_precondition(const Mat& normmat, integer size, integer ndim)
 
 floating get_condnum_by_poweriter(const Mat& matrix, floating conv_thres, integer max_iter)
 {
+  feenableexcept(FE_INVALID | FE_DIVBYZERO);
   MPI_Comm comm;
   PetscObjectGetComm(reinterpret_cast<PetscObject>(matrix), &comm);
   floating eigen_lo = get_eigenvalue_by_poweriter(matrix, conv_thres, max_iter);
@@ -154,8 +156,11 @@ floating get_condnum_by_poweriter(const Mat& matrix, floating conv_thres, intege
 
   eigen_lo = eigenpair.first;
   eigen_hi = eigenpair.second;
+  floating condnum = eigen_hi/eigen_lo;
 
-  return eigen_hi/eigen_lo;
+  fedisableexcept(FE_INVALID | FE_DIVBYZERO);
+
+  return condnum; 
 }
 
 floating get_eigenvalue_by_poweriter(const Mat& matrix, floating conv_thres, integer max_iter)
