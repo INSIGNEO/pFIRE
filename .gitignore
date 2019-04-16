@@ -20,6 +20,7 @@ gh-pages
 *.aux
 *.log
 *.pdf
+test/*.h5
 
 # Compiled Object files
 *.slo
