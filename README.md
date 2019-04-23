@@ -2,8 +2,8 @@
 [![Master Build Status](https://img.shields.io/travis/INSIGNEO/pFIRE/master.svg?label=master&logo=travis)](https://travis-ci.org/INSIGNEO/pFIRE/branches)
 [![Develop Build Status](https://img.shields.io/travis/INSIGNEO/pFIRE/develop.svg?label=develop&logo=travis)](https://travis-ci.org/INSIGNEO/pFIRE/branches)
 [![License Info](https://img.shields.io/github/license/INSIGNEO/pFIRE.svg)](https://github.com/INSIGNEO/pFIRE/blob/master/LICENSE)<br />
-[![Master Build Status](https://img.shields.io/appveyor/ci/ptooley/pFIRE/master.svg?label=master&logo=appveyor)](https://travis-ci.org/INSIGNEO/pFIRE/branches)
-[![Develop Build Status](https://img.shields.io/appveyor/ci/ptooley/pFIRE/develop.svg?label=develop&logo=appveyor)](https://travis-ci.org/INSIGNEO/pFIRE/branches)
+[![Master Build Status](https://img.shields.io/appveyor/ci/ptooley/pFIRE/master.svg?label=master&logo=appveyor)](https://ci.appveyor.com/project/ptooley/pfire/history)
+[![Develop Build Status](https://img.shields.io/appveyor/ci/ptooley/pFIRE/develop.svg?label=develop&logo=appveyor)](https://ci.appveyor.com/project/ptooley/pfire/history)
 
 Online Documentation: [ https://insigneo.github.io/pFIRE/]( https://insigneo.github.io/pFIRE/)
 
