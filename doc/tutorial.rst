@@ -33,8 +33,6 @@ The minimum information pFIRE requires to perform a registration is a fixed imag
 and a target nodespacing. If the parameters ``fixed``, ``moved`` and ``nodespacing`` are not set in
 the configuration file, pFIRE will abort with an error. 
 
-# TODO ADD OUTPUT OPTION INFO
-
 A minimal configuration file will look like this:
 
 .. code-block:: ini
@@ -236,38 +234,6 @@ field.  The appropriateness of the global smoothing is problem specific, and for
 problems some experimentation may be required to find the optimal smoothing behaviour.*
 
 
-Visualising the Result
-======================
-
-The primary purpose of outputting the registered image is to compare it with the fixed image to
-determine the quality of the registration.  This can be done in many ways, a common approach being
-to simply overlay the two images and visually determine how well the registration has performed.
-
-An example script called ``overlay_images.py`` is provided with pFIRE to demonstrate this for 2D
-images. It takes a pair of input images, and overlays them to show how closely they are aligned:
-
-.. runblock:: console
-
-   $ overlay_images.py --help
-
-For example, overlaying the results of the first registration we performed above,
-
-.. runblock:: console
-   
-   $ cd tutorial_files/faces_1
-   $ overlay_images.py happy.png sad2happy_default.png comparison.png --flip
-
-produces the following result:
-
-+--------------+
-| |comparison| |
-+--------------+
-
-.. |comparison| image:: /tutorial_files/faces_1/comparison.png
-
-The fixed image is shown in grey, and the moved image in red, with the composite dark red areas
-showing where the images are overlaid.
-
 Unregisterable Images
 =====================
 
@@ -316,9 +282,9 @@ The Displacement Map
 ====================
 
 The primary output of pFIRE is the displacement map.  This is a 2-D or 3-D vector field describing
-how the moved image is related to the fixed image.  Specifically, pFIRE outputs a map which for a
-given point in the fixed image, describes the location in the moved image that this point
-corresponds to.  This can be expressed as
+how the moved image is related to the fixed image.  Specifically, pFIRE outputs the reverse
+mapping, describing for a given point in the fixed image, the location in the moved image that this
+point corresponds to.  This can be expressed as
 
 .. math:: f(\bar{x}) = m(\bar{x} + \bar{R}(\bar{x}))
 
@@ -330,12 +296,11 @@ with values between grid nodes found by linear interpolation.
 Applying the Map
 ----------------
 
-The output map is also the form of the mapping used internally in pFIRE to transform the moved
-image to the fixed image: Each pixel in the fixed image is mapped to a location in the moved image.
-The moved image is then sampled to determine the value of the pixel in the fixed image. The
-sampling point may not be exactly located in the centre of a pixel, in which case linear
-interpolation is used to sample the four nearest pixels to the sample point.  This can be
-considered as "pulling" the moved image to line up with the fixed image.
+This is the form of the mapping used internally in pFIRE to transform the moved image to the fixed image, since
+for each pixel in the fixed image it provides a location in the moved image which can be sampled to
+determine the value of the pixel in the fixed image. This may not be exactly located in the centre
+of a pixel, in which case linear interpolation is used to sample the four nearest pixels to the
+sample point.  This can be considered as "pulling" the moved image to line up with the fixed image.
 
 Often, however, we will in fact want to "push" something that we know the coordinates of the in
 fixed image, in order to determine its location in the moved image.  This might be the location of
@@ -387,107 +352,23 @@ This relationship is demonstrated graphically below:
    :width: 100%
 
 
-If the inverse mapping field is needed at the original node coordinates this can be found by
-interpolating the reverse mapping at the desired points.
+If the reverse mapping field is needed at the original node coordinates this can be found by
+interpolating the reverse mapping at the moved nodes.
 
 The HDF5/XDMF Output Format
 ---------------------------
-
-The primary output format that pFIRE uses for displacement maps is an HDF5_ file, with XDMF_
-metatdata file, both of which are well known and standardised formats.  The HDF5 file is a binary format which contains the map as arrays of displacement
-field values and node locations.  The XDMF file is a small metadata file which describes the layout
-of the data within the HDF5 file, and is intended to be consumed by visualisation programs such as
-ParaView_ or VisIt_.
-
-HDF5 Data Layout
-""""""""""""""""
-
-A HDF5 file may contain multiple datasets organised into groups, similar to the way that files may
-be organised into folders in a computer filesystem.  For pFIRE map data, the map data is stored in
-4 or 6 datasets, depending on the dimensionality of the image. These datasets will be stored in a
-group, the name of which can be chosen by the user in the configuration file (the default is
-``/map``).
-
-The displacement field data itself is stored in 2 or 3 2D or 3D array datasets, one per spatial
-component, named `x`, `y`, and, if the problem is 3D, `z`.  The node location data is stored in 2
-or 3 1D array datasets, named `nodes_x`, `nodes_y`, and `nodes_z`, listing the node locations along
-each axis. For example, with the default group naming of ``map``, a 2D dimensional problem with a
-:math:`13\times 11` displacement field, would result in an HDF5 file with the following structure:
-
-.. literalinclude:: /_static/tutorial_images/map_h5ls.txt
-
-This HDF5 file may be opened and used by and program or library which supports it.  However, for
-simply viewing the map, the supplied XDMF metadata file makes it straightforward to view the map
-using standard visualisation software such as Paraview.
-
-.. _HDF5: https://portal.hdfgroup.org/display/HDF5/HDF5
-.. _XDMF: http://www.xdmf.org/index.php/XDMF_Model_and_Format
-.. _ParaView: https://www.paraview.org/
-.. _VisIt: https://wci.llnl.gov/simulation/computer-codes/visit/
+-hdf5 format
 
 Visualising The Map
 -------------------
 
-Visualisation of the map can be performed in multiple ways using either existing visualisation
-software, or by writing custom analysis and plotting routines.  This tutorial includes a simple
-demonstration of both of these methods.
-
-The ``mapplot2d`` script
-""""""""""""""""""""""""
-
-A small python script called ``mapplot2d.py`` is supplied with pFIRE.  It is intended to be both a
-simple viewer tool for 2D problems and as a teaching aid to demonstrate working with the map data
-in Python. The script takes four arguments:
-
-.. runblock:: console
-
-   $ mapplot2d.py --help
-
-:fixed: The path to the fixed image.
-
-:moved: The path to the moved image.
-
-:map: The path to the map hdf5 file.
-
-:output: Path to output the resulting image (png)
-
-:--group: Specify the group name of the map in HDF5 file (default "map")
-
-:--flip: Flip image vertically (puts origin in the upper left)
-
-:--invert-map: Invert the mapping to show direction of motion from moved to fixed image.
-
-For example, to render the results of the first sample problem in ``faces_1/sad2happy_default.png``,
-navigate to that folder and run
-
-.. runblock:: console
-   
-   $ cd tutorial_files/faces_1
-   $ mapplot2d.py --flip --invert-map sad2happy_default.png sad.png sad2happy_default.xdmf.h5 sad2happy_map_render.png
-
-which results in:
-
-+------------------------------+
-| |sad2happy_map_render|       |
-+------------------------------+
-| ``sad2happy_map_render.png`` |
-+------------------------------+
-
-.. |sad2happy_map_render| image:: /tutorial_files/faces_1/sad2happy_map_render.png
-
-The resulting image shows the moved image in red, and the registered image in grey, with the map
-vector field overlaid. In this case the map is inverted to show the direction of motion of the
-pixels between the moved and fixed images.
-
-ParaView
+Paraview
 """"""""
 
-To visualise the map using ParaView, open the XDMF file produced by pFIRE.  This will instruct
-ParaView how to interpret the accompanying HDF5 file.  After opening the file using the
-*file->open* dialog, the dataset will appear in the list on the left hand pane of the screen.
-Clicking apply will cause ParaView to render the map data.  Now the data is loaded, the mapping can
-be visualised using glyphs.  The glyph filter can be applied by selecting *filters->common->glyph*
-from the menu bar, and again clicking apply in the left hand pane.
+The ``map2png`` script
+""""""""""""""""""""""
+
+-simple 2D map vis tool
 
 
 Intermediate Frames
@@ -563,15 +444,6 @@ named ``intermediates-00-000.jpeg``.  Note that using this template format pFIRE
 to output the intermediate frames as jpeg images even though the registered image is output in png
 format.
 
-This results in an image series like the following (animated gif):
-
-+-----------------------------+
-| |intermediates_anim|        |
-+-----------------------------+
-
-.. |intermediates_anim| image:: /tutorial_files/intermediate_frames/loop.gif
-   :scale: 100%
-
 Application Examples
 ====================
 
@@ -592,43 +464,11 @@ organ, or the alignment of multiple histological samples.  This latter case is w
 example. Alignment of such histological samples is particularly difficult due to non-linear
 distortion introduced into the sample during the preparation process.  
 
-The tutorial folders ``lung_lesions`` and ``lung_lobes`` contain sets of 2D histological microscopy
-tissue slices, stained with a variety of different stains. Along with the images, the dataset also
-includes a set of manually identified tissue landmarks.  These are located on the same structures
-in each sample and can be used to validate the registration of the image. This dataset is made
-available under a creative commons license (CC-BY-SA) by `Jiří Borovec`_ (see :ref:`below
-<dataset_information>`).
-
-The typical use case for image registration with datasets such as this is to choose one image as
-the fixed image and register all the other images to that image. This produces a new dataset
-comprised of a set of aligned images for direct comparison of the same tissue location with various
-different stains.
-
-An example registration configuration is provided in each directory, these should be copied and
-modified to optimise the registration of the various images.
-
-An additional demonstration analysis script ``plot_annotations.py`` is provided to demonstrate how
-the manually identified landmarks can be used to determine the goodness of the registration.
-
-.. runblock:: console
-   
-   $  plot_annotations.py --help 
-
-Running this results in an image like the following:
-
-+-----------------------------+
-| |mapped_annotations|        |
-+-----------------------------+
-
-.. |mapped_annotations| image:: /tutorial_files/lung_lobes/mapped_annotations.png
-   :scale: 100%
-
-The script plots the fixed (black) and moved (red) images along with the annotated landmarks and shows the
-displacement that would be applied to each node in the moved image if warped using the pFIRE
-map.  If the registration is correct each red node should be linked directly to a black node by a
-displacement vector.  In this case the registration is poor and the displacment field does not
-correctly map all the nodes. Optimisation of registration parameters will likely improve the
-quality, but this is an exercise left to the dedicated reader.
+The tutorial folder ``lung_lobes`` contains a set of 2D histological microscopy tissue slices,
+stained with a variety of different stains. Along with the images, the dataset also includes a set of manually identified tissue landmarks.
+These are located on the same structures in each sample and can be used to validate the
+registration of the image. This dataset is made available under a creative commons license
+(CC-BY-SA) by `Jiří Borovec`_ (see :ref:`below <dataset_information>`).
 
 .. _dataset_information:
 
@@ -641,34 +481,15 @@ provided by Prof. Arrate Munoz-Barrutia, Center for Applied Medical Research (CI
 Navarra, Pamplona Spain [2]_; and Prof. Ortiz de Solórzano, Center for Applied Medical Research
 (CIMA), University of Navarra, Pamplona Spain [3]_. 
 
-
-Further Reading
-===============
-
-For further information on the algorithm implemented by pFIRE, the original papers describing the
-algorithm are Barber and Hose 2005 [4]_ and Barber et al. 2007 [5]_.
-
 .. _Jiří Borovec: http://cmp.felk.cvut.cz/~borovji3/?page=dataset
 
 .. [1] J. Borovec, A. Munoz-Barrutia, and J. Kybic, “Benchmarking of Image Registration Methods for
-       Differently Stained Histological Slides,” *IEEE International Conference on Image Processing
-       (ICIP)*, 2018, pp. 3368–3372, DOI: `10.1109/icip.2018.8451040
-       <https://doi.org/10.1109/icip.2018.8451040>`_.
-
+   Differently Stained Histological Slides,” in IEEE International Conference on Image Processing
+   (ICIP), 2018, pp. 3368–3372.
 .. [2] J. Borovec, J. Kybic, M. Bušta, C. Ortiz-de-Solorzano, and A. Munoz-Barrutia, “Registration of
-       multiple stained histological sections,” in IEEE International Symposium on Biomedical
-       Imaging (ISBI), 2013, pp. 1034–1037, DOI: `10.1109/ISBI.2013.6556654
-       <https://doi.org/10.1109/ISBI.2013.6556654>`_.
-
+   multiple stained histological sections,” in IEEE International Symposium on Biomedical Imaging
+   (ISBI), 2013, pp. 1034–1037.
 .. [3] R. Fernandez-Gonzalez et al., “System for combined three-dimensional morphological and
-       molecular analysis of thick tissue specimens,” Microsc. Res. Tech., vol. 59, no. 6, pp. 522–530,
-       2002, DOI: `10.1002/jemt.10233 <https://doi.org/10.1002/jemt.10233>`_.
+   molecular analysis of thick tissue specimens,” Microsc. Res. Tech., vol. 59, no. 6, pp. 522–530,
+   2002.
 
-.. [4] Barber D, Hose D., “Automatic segmentation of medical images using image registration:
-       diagnostic and simulation applications,” *Journal of medical engineering & technology*,
-       **29(2)**, 2005, pp. 53-63, DOI:`10.1080/03091900412331289889 
-       <https://doi.org/10.1080/03091900412331289889>`_.
-
-.. [5] Barber DC, Oubel E, Frangi AF, Hose D., “Efficient computational fluid dynamics mesh
-       generation by image registration,” *Medical image analysis*, **11(6)**, 2007, pp. 648–662,
-       DOI:`10.1016/j.media.2007.06.011 <https://doi.org/10.1016/j.media.2007.06.011>`_.
