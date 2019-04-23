@@ -68,4 +68,21 @@ protected:
   }
 };
 
+class BadConfigurationError: public std::runtime_error {
+public:
+  BadConfigurationError(const std::string& what, std::string file = "unknown", integer line = 0)
+    : std::runtime_error(build_errstring(what, file, line))
+  {
+  }
+
+protected:
+  static std::string build_errstring(
+      const std::string& what, std::string file, integer line)
+  {
+    std::ostringstream errss;
+    errss << "Internal error at " << file << ":" << line << " \"" << what << "\"";
+    return errss.str();
+  }
+};
+
 #endif // EXCEPTIONS_HPP

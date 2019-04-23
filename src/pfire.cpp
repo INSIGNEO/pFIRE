@@ -20,6 +20,7 @@
 #include "setup.hpp"
 #include "shirtemulation.hpp"
 
+#include "exceptions.hpp"
 #include "elastic.hpp"
 #include "image.hpp"
 #include "infix_iterator.hpp"
@@ -44,13 +45,20 @@ int main(int argc, char **argv)
   std::string invocation_name = ConfigurationBase::get_invocation_name(argv[0]);
 
   std::shared_ptr<ConfigurationBase> configobj(nullptr);
-  if (ShirtConfig::valid_invocation(invocation_name))
-  {
-    configobj = std::make_shared<ShirtConfig>(argc, argv);
+  try{
+    if (ShirtConfig::valid_invocation(invocation_name))
+    {
+      configobj = std::make_shared<ShirtConfig>(argc, argv);
+    }
+    else
+    {
+      configobj = std::make_shared<IniConfig>(argc, argv);
+    }
   }
-  else
+  catch (const BadConfigurationError &err)
   {
-    configobj = std::make_shared<IniConfig>(argc, argv);
+    PetscPrintf(PETSC_COMM_WORLD, "Failed to parse configuration: %s", err.what());
+    MPI_Abort(PETSC_COMM_WORLD, -1);
   }
 
   configobj->validate_config();
@@ -113,12 +121,14 @@ void mainflow(std::shared_ptr<ConfigurationBase> config)
   std::string outfile = config->grab<std::string>("registered");
   std::string h5group = config->grab<std::string>("registered_h5_path");
   std::string output_path = outfile + ":" + h5group;
+  PetscPrintf(PETSC_COMM_WORLD, "Saving registered image to %s\n", output_path.c_str());
   BaseWriter_unique wtr = BaseWriter::get_writer_for_filename(output_path, fixed->comm());
   wtr->write_image(*reg.registered());
 
   outfile = config->grab<std::string>("map");
   h5group = config->grab<std::string>("map_h5_path");
   output_path = outfile + ":" + h5group;
+  PetscPrintf(PETSC_COMM_WORLD, "Saving map to %s\n", output_path.c_str());
   wtr = BaseWriter::get_writer_for_filename(output_path, fixed->comm());
   wtr->write_map(*reg.m_p_map);
 }

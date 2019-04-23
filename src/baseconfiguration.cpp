@@ -17,6 +17,7 @@
 
 #include <sstream>
 
+#include "exceptions.hpp"
 #include "infix_iterator.hpp"
 
 const std::string ConfigurationBase::k_stem_token = "%name%";
@@ -64,7 +65,7 @@ void ConfigurationBase::validate_config()
     errmsg << "Missing required argument(s) \"";
     std::copy(missing.cbegin(), missing.cend(), infix_ostream_iterator<std::string>(errmsg, ", "));
     errmsg << "\"";
-    throw std::runtime_error(errmsg.str());
+    throw BadConfigurationError(errmsg.str());
   }
 }
 
