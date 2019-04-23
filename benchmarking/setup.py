@@ -10,6 +10,8 @@ setup(name='pfire_benchmarking',
       url='insigneo.org',
       packages=find_packages(''),
       include_package_data=True,
+      install_requires=['numpy', 'scipy', 'h5py', 'matplotlib', 'flannel',
+                        'configObj'],
       entry_points={
           'console_scripts':  [
               'pfire-shirt-compare = pfire_benchmarking.validate:main',
