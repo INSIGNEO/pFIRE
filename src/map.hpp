@@ -21,12 +21,12 @@
 #include <numeric>
 #include <utility>
 
+#include "mask.hpp"
 #include "types.hpp"
 
 class Map {
 public:
-  Map(const Image& mask, const floatvector& node_spacing);
-  Map(const Map& map, const floatvector& node_spacing);
+  Map(floatvector node_spacing, const Mask& mask);
 
   //  ~Map();
 
@@ -69,7 +69,7 @@ public:
   // private:
 
   MPI_Comm m_comm;
-  const Image& m_mask;
+  const Mask& m_mask;
   uinteger m_ndim;
   floatvector m_v_node_spacing;
   floatvector m_v_offsets;
@@ -81,12 +81,14 @@ public:
   Vec_unique m_displacements;
   mutable DM_unique map_dmda;
 
+  void apply_mask_to_basis();
   void alloc_displacements();
   void initialize_dmda() const;
-  void calculate_node_locs();
+  void calculate_node_info();
   void calculate_basis();
   void calculate_laplacian();
   void calculate_warp_matrix();
+  Vec_unique calculate_map_mask(Vec& stacked_mask);
 };
 
 #endif

@@ -30,7 +30,7 @@
 
 class Elastic {
 public:
-  Elastic(const Image& fixed, const Image& moved, const floatvector nodespacing,
+  Elastic(const Image& fixed, const Image& moved, const Mask& mask, const floatvector nodespacing,
       const ConfigurationBase& configuration);
 
   void autoregister();
@@ -57,6 +57,7 @@ public:
   integer m_iternum;
   const Image& m_fixed;
   const Image& m_moved;
+  const Mask& m_mask;
   floating m_lambda;
 
   // Other class data, default initialize then populate in c'tor

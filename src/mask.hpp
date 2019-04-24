@@ -13,30 +13,28 @@
 //   See the License for the specific language governing permissions and
 //   limitations under the License.
 
-#ifndef IMAGE_HPP
-#define IMAGE_HPP
+#ifndef MASK_HPP
+#define MASK_HPP
 
-#include <type_traits>
+#include "image.hpp"
 
-#include <mpi.h>
-
-#include "imagebase.hpp"
-#include "types.hpp"
-
-class Image: public ImageBase {
+class Mask: public ImageBase {
 public:
-  explicit Image(const intvector &shape, MPI_Comm comm = PETSC_COMM_WORLD);
+  explicit Mask(const intvector& shape, MPI_Comm comm = PETSC_COMM_WORLD);
 
-  static std::unique_ptr<Image> load_file(const std::string& filename,
-      const ImageBase* existing = nullptr, MPI_Comm comm = PETSC_COMM_WORLD);
+  static std::unique_ptr<Mask> duplicate(const ImageBase& img);
+  static std::unique_ptr<Mask> copy(const ImageBase& img);
+  static std::unique_ptr<Mask> full_image(const ImageBase& img); 
 
-  static std::unique_ptr<Image> duplicate(const ImageBase& img);
-  static std::unique_ptr<Image> copy(const ImageBase& img);
+  static std::unique_ptr<Mask> load_file(
+      const std::string& filename, const ImageBase* existing = nullptr,
+      MPI_Comm comm = PETSC_COMM_WORLD);
 
-  protected:
-  explicit Image(const ImageBase& image);
-  Image &operator=(const ImageBase &image);
+  integer npoints() const;
 
+
+protected:
+  explicit Mask(const ImageBase& mask);
 };
 
-#endif
+#endif // MASK_HPP

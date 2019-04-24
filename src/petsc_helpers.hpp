@@ -16,6 +16,7 @@
 #ifndef PETSC_HELPERS_HPP
 #define PETSC_HELPERS_HPP
 
+#include <petscdmda.h>
 #include <petscvec.h>
 
 #include "types.hpp"
@@ -29,5 +30,9 @@ void block_precondition(const Mat& normmat, integer size, integer ndim);
 floating get_condnum_by_poweriter(const Mat& matrix, floating conv_thres, integer max_iter);
 
 floating get_eigenvalue_by_poweriter(const Mat& matrix, floating conv_thres, integer max_iter);
+
+void repeat_stack(const Vec& subvec, const Vec& stacked);
+void repeat_stack_petsc_to_nat(const Vec& subvec, const Vec& stacked, const DM& subvec_dmda);
+void copy_nth_from_stack_nat_to_petsc(const Vec& subvec, const Vec& stacked, const DM& subvec_dmda, integer n);
 
 #endif

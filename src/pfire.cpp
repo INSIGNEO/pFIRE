@@ -115,7 +115,24 @@ void mainflow(std::shared_ptr<ConfigurationBase> config)
   fixed->normalize();
   moved->normalize();
 
-  Elastic reg(*fixed, *moved, nodespacing, *config);
+  std::unique_ptr<Mask> mask;
+  if(config->grab<std::string>("mask").empty()){
+    mask = Mask::full_image(*fixed);
+  }
+  else
+  {
+    try
+    {
+      mask = Mask::load_file(config->grab<std::string>("mask"), fixed.get());
+    }
+    catch (std::exception &e)
+    {
+      std::cerr << "Error: Failed to load mask: " << e.what() << std::endl;
+      return;
+    }
+  }
+
+  Elastic reg(*fixed, *moved, *mask, nodespacing, *config);
   reg.autoregister();
 
   std::string outfile = config->grab<std::string>("registered");

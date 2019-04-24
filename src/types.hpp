@@ -32,7 +32,9 @@
 
 // Forward Defs
 //
+class ImageBase;
 class Image;
+class Mask;
 class WorkSpace;
 class Map;
 class Elastic;

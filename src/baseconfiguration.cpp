@@ -26,7 +26,7 @@ const std::string ConfigurationBase::k_outer_token = "%s%";
 const std::string ConfigurationBase::k_inner_token = "%i%";
 
 const config_map ConfigurationBase::default_config = {{"verbose", "false"},
-    {"registered", "registered.xdmf"}, {"map", "map.xdmf"}, {"lambda", "auto"},
+    {"registered", "registered.xdmf"}, {"map", "map.xdmf"}, {"lambda", "auto"}, {"mask", ""},
     {"registered_h5_path", "/registered"}, {"map_h5_path", "/map"}, {"lambda_mult", "1.0"},
     {"with_memory", "true"}, {"save_intermediate_frames", "false"},
     {"intermediate_template", "%name%-intermediate-%s%-%i%%ext%"},

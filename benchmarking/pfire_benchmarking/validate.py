@@ -103,7 +103,7 @@ def run_shirt(config_file):
         fio.save_image(data, maskname)
         config['mask'] = maskname
 
-    shirt_args = ['ShIRT', 'Register',
+    shirt_args = ['ShIRT', 'Register', 'verbose',
                   'Fixed', config['fixed'].replace('.image', ''),
                   'Moved', config['moved'].replace('.image', ''),
                   'Mask', config['mask'].replace('.mask',''),
@@ -139,6 +139,7 @@ def main():
     moved_data = fio.load_image(shirt_result.moved_path)/255
     shirt_data = fio.load_image(shirt_result.registered_path)/255
     pfire_data = load_pfire_image(pfire_result.registered_path)
+    pfire_data /= pfire_data.max()
 
     mi_start = calculate_mutual_information(fixed_data, moved_data,
                                             return_hist=True)

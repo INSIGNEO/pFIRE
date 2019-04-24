@@ -31,13 +31,13 @@
 
 namespace bf = boost::filesystem;
 
-Elastic::Elastic(const Image& fixed, const Image& moved, const floatvector nodespacing,
-    const ConfigurationBase& configuration)
+Elastic::Elastic(const Image& fixed, const Image& moved, const Mask& mask,
+    const floatvector nodespacing, const ConfigurationBase& configuration)
   : m_comm(fixed.comm()), configuration(configuration), m_imgdims(fixed.ndim()),
-    m_mapdims(m_imgdims + 1), m_size(fixed.size()), m_iternum(0), m_fixed(fixed), m_moved(moved),
-    m_v_nodespacings(floatvector2d()), m_v_final_nodespacing(nodespacing),
-    m_p_registered(std::shared_ptr<Image>(nullptr)), m_p_map(std::unique_ptr<Map>(nullptr)),
-    m_workspace(std::shared_ptr<WorkSpace>(nullptr)), normmat(create_unique_mat())
+  m_mapdims(m_imgdims + 1), m_size(fixed.size()), m_iternum(0), m_fixed(fixed), m_moved(moved),
+  m_mask(mask), m_v_final_nodespacing(nodespacing),
+  m_p_registered(std::shared_ptr<Image>(nullptr)), m_p_map(std::unique_ptr<Map>(nullptr)),
+  m_workspace(std::shared_ptr<WorkSpace>(nullptr)), normmat(create_unique_mat())
 {
   // TODO: image compatibility checks (maybe write Image.iscompat(Image foo)
   // TODO: enforce normalization
@@ -55,13 +55,13 @@ Elastic::Elastic(const Image& fixed, const Image& moved, const floatvector nodes
   m_max_iter = configuration.grab<integer>("max_iterations"); 
 
   // not in initializer to avoid copy until we know images are compatible and we can proceed
-  m_p_registered = moved.copy();
+  m_p_registered = Image::copy(moved);
 
   // work out intermediate node spacings
   calculate_node_spacings();
 
   // make map, need to ensure basis is always the same layout
-  m_p_map = std::make_unique<Map>(fixed, m_v_nodespacings.back());
+  m_p_map = std::make_unique<Map>(m_v_nodespacings.back(), mask);
 
   // set scratchpad storage, scatterers:
   m_workspace = std::make_shared<WorkSpace>(fixed, *m_p_map);
@@ -487,12 +487,18 @@ floating Elastic::approximate_optimum_lambda(Mat& mat_a, Mat& mat_b, floating la
   floating a, b, c;
   quadratic_from_points(x_lo, x_mid, x_hi, y_lo, y_mid, y_hi, a, b, c);
 
+  if(a <= 0){
+    PetscPrintf(m_comm, "Warning: convex function in smoothing parameter estimation.\n");
+    return lambda_min;
+  }
+
+
   floating x, y;
   quadratic_vertex(a, b, c, x, y);
 
   if (x < lambda_min)
   {
-    x = lambda_min;
+    return lambda_min;
   }
 
   return x;
