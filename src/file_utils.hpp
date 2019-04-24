@@ -19,5 +19,8 @@
 #include <string>
 
 void throw_if_nonexistent(const std::string& filepath);
+void replace_token(std::string& str, const std::string& token, const std::string& replacement);
+
+void ensure_directories_exist(const std::string& dirpath);
 
 #endif // FILE_UTILS_HPP

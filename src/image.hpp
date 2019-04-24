@@ -20,25 +20,23 @@
 
 #include <mpi.h>
 
-#include <petscdmda.h>
-
 #include "imagebase.hpp"
 #include "types.hpp"
 
 class Image: public ImageBase {
 public:
-  explicit Image(const intvector& shape, MPI_Comm comm = PETSC_COMM_WORLD);
-
-  static std::unique_ptr<Image> duplicate(const ImageBase& img);
-  static std::unique_ptr<Image> copy(const ImageBase& img);
-
-  floating masked_normalize(const Mask& mask);
+  explicit Image(const intvector &shape, MPI_Comm comm = PETSC_COMM_WORLD);
 
   static std::unique_ptr<Image> load_file(const std::string& filename,
       const ImageBase* existing = nullptr, MPI_Comm comm = PETSC_COMM_WORLD);
 
-protected:
+  static std::unique_ptr<Image> duplicate(const ImageBase& img);
+  static std::unique_ptr<Image> copy(const ImageBase& img);
+
+  protected:
   explicit Image(const ImageBase& image);
+  Image &operator=(const ImageBase &image);
+
 };
 
 #endif

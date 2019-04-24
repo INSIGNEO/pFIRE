@@ -68,7 +68,8 @@ include_directories(${MPI_INCLUDES})
 set(EXTRA_LIBS ${EXTRA_LIBS} ${MPI_LIBRARIES})
 
 find_package(HDF5 REQUIRED)
-include_directories(${HDF5_INCLUDES})
+include_directories(${HDF5_INCLUDE_DIRS})
+message(STATUS "HDF5_INCLUDES: ${HDF5_INCLUDE_DIRS}")
 set(EXTRA_LIBS ${EXTRA_LIBS} ${HDF5_LIBRARIES})
 
 if(NOT HDF5_IS_PARALLEL)
@@ -83,7 +84,6 @@ add_definitions(-DPETSC_CLANGUAGE_CXX=1)
 find_package(Boost REQUIRED COMPONENTS filesystem program_options)
 include_directories(${BOOST_INCLUDE_DIRS})
 set(EXTRA_LIBS ${EXTRA_LIBS} ${Boost_LIBRARIES})
-
 
 find_package(DCMTK)
 if(DCMTK_FOUND)

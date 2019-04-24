@@ -94,18 +94,31 @@ void DCMLoader::copy_scaled_chunk(
     {
       integer flat_idx = (col_idx + offset[1]) * size[0] + offset[0];
       integer frame_idx = slice_idx - offset[2];
+      floating* array_slice_ptr = data[slice_idx][col_idx];
+      if(!array_slice_ptr)
+      {
+        throw InternalError("Out of bounds array access", __FILE__, __LINE__);
+      }
       switch (bitdepth)
       {
         case 8:
         {
-          uint8_t *rawdata = (uint8_t *)img.getOutputData(8, slice_idx, 0);
-          norm_convert(data[frame_idx][col_idx], rawdata + flat_idx, size[0], dmin, dmax);
+          uint8_t *rawdata = (uint8_t *)img.getOutputData(8, frame_idx, 0);
+          if (!rawdata)
+          {
+            throw InternalError("MPI dicom read failed", __FILE__, __LINE__);
+          }
+          norm_convert(array_slice_ptr, rawdata + flat_idx, size[0], dmin, dmax);
           break;
         }
         case 16:
         {
-          uint16_t *rawdata = (uint16_t *)img.getOutputData(16, slice_idx, 0);
-          norm_convert(data[frame_idx][col_idx], rawdata + flat_idx, size[0], dmin, dmax);
+          uint16_t *rawdata = (uint16_t *)img.getOutputData(16, frame_idx, 0);
+          if (!rawdata)
+          {
+            throw InternalError("MPI dicom read failed", __FILE__, __LINE__);
+          }
+          norm_convert(array_slice_ptr, rawdata + flat_idx, size[0], dmin, dmax);
           break;
         }
         default:

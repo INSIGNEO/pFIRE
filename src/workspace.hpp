@@ -29,20 +29,24 @@ public:
   void scatter_grads_to_stacked();
   void duplicate_single_grad_to_stacked(size_t idx);
 
+  void scatter_stacked_to_grads_noreorder();
+
   friend Elastic;
   friend Map;
 
   //  protected:
 
   void allocate_persistent_workspace();
-  void create_scatterers();
+  void create_reordering_scatterers();
+  void create_nonreordering_scatterers();
 
   MPI_Comm m_comm;
   DM_shared m_dmda;
   integer m_size;
   std::vector<Vec_unique> m_globaltmps;
   std::vector<IS_unique> m_iss;
-  std::vector<VecScatter_unique> m_scatterers;
+  std::vector<VecScatter_unique> m_r_scatterers;
+  std::vector<VecScatter_unique> m_nr_scatterers;
   Vec_unique m_stacktmp, m_localtmp;
   Vec_unique m_delta, m_rhs;
   Mat_unique m_tmat;

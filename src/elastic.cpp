@@ -18,19 +18,26 @@
 #include <iomanip>
 #include <sstream>
 
+#include <boost/filesystem.hpp>
+#include <boost/format.hpp>
+
+#include "basewriter.hpp"
 #include "fd_routines.hpp"
+#include "file_utils.hpp"
 #include "infix_iterator.hpp"
 #include "iterator_routines.hpp"
 #include "math_utils.hpp"
 #include "petsc_debug.hpp"
 
+namespace bf = boost::filesystem;
+
 Elastic::Elastic(const Image& fixed, const Image& moved, const Mask& mask,
     const floatvector nodespacing, const ConfigurationBase& configuration)
   : m_comm(fixed.comm()), configuration(configuration), m_imgdims(fixed.ndim()),
-    m_mapdims(m_imgdims + 1), m_size(fixed.size()), m_iternum(0), m_fixed(fixed), m_moved(moved),
-    m_v_final_nodespacing(nodespacing), m_p_registered(std::shared_ptr<Image>(nullptr)),
-    m_p_map(std::unique_ptr<Map>(nullptr)), m_workspace(std::shared_ptr<WorkSpace>(nullptr)),
-    normmat(create_unique_mat())
+  m_mapdims(m_imgdims + 1), m_size(fixed.size()), m_iternum(0), m_fixed(fixed), m_moved(moved),
+  m_mask(mask), m_v_final_nodespacing(nodespacing),
+  m_p_registered(std::shared_ptr<Image>(nullptr)), m_p_map(std::unique_ptr<Map>(nullptr)),
+  m_workspace(std::shared_ptr<WorkSpace>(nullptr)), normmat(create_unique_mat())
 {
   // TODO: image compatibility checks (maybe write Image.iscompat(Image foo)
   // TODO: enforce normalization
@@ -44,6 +51,8 @@ Elastic::Elastic(const Image& fixed, const Image& moved, const Mask& mask,
   {
     m_v_final_nodespacing.push_back(1);
   }
+
+  m_max_iter = configuration.grab<integer>("max_iterations"); 
 
   // not in initializer to avoid copy until we know images are compatible and we can proceed
   m_p_registered = Image::copy(moved);
@@ -94,11 +103,14 @@ void Elastic::autoregister()
 
 void Elastic::innerloop(integer outer_count)
 {
+  floating prev_mi = m_p_registered->mutual_information(m_fixed);
+
   // setup map resolution specific solution storage (tmat, delta a, rvec)
   // calculate lambda for loop
-  if (configuration.grab<bool>("debug_frames"))
+  if (configuration.grab<bool>("save_intermediate_frames"))
   {
-    save_debug_frame(configuration.grab<std::string>("debug_frames_prefix"), outer_count, 0);
+    save_debug_frame(outer_count, 0);
+    save_debug_map(outer_count, 0);
   }
 
   bool recalculate_lambda = false;
@@ -117,9 +129,10 @@ void Elastic::innerloop(integer outer_count)
     innerstep(inum, recalculate_lambda);
     recalculate_lambda = false;
 
-    if (configuration.grab<bool>("debug_frames"))
+    if (configuration.grab<bool>("save_intermediate_frames"))
     {
-      save_debug_frame(configuration.grab<std::string>("debug_frames_prefix"), outer_count, inum);
+      save_debug_frame(outer_count, inum);
+      save_debug_map(outer_count, inum);
     }
 
     // check convergence and break if below threshold
@@ -130,16 +143,24 @@ void Elastic::innerloop(integer outer_count)
     CHKERRABORT(m_comm, perr);
     floating amax = std::max(std::fabs(posmax), std::fabs(negmax));
     PetscPrintf(m_comm, "Maximum displacement: %.2f\n", amax);
-    if (amax < m_convergence_thres)
+    floating aavg;
+    perr = VecNorm(*m_workspace->m_delta, NORM_2, &aavg);
+    aavg /= m_p_map->size();
+    PetscPrintf(m_comm, "Average displacement: %.2f\n", aavg);
+    floating curr_mi = m_p_registered->mutual_information(m_fixed);
+    PetscPrintf(m_comm, "Mutual information: %f\n", curr_mi);
+    if (aavg < m_convergence_thres || curr_mi <= prev_mi)
     {
       PetscPrintf(m_comm, "Generation %i converged after %i iterations.\n\n", outer_count, inum);
       break;
     }
+    prev_mi = curr_mi;
   }
 }
 
 void Elastic::innerstep(integer inum, bool recalculate_lambda)
 {
+  floating lambda_mult = configuration.grab<floating>("lambda_mult");
   // calculate up to date tmat
   calculate_tmat(inum);
 
@@ -155,18 +176,19 @@ void Elastic::innerstep(integer inum, bool recalculate_lambda)
 
   floating lapldiagavg = diagonal_sum(*m_p_map->laplacian()) / (m_p_map->size() * m_p_map->m_ndim);
   floating tdiagavg = diagonal_sum(*normmat) / m_p_map->size();
-  floating laplmult = tdiagavg / lapldiagavg;
-  PetscPrintf(m_comm, "laplavg = %g, tavg = %g, mult=%g\n", lapldiagavg, tdiagavg, laplmult);
+  floating lapl_mult = tdiagavg / lapldiagavg;
+  PetscPrintf(m_comm, "laplavg = %g, tavg = %g, mult=%g\n", lapldiagavg, tdiagavg, lapl_mult);
 
   if (recalculate_lambda)
   {
     m_lambda = approximate_optimum_lambda(
-        *normmat, *m_p_map->laplacian(), laplmult, m_lambda, 10.0, 30, k_lambda_min);
+        *normmat, *m_p_map->laplacian(), lapl_mult, m_lambda, 10.0, 30, k_lambda_min);
     PetscPrintf(m_comm, "Calculated smoothing factor: %.2f\n", m_lambda);
   }
 
+  floating total_mult = lapl_mult * lambda_mult * m_lambda;
   // calculate tmat2 + lambda*lapl2
-  perr = MatAXPY(*normmat, laplmult * m_lambda, *m_p_map->laplacian(), DIFFERENT_NONZERO_PATTERN);
+  perr = MatAXPY(*normmat, total_mult, *m_p_map->laplacian(), DIFFERENT_NONZERO_PATTERN);
   CHKERRABORT(m_comm, perr);
 
   // calculate rvec, to do this need to reuse stacked vector for [f-m f-m f-m f-m]
@@ -175,6 +197,24 @@ void Elastic::innerstep(integer inum, bool recalculate_lambda)
   CHKERRABORT(m_comm, perr);
   m_workspace->duplicate_single_grad_to_stacked(0);
   perr = MatMultTranspose(*m_workspace->m_tmat, *m_workspace->m_stacktmp, *m_workspace->m_rhs);
+  CHKERRABORT(m_comm, perr);
+
+  // apply memory term if needed
+  if (configuration.grab<bool>("with_memory"))
+  {
+    // build -lambda*a
+    Vec_unique disp = create_unique_vec();
+    perr = VecDuplicate(m_p_map->displacements(), disp.get());
+    CHKERRABORT(m_comm, perr);
+    perr = VecCopy(m_p_map->displacements(), *disp);
+    CHKERRABORT(m_comm, perr);
+    perr = VecScale(*disp, -total_mult);
+    CHKERRABORT(m_comm, perr);
+
+    // calculate vecdot(lapl_2, -lambda*a) and add to rhs in one operation
+    perr = MatMultAdd(*m_p_map->laplacian(), *disp, *m_workspace->m_rhs, *m_workspace->m_rhs);
+    CHKERRABORT(m_comm, perr);
+  }
 
   // Force free tmat as no longer needed
   m_workspace->m_tmat = create_unique_mat();
@@ -205,11 +245,12 @@ void Elastic::calculate_node_spacings()
   const intvector& imshape = m_fixed.shape();
   floatvector currspc = m_v_final_nodespacing;
   m_v_nodespacings.push_back(currspc);
-  while (all_true_varlen(currspc.begin(), currspc.end(), imshape.begin(), imshape.end(),
+  auto start_iter = currspc.begin();
+  auto end_iter = std::next(start_iter, m_fixed.ndim());
+  while (all_true_varlen(start_iter, end_iter, imshape.begin(), imshape.end(),
       [](floating x, integer y) -> bool { return (y / x) > 2.0; }))
   {
-    std::transform(currspc.begin(), currspc.end(), currspc.begin(),
-        [](floating a) -> floating { return a * 2; });
+    std::transform(start_iter, end_iter, start_iter, [](floating a) -> floating { return a * 2; });
     m_v_nodespacings.push_back(currspc);
   }
 }
@@ -259,14 +300,121 @@ void Elastic::calculate_tmat(integer iternum __attribute__((unused)))
   CHKERRABORT(m_comm, perr);
 }
 
-void Elastic::save_debug_frame(const std::string& prefix, integer outer_count, integer inner_count)
+void Elastic::save_debug_map(integer outer_count, integer inner_count)
 {
   std::ostringstream outname;
-  outname << prefix << "_" << outer_count << "_" << inner_count;
+  std::string file_str(configuration.grab<std::string>("intermediate_map_template"));
+  bf::path map_path(configuration.grab<std::string>("map"));
 
-  // XDMFWriter wtr(outname.str(), m_comm);
+  boost::format pad2("%02d");
+  replace_token(file_str, ConfigurationBase::k_outer_token, (pad2 % outer_count).str());
 
-  // wtr.write_image(*m_p_registered, "registered");
+  boost::format pad3("%03d");
+  replace_token(file_str, ConfigurationBase::k_inner_token, (pad3 % inner_count).str());
+
+  replace_token(file_str, ConfigurationBase::k_stem_token, 
+                map_path.filename().stem().string());
+
+  replace_token(file_str, ConfigurationBase::k_extension_token,
+                map_path.extension().string());
+
+  bf::path output_path(map_path.parent_path());
+
+  bf::path intermediates_path(configuration.grab<std::string>("intermediate_directory"));
+  if(intermediates_path.is_absolute())
+  {
+    if (!bf::exists(intermediates_path))
+    {
+      std::ostringstream errss;
+      errss << "Intermediate frame output path " << intermediates_path << " does not exist.";
+      throw std::runtime_error(errss.str());
+    }
+    output_path = intermediates_path;
+  }
+  else
+  {
+    // Don't create directories we don't say we will, error instead
+    // (Pre-flight checks mean this should never throw)
+    if (!output_path.empty() && !bf::exists(output_path))
+    {
+      std::ostringstream errss;
+      errss << "Output path " << output_path << " does not exist.";
+      throw std::runtime_error(errss.str());
+    }
+
+    // Append intermediates dir
+    output_path /= configuration.grab<std::string>("intermediate_directory");
+
+    // Create intermediates dir as needed
+    bf::create_directories(output_path);
+  }
+
+  // Finally append filename and any group extension
+  output_path /= file_str;
+  std::string output_path_str(output_path.string());
+  output_path_str.append(":");
+  output_path_str.append(configuration.grab<std::string>("map_h5_path"));
+
+  BaseWriter_unique wtr = BaseWriter::get_writer_for_filename(output_path_str, m_comm);
+  wtr->write_map(*m_p_map);
+}
+void Elastic::save_debug_frame(integer outer_count, integer inner_count)
+{
+  std::ostringstream outname;
+  std::string file_str(configuration.grab<std::string>("intermediate_template"));
+  bf::path registered_path(configuration.grab<std::string>("registered"));
+
+  boost::format pad2("%02d");
+  replace_token(file_str, ConfigurationBase::k_outer_token, (pad2 % outer_count).str());
+
+  boost::format pad3("%03d");
+  replace_token(file_str, ConfigurationBase::k_inner_token, (pad3 % inner_count).str());
+
+  replace_token(file_str, ConfigurationBase::k_stem_token, 
+                registered_path.filename().stem().string());
+
+  replace_token(file_str, ConfigurationBase::k_extension_token,
+                registered_path.extension().string());
+
+  bf::path output_path(registered_path.parent_path());
+
+  bf::path intermediates_path(configuration.grab<std::string>("intermediate_directory"));
+  if(intermediates_path.is_absolute())
+  {
+    if (!bf::exists(intermediates_path))
+    {
+      std::ostringstream errss;
+      errss << "Intermediate frame output path " << intermediates_path << " does not exist.";
+      throw std::runtime_error(errss.str());
+    }
+    output_path = intermediates_path;
+  }
+  else
+  {
+    // Don't create directories we don't say we will, error instead
+    // (Pre-flight checks mean this should never throw)
+    if (!output_path.empty() && !bf::exists(output_path))
+    {
+      std::ostringstream errss;
+      errss << "Output path " << output_path << " does not exist.";
+      throw std::runtime_error(errss.str());
+    }
+
+    // Append intermediates dir
+    output_path /= configuration.grab<std::string>("intermediate_directory");
+
+    // Create intermediates dir as needed
+    bf::create_directories(output_path);
+  }
+
+  // Finally append filename and any group extension
+  output_path /= file_str;
+  std::string output_path_str(output_path.string());
+  output_path_str.append(":");
+  output_path_str.append(configuration.grab<std::string>("registered_h5_path"));
+
+  BaseWriter_unique wtr = BaseWriter::get_writer_for_filename(output_path_str, m_comm);
+  wtr->write_image(*m_p_registered);
 }
 
 floating Elastic::approximate_optimum_lambda(Mat& mat_a, Mat& mat_b, floating lambda_mult,

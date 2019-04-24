@@ -1,0 +1,29 @@
+dist: xenial
+language: minimal
+sudo: require
+
+branches:
+  except:
+    - gh-pages
+
+env:
+  global:
+    - docker_image="ubuntu-img"
+    - CTEST_EXT_COLOR_OUTPUT=TRUE
+    - SH="docker exec -t ${docker_image} bash -c"
+    - OMPI_MCA_btl_base_warn_component_unused=0
+
+before_install:
+  - docker run -d --name ${docker_image} --env OMPI_MCA_btl_base_warn_component_unused=0 --volume ${TRAVIS_BUILD_DIR}:/home/travis --workdir /home/travis ubuntu:18.04 tail -f /dev/null
+  - docker ps
+  - $SH "pwd"
+  - $SH "ls"
+  - $SH "apt-get update"
+  - $SH "apt-get install --yes build-essential cmake pkg-config git"
+  - $SH "apt-get install --yes petsc-dev libboost-all-dev libhdf5-openmpi-dev libdcmtk-dev openmpi-bin"
+
+install:
+  - $SH "mkdir build && cd build && cmake -DPETSC_EXECUTABLE_RUNS:BOOL=Yes .. && make"
+
+script:
+  - $SH "cd build && ctest -V -L serial"

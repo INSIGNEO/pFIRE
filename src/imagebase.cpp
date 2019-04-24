@@ -115,6 +115,20 @@ Vec_unique ImageBase::get_raw_data_row_major() const
   return rmlocalpart;
 }
 
+floating ImageBase::masked_normalize(const Mask& mask)
+{
+  Vec_unique tmp = create_unique_vec();
+  PetscErrorCode perr = VecDuplicate(*m_globalvec, tmp.get());CHKERRABORT(m_comm, perr);
+  perr = VecPointwiseMult(*tmp, *mask.global_vec(), *m_globalvec);CHKERRABORT(m_comm, perr);
+
+  floating norm;
+  perr = VecSum(*tmp, &norm);CHKERRABORT(m_comm, perr);
+  norm = mask.npoints() / norm;
+  perr = VecScale(*m_globalvec, norm);CHKERRABORT(m_comm, perr);
+
+  return norm;
+}
+
 void ImageBase::copy_data(const ImageBase &img)
 {
   PetscErrorCode perr = VecCopy(*img.global_vec(), *m_globalvec);
@@ -218,4 +232,104 @@ void ImageBase::update_local_from_global()
   CHKERRABORT(PETSC_COMM_WORLD, perr);
 }
 
+Vec_unique ImageBase::get_raw_data_natural() const
+{
+  Vec_unique natvector = create_unique_vec();
+  PetscErrorCode perr = DMDACreateNaturalVector(*m_dmda, natvector.get());
+  CHKERRXX(perr);
 
+  perr = DMDAGlobalToNaturalBegin(*m_dmda, *m_globalvec, INSERT_VALUES, *natvector);
+  CHKERRXX(perr);
+  perr = DMDAGlobalToNaturalEnd(*m_dmda, *m_globalvec, INSERT_VALUES, *natvector);
+  CHKERRXX(perr);
+
+  return natvector;
+}
+
+floating ImageBase::mutual_information(const ImageBase &other)
+{
+  // Mutual information is given by integrating P(X, Y)log(P(X,Y)/(P(X)P(Y)) over all X and all Y,
+  // In this case the probabilities can be calculated from a 2D histogram of X against Y.
+
+  // Could also just find 2D and perform summations after comm, but for now do it this way
+  floatvector xhist(mi_resolution, 0);
+  floatvector yhist(mi_resolution, 0);
+  floatvector2d xyhist(mi_resolution, floatvector(mi_resolution, 0));
+
+  integer img_localsize;
+  PetscErrorCode perr = VecGetLocalSize(*m_globalvec, &img_localsize);
+  CHKERRABORT(m_comm, perr);
+
+  floating max1, max2;
+  perr = VecMax(*m_globalvec, nullptr, &max1);CHKERRABORT(m_comm, perr);
+  perr = VecMax(*other.global_vec(), nullptr, &max2);CHKERRABORT(m_comm, perr);
+  floating max = std::max(max1, max2);
+
+  // Only need RO data from PETSc vecs
+  floating const *x_data, *y_data;
+  perr = VecGetArrayRead(*m_globalvec, &x_data);
+  CHKERRABORT(m_comm, perr);
+  perr = VecGetArrayRead(*other.global_vec(), &y_data);
+  CHKERRABORT(m_comm, perr);
+
+  for (integer idx = 0; idx < img_localsize; idx++)
+  {
+    integer x = std::lround(x_data[idx]/max * static_cast<double>(mi_resolution-1));
+    integer y = std::lround(y_data[idx]/max * static_cast<double>(mi_resolution-1));
+    xhist[x] += 1;
+    yhist[y] += 1;
+    xyhist[x][y] += 1;
+  }
+
+  int rank;
+  MPI_Comm_rank(m_comm, &rank);
+  if(rank == 0)
+  {
+    MPI_Reduce(MPI_IN_PLACE, xhist.data(), xhist.size(), MPIU_SCALAR, MPI_SUM, 0, m_comm);
+    MPI_Reduce(MPI_IN_PLACE, yhist.data(), yhist.size(), MPIU_SCALAR, MPI_SUM, 0, m_comm);
+    MPI_Reduce(MPI_IN_PLACE, xyhist.data(), xyhist.size(), MPIU_SCALAR, MPI_SUM, 0, m_comm);
+  } 
+  else
+  {
+    MPI_Reduce(xhist.data(), xhist.data(), xhist.size(), MPIU_SCALAR, MPI_SUM, 0, m_comm);
+    MPI_Reduce(yhist.data(), yhist.data(), yhist.size(), MPIU_SCALAR, MPI_SUM, 0, m_comm);
+    MPI_Reduce(xyhist.data(), xyhist.data(), xyhist.size(), MPIU_SCALAR, MPI_SUM, 0, m_comm);
+  }
+
+  // Need all probability distributions to sum to 1.0
+  integer pix_tot = this->size();
+  std::transform(xhist.cbegin(), xhist.cend(), xhist.begin(),
+                 [pix_tot](floating x) -> floating {return x/pix_tot;});
+  std::transform(xhist.cbegin(), xhist.cend(), xhist.begin(),
+                 [pix_tot](floating y) -> floating {return y/pix_tot;});
+  for(auto &vec1d: xyhist)
+  {
+    std::transform(vec1d.cbegin(), vec1d.cend(), vec1d.begin(),
+                   [pix_tot](floating y) -> floating {return y/pix_tot;});
+  }
+
+  // Use Kahan summation to try to minimize error
+  floating mi_total(0);
+  floating mi_err(0);
+  if(rank == 0)
+  {
+    for(size_t ix(0); ix < xhist.size(); ix++)
+    {
+      for(size_t iy(0); iy < yhist.size(); iy++)
+      {
+        if(xyhist[ix][iy] > 0)
+        {
+          floating mi_part = xyhist[ix][iy] * std::log(xyhist[ix][iy]/(xhist[ix]*yhist[iy]));
+          mi_part -= mi_err;
+          floating tmp = mi_total + mi_part;
+          mi_err = (tmp - mi_total) - mi_part;
+          mi_total = tmp;
+        }
+      }
+    }
+  }
+
+  MPI_Bcast(&mi_total, 1, MPIU_SCALAR, 0, m_comm);
+
+  return mi_total;
+}

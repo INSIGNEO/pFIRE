@@ -183,6 +183,14 @@ function(Main)
     WriteGitVersionSrc("${git_state_tgt}")
   endif(changed)
 
+  execute_process(COMMAND
+    cp -u "${git_state_src}.hpp.in" "${git_state_tgt}.hpp" 
+    RESULT_VARIABLE res
+    ERROR_QUIET)
+  if(NOT res EQUAL 0)
+    message(FATAL_ERROR "Failed to update ${git_state_tgt}.hpp")
+  endif(NOT res EQUAL 0)
+
 endfunction(Main)
 
 Main()

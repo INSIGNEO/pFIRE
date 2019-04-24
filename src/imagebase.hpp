@@ -16,11 +16,16 @@
 #ifndef IMAGEBASE_HPP
 #define IMAGEBASE_HPP
 
+#include <petscdmda.h>
+
 #include "types.hpp"
 
 class ImageBase {
 public:
   explicit ImageBase(const intvector& shape, MPI_Comm comm = PETSC_COMM_WORLD);
+
+  static std::unique_ptr<Image> duplicate(const ImageBase& img);
+  static std::unique_ptr<Image> copy(const ImageBase& img);
 
   // Allow RO access to member variables
   // Note that datavec and dmda remain mutable in this way
@@ -35,11 +40,12 @@ public:
   const floating* get_raw_data_ro() const;
   void release_raw_data_ro(const floating*& ptr) const;
   void copy_data(const ImageBase& img);
-
   Vec_unique get_raw_data_row_major() const;
+  Vec_unique get_raw_data_natural() const;
 
   Vec_unique gradient(integer dim);
   floating normalize();
+  floating masked_normalize(const Mask& mask);
   void binarize();
 
   template <typename inttype>
@@ -47,12 +53,17 @@ public:
   template <typename inttype>
   std::vector<inttype> mpi_get_chunksize() const;
 
-  //  void set_mask(std::shared_ptr<Mask>);
-  //  void masked_normalize(const Mask& mask);
-
-
   Vec_unique scatter_to_zero() const;
 
+/*!
+   * Calculate mutual information between this and a second image.
+   *
+   * The two images must share a DMDA.
+   *
+   * @param other the second image for mutual information calculation
+   * @return The mutual information between images
+   */
+  floating mutual_information(const ImageBase &other);
 
 protected:
   void update_local_from_global();
@@ -71,8 +82,10 @@ protected:
   void initialize_vectors();
 
   integer instance_id;
-
   static integer instance_id_counter;
+
+private:
+  const size_t mi_resolution = 100;
 };
 
 template <typename inttype>

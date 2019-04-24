@@ -35,3 +35,5 @@ target_link_libraries(libpfire ${EXTRA_LIBS})
 add_executable(pfire pfire.cpp)
 set_target_properties(pfire PROPERTIES LINKER_LANGUAGE CXX)
 target_link_libraries(pfire libpfire)
+
+install(TARGETS pfire DESTINATION bin)

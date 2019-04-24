@@ -107,7 +107,7 @@ void XDMFWriter::write_image(const Image &image)
 
       // And link to hdf5 data
       std::ostringstream datapath;
-      datapath << h5_filename << ":" << h5_groupname;
+      datapath << bf::path(h5_filename).filename().string() << ":" << h5_groupname;
       std::ostringstream imgdims;
       std::copy(image.shape().cbegin(), image.shape().cend(),
           infix_ostream_iterator<integer>(imgdims, " "));
@@ -211,7 +211,7 @@ void XDMFWriter::write_map(const Map &map)
       for (uinteger idx = 0; idx < map.ndim(); idx++)
       {
         std::ostringstream datapath;
-        datapath << h5_filename << ":" << h5_groupname << "/" << _components[idx];
+        datapath << bf::path(h5_filename).filename().string() << ":" << h5_groupname << "/" << _components[idx];
 
         pt::ptree &imdata = attr.add("DataItem", datapath.str());
         imdata.add("<xmlattr>.Name", std::string("d") + _components[idx]);

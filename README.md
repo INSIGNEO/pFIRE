@@ -1,13 +1,20 @@
-# pFIRE
-## The Parallel Framework for Image Registration
+## pFIRE - The Parallel Framework for Image Registration
+[![Master Build Status](https://img.shields.io/travis/INSIGNEO/pFIRE/master.svg?label=master&logo=travis)](https://travis-ci.org/INSIGNEO/pFIRE/branches)
+[![Develop Build Status](https://img.shields.io/travis/INSIGNEO/pFIRE/develop.svg?label=develop&logo=travis)](https://travis-ci.org/INSIGNEO/pFIRE/branches)
+[![License Info](https://img.shields.io/github/license/INSIGNEO/pFIRE.svg)](https://github.com/INSIGNEO/pFIRE/blob/master/LICENSE)<br />
+[![Master Build Status](https://img.shields.io/appveyor/ci/ptooley/pFIRE/master.svg?label=master&logo=appveyor)](https://travis-ci.org/INSIGNEO/pFIRE/branches)
+[![Develop Build Status](https://img.shields.io/appveyor/ci/ptooley/pFIRE/develop.svg?label=develop&logo=appveyor)](https://travis-ci.org/INSIGNEO/pFIRE/branches)
+
+Online Documentation: [ https://insigneo.github.io/pFIRE/]( https://insigneo.github.io/pFIRE/)
+
+### About pFIRE
 
 pFIRE performs elastic registration of 2- and 3-dimensional images by the method of Barber and
 Hose&#91;[1](#note1)&#93;. It is implemented in C++ using the
 [PETSc](https://www.mcs.anl.gov/petsc/) scientific toolkit to provide parallelised mathematical
 routines.
 
-Usage
------
+### Usage
 
 pFIRE is invoked from the console (via mpirun for parallel use), e.g:
 
@@ -38,8 +45,8 @@ that if the filename contains spaces it must be enclosed in quotes.  In this cas
 and registered image will be saved to the default hdf5+xdmf format with filenames
 ``registered.xdmf`` and ``map.xdmf``.
 
-Dependencies
-------------
+
+### Dependencies
 
 pFIRE is an MPI application built on top the the [PETSc](https://www.mcs.anl.gov/petsc/)
 distributed scientific toolkit. It is additionally dependent on the [Boost](https://www.boost.org/)
@@ -67,8 +74,8 @@ registration.
 We recommend installing dependencies using your system package manager (e.g synaptic, apt, yum), or
 on HPC the use of SPACK may be appropriate.
 
-Installing
-----------
+### Installing
+
 pFIRE is installed using cmake in an out of tree build:
 
 ```sh
@@ -80,8 +87,8 @@ user@machine $ cmake ..
 user@machine $ make
 ```
 
-Links
------
+### Links
+
 <a name="note1">[1]</a>: DC Barber and DR Hose 2005 (https://doi.org/10.1080/03091900412331289889),
     DC Barber et al. 2007 (https://doi.org/10.1016/j.media.2007.06.011)
 

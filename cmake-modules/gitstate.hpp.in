@@ -22,4 +22,26 @@ extern const std::string kGitTag;
 extern const std::string kGitSHA;
 extern const bool kGitDirty;
 
+inline std::string git_commit_string(){
+
+  if(kGitDirty){
+    return kGitSHA + "-dirty";
+  }
+  else
+  {
+    return kGitSHA;
+  }
+}
+
+inline std::string git_version_string(){
+
+  if(kGitTag != ""){
+    return "Version " + kGitTag + " (commit:" + git_commit_string() + ")"; 
+  }
+  else
+  {
+    return "Development build (commit:" + git_commit_string() + ")"; 
+  }
+}
+
 #endif //GITSTATE_HPP

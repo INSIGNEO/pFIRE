@@ -24,6 +24,7 @@
 #include <petscvec.h>
 
 #include "fd_routines.hpp"
+#include "indexing.hpp"
 #include "iterator_routines.hpp"
 #include "map.hpp"
 #include "indexing.hpp"
@@ -63,8 +64,7 @@ Image::load_file(const std::string& path, const ImageBase* existing, MPI_Comm co
   if (existing != nullptr)
   {
     comm = existing->comm();
-    if (!all_true(
-            loader->shape().begin(), loader->shape().end(), existing->shape().begin(),
+    if (!all_true(loader->shape().begin(), loader->shape().end(), existing->shape().begin(),
             existing->shape().end(), std::equal_to<>()))
     {
       throw std::runtime_error("New image must have same shape as existing");
@@ -82,7 +82,7 @@ Image::load_file(const std::string& path, const ImageBase* existing, MPI_Comm co
   CHKERRABORT(comm, perr);
   // std::transform(shape.cbegin(), shape.cend(), offset.cbegin(), shape.begin(), std::minus<>());
 
-  floating*** vecptr(nullptr);
+  floating ***vecptr(nullptr);
   perr = DMDAVecGetArray(*new_image->dmda(), *new_image->global_vec(), &vecptr);
   CHKERRABORT(comm, perr);
   loader->copy_scaled_chunk(vecptr, shape, offset);
@@ -94,23 +94,11 @@ Image::load_file(const std::string& path, const ImageBase* existing, MPI_Comm co
   return new_image;
 }
 
-floating Image::masked_normalize(const Mask& mask)
-{
-  Vec_unique tmp = create_unique_vec();
-  PetscErrorCode perr = VecDuplicate(*m_globalvec, tmp.get());CHKERRABORT(m_comm, perr);
-  perr = VecPointwiseMult(*tmp, *mask.global_vec(), *m_globalvec);CHKERRABORT(m_comm, perr);
-
-  floating norm;
-  perr = VecSum(*tmp, &norm);CHKERRABORT(m_comm, perr);
-  norm = mask.npoints() / norm;
-  perr = VecScale(*m_globalvec, norm);CHKERRABORT(m_comm, perr);
-
-  return norm;
-}
-
 // Protected Methods
 
 Image::Image(const ImageBase& image)
   : ImageBase(image)
 {
 }
+
+

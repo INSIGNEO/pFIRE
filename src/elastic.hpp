@@ -57,6 +57,7 @@ public:
   integer m_iternum;
   const Image& m_fixed;
   const Image& m_moved;
+  const Mask& m_mask;
   floating m_lambda;
 
   // Other class data, default initialize then populate in c'tor
@@ -67,7 +68,8 @@ public:
   std::shared_ptr<WorkSpace> m_workspace;
   Mat_unique normmat;
 
-  void save_debug_frame(const std::string& prefix, integer ocount, integer icount);
+  void save_debug_frame(integer ocount, integer icount);
+  void save_debug_map(integer ocount, integer icount);
   void innerloop(integer outer_count);
   void innerstep(integer inum, bool recalculate_lambda);
 

@@ -21,9 +21,9 @@
 
 std::string get_invocation_name(const std::string &argzero);
 
-void pfire_setup(const std::vector<std::string> &petsc_args);
+void pfire_setup(const std::vector<std::string> &petsc_args, bool silent=false);
 
-void check_and_warn_odd_comm();
+void check_comm_size_and_warn_odd();
 void print_welcome_message();
 
 void pfire_teardown();
