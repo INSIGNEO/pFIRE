@@ -166,9 +166,9 @@ Vec_unique ImageBase::scatter_to_zero() const
 floating ImageBase::normalize()
 {
   floating norm;
-  PetscErrorCode perr = VecSum(*m_globalvec, &norm);
+  PetscErrorCode perr = VecMax(*m_globalvec, nullptr, &norm);
   CHKERRABORT(m_comm, perr);
-  norm = this->size() / norm;
+  norm = 1.0 / norm;
   perr = VecScale(*m_globalvec, norm);
   CHKERRABORT(m_comm, perr);
   return norm;

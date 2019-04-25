@@ -86,7 +86,7 @@ BOOST_AUTO_TEST_CASE(check_image_ordering)
   H5Dclose(dset_h);
   H5Fclose(file_h);
 
-  BOOST_CHECK(std::equal(hdf_data.cbegin(), hdf_data.cend(), cmp_data.cbegin(), cmp_data.cend()));
+  BOOST_REQUIRE(std::equal(hdf_data.cbegin(), hdf_data.cend(), cmp_data.cbegin(), cmp_data.cend()));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

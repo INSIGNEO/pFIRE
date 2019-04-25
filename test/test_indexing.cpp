@@ -100,7 +100,7 @@ BOOST_FIXTURE_TEST_SUITE(indexing, im, *butf::enabled())
     for(integer idx=imlo; idx<imhi; idx++)
     {
       intvector loc = unravel(idx, image.shape());
-      BOOST_CHECK(ptr[loc[2]][loc[1]][loc[0]] == idx);
+      BOOST_REQUIRE(ptr[loc[2]][loc[1]][loc[0]] == idx);
     }
     DMDAVecRestoreArray(*image.dmda(), *image.global_vec(), &ptr);}
     

@@ -45,8 +45,7 @@ BOOST_FIXTURE_TEST_SUITE(indexing, im)
     perr = DMDAVecRestoreArray(*image.dmda(), *image.global_vec(), &ptr);CHKERRXX(perr);
     }//image setting enclosure
 
-    //image.update_local_from_global();
-    Vec_unique grad = fd::gradient_to_global_unique(*image.dmda(), *image.local_vec(), 0);
+    Vec_unique grad = image.gradient(0);
 
     {//gradient checking enclosure
     floating ***ptr;
@@ -59,7 +58,7 @@ BOOST_FIXTURE_TEST_SUITE(indexing, im)
       {
         for(integer zz=zlo; zz<zhi; zz++)
         {
-          BOOST_CHECK(ptr[zz][yy][xx] == 1);
+          BOOST_REQUIRE(ptr[zz][yy][xx] == 1);
         }
       }
     }
@@ -94,8 +93,7 @@ BOOST_FIXTURE_TEST_SUITE(indexing, im)
     perr = DMDAVecRestoreArray(*image.dmda(), *image.global_vec(), &ptr);CHKERRXX(perr);
     }//image setting enclosure
 
-    //image.update_local_from_global();
-    Vec_unique grad = fd::gradient_to_global_unique(*image.dmda(), *image.local_vec(), 1);
+    Vec_unique grad = image.gradient(1);
 
     {//gradient checking enclosure
     floating ***ptr;
@@ -108,7 +106,7 @@ BOOST_FIXTURE_TEST_SUITE(indexing, im)
       {
         for(integer zz=zlo; zz<zhi; zz++)
         {
-          BOOST_CHECK(ptr[zz][yy][xx] == 1);
+          BOOST_REQUIRE(ptr[zz][yy][xx] == 1);
         }
       }
     }
@@ -143,8 +141,7 @@ BOOST_FIXTURE_TEST_SUITE(indexing, im)
     perr = DMDAVecRestoreArray(*image.dmda(), *image.global_vec(), &ptr);CHKERRXX(perr);
     }//image setting enclosure
 
-    //image.update_local_from_global();
-    Vec_unique grad = fd::gradient_to_global_unique(*image.dmda(), *image.local_vec(), 2);
+    Vec_unique grad = image.gradient(2);
 
     {//gradient checking enclosure
     floating ***ptr;
@@ -157,7 +154,7 @@ BOOST_FIXTURE_TEST_SUITE(indexing, im)
       {
         for(integer zz=zlo; zz<zhi; zz++)
         {
-          BOOST_CHECK(ptr[zz][yy][xx] == 3);
+          BOOST_REQUIRE(ptr[zz][yy][xx] == 3);
         }
       }
     }

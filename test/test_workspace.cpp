@@ -54,7 +54,7 @@ BOOST_AUTO_TEST_CASE(test_scatter_to_stacked)
     std::iota(idxn.begin(), idxn.end(), lo);
     floatvector data(localsize, 0);
     perr = VecGetValues(*workspace.m_stacktmp, localsize, idxn.data(), data.data());
-    BOOST_CHECK(std::all_of(
+    BOOST_REQUIRE(std::all_of(
         data.begin(), data.end(), [idx](floating x) -> bool { return x == floating(idx); }));
     offset += vecsize;
   }

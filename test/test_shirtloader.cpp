@@ -39,13 +39,15 @@ BOOST_FIXTURE_TEST_SUITE(shirtloader, im)
     VecGetOwnershipRange(*natvec, &vec_lo, &vec_hi);
     local_len = vec_hi - vec_lo;
 
+    integer global_len = img->size();
     floatvector cmp(local_len);
     std::iota(cmp.begin(), cmp.end(), vec_lo);
+    std::for_each(cmp.begin(), cmp.end(), [global_len](floating &x) -> void {x /= global_len-1;});
     
     floating *ptr;
     VecGetArray(*natvec, &ptr);
 
-    BOOST_CHECK(std::equal(cmp.cbegin(), cmp.cend(), ptr)); 
+    BOOST_REQUIRE(std::equal(cmp.cbegin(), cmp.cend(), ptr)); 
   }
 
 BOOST_AUTO_TEST_SUITE_END()
