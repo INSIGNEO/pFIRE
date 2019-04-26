@@ -26,7 +26,10 @@ def load_pfire_map(imagepath):
     imgdata = []
     with h5py.File(filename, 'r') as fh:
         for dxn in ['x', 'y', 'z']:
-            imgdata.append(np.asarray(fh["{}/{}".format(group,dxn)]))
+            try:
+                imgdata.append(np.asarray(fh["{}/{}".format(group, dxn)]))
+            except KeyError:
+                break
 
     return np.stack(imgdata)
 
@@ -76,8 +79,7 @@ def calculate_mutual_information(data1, data2, resolution=50,
 
     mutual_information = entropy1 + entropy2 - entropy1_2
 
-    if (return_hist):
+    if return_hist:
         return (mutual_information, entropy1, entropy2, entropy1_2, prob1_2)
     else:
         return (mutual_information, entropy1, entropy2, entropy1_2)
-
