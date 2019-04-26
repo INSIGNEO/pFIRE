@@ -138,14 +138,14 @@ void mainflow(std::shared_ptr<ConfigurationBase> config)
   std::string outfile = config->grab<std::string>("registered");
   std::string h5group = config->grab<std::string>("registered_h5_path");
   std::string output_path = outfile + ":" + h5group;
-  PetscPrintf(PETSC_COMM_WORLD, "Saving registered image to %s\n", output_path.c_str());
   BaseWriter_unique wtr = BaseWriter::get_writer_for_filename(output_path, fixed->comm());
-  wtr->write_image(*reg.registered());
+  output_path = wtr->write_image(*reg.registered());
+  PetscPrintf(PETSC_COMM_WORLD, "Saving registered image to %s\n", output_path.c_str());
 
   outfile = config->grab<std::string>("map");
   h5group = config->grab<std::string>("map_h5_path");
   output_path = outfile + ":" + h5group;
-  PetscPrintf(PETSC_COMM_WORLD, "Saving map to %s\n", output_path.c_str());
   wtr = BaseWriter::get_writer_for_filename(output_path, fixed->comm());
-  wtr->write_map(*reg.m_p_map);
+  output_path = wtr->write_map(*reg.m_p_map);
+  PetscPrintf(PETSC_COMM_WORLD, "Saving map to %s\n", output_path.c_str());
 }

@@ -27,7 +27,7 @@ OIIOWriter::OIIOWriter(std::string filename, const MPI_Comm& comm)
 {
 }
 
-void OIIOWriter::write_image(const Image& image)
+std::string OIIOWriter::write_image(const Image& image)
 {
   Vec_unique imgvec = image.scatter_to_zero();
 
@@ -58,9 +58,10 @@ void OIIOWriter::write_image(const Image& image)
 #endif //OIIO_VERSION < 10903
   }
   MPI_Barrier(_comm);
+  return filename;
 }
 
-void OIIOWriter::write_map(const Map& map __attribute__((unused)))
+std::string OIIOWriter::write_map(const Map& map __attribute__((unused)))
 {
   throw std::runtime_error("Cannot save map using OIIO.");
 }

@@ -3,6 +3,33 @@
 import numpy as np
 import h5py
 
+import skimage.io as skio
+
+import flannel.io as fio
+
+def load_image(imagepath):
+    image = None
+    try:
+        image = fio.load_image(imagepath)
+    except ValueError as err:
+        pass
+    try:
+        image = load_pfire_image(imagepath)
+    except ValueError as err:
+        pass
+    try:
+        image = skio.imread(imagepath, as_gray=True)
+    except Exception as err:
+        print(type(err).__name__)
+
+    if image is None:
+        raise RuntimeError("Failed to load image - {}".format(imagepath))
+
+    image = image / image.max()
+
+    return image
+
+
 def load_pfire_image(imagepath):
     """Load pFIRE image
     """

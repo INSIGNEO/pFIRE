@@ -39,8 +39,8 @@ public:
   BaseWriter(const std::string& filespec, const MPI_Comm& comm = PETSC_COMM_WORLD);
   virtual ~BaseWriter() = default;
 
-  virtual void write_image(const Image& image) = 0;
-  virtual void write_map(const Map& map) = 0;
+  virtual std::string write_image(const Image& image) = 0;
+  virtual std::string write_map(const Map& map) = 0;
 
   template <typename WriterClass>
   static BaseWriter_unique create_writer(const std::string &path, MPI_Comm comm)

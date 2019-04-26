@@ -50,7 +50,7 @@ XDMFWriter::~XDMFWriter()
 {
 }
 
-void XDMFWriter::write_image(const Image &image)
+std::string XDMFWriter::write_image(const Image &image)
 {
   // First need to write the hdf data
   HDFWriter::write_image(image);
@@ -121,9 +121,12 @@ void XDMFWriter::write_image(const Image &image)
     pt::xml_writer_settings<std::string> settings(' ', 4);
     pt::write_xml(xdmf_filename, xdmf_tree, std::locale(), settings);
   }
+
+  std::string filepath = xdmf_filename + ":" + h5_groupname;
+  return filepath;
 }
 
-void XDMFWriter::write_map(const Map &map)
+std::string XDMFWriter::write_map(const Map &map)
 {
   HDFWriter::write_map(map);
 
@@ -224,6 +227,9 @@ void XDMFWriter::write_map(const Map &map)
     pt::xml_writer_settings<std::string> settings(' ', 4);
     pt::write_xml(xdmf_filename, xdmf_tree, std::locale(), settings);
   }
+
+  std::string filepath = xdmf_filename + ":" + h5_groupname;
+  return filepath;
 }
 
 std::string XDMFWriter::h5name_from_xdmfname(const std::string &filename)

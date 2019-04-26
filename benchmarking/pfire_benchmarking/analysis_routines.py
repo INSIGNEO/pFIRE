@@ -9,7 +9,7 @@ import scipy.stats as sps
 import flannel.io as fio
 
 from .image_routines import (calculate_mutual_information,
-                             load_pfire_image,
+                             load_image,
                              load_pfire_map)
 
 def compare_image_results(fixed_path, moved_path, shirt_registered_path,
@@ -17,11 +17,10 @@ def compare_image_results(fixed_path, moved_path, shirt_registered_path,
     """Compare ShIRT and pFIRE registered images
     """
 
-    fixed_data = fio.load_image(fixed_path)/255
-    moved_data = fio.load_image(moved_path)/255
-    shirt_data = fio.load_image(shirt_registered_path)/255
-    pfire_data = load_pfire_image(pfire_registered_path)
-    pfire_data /= pfire_data.max()
+    fixed_data = load_image(fixed_path)
+    moved_data = load_image(moved_path)
+    shirt_data = load_image(shirt_registered_path)
+    pfire_data = load_image(pfire_registered_path)
 
     mi_start = calculate_mutual_information(fixed_data, moved_data,
                                             return_hist=True)

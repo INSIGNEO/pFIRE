@@ -89,7 +89,7 @@ void HDFWriter::write_1d_dataset_rank0(hsize_t nval, const std::string& groupnam
   H5Sclose(fspace_h);
 }
 
-void HDFWriter::write_image(const Image& image)
+std::string HDFWriter::write_image(const Image& image)
 {
   // Sanity check communicators
   MPI_Comm comm = image.comm();
@@ -113,9 +113,12 @@ void HDFWriter::write_image(const Image& image)
 
   write_3d_dataset_parallel(image.ndim(), imgsizehsizet, image.mpi_get_chunksize<hsize_t>(),
       image.mpi_get_offset<hsize_t>(), groupname, *image.get_raw_data_row_major());
+
+  std::string filepath = h5_filename + ":" + h5_groupname;
+  return filepath;
 }
 
-void HDFWriter::write_map(const Map& map)
+std::string HDFWriter::write_map(const Map& map)
 {
   // Sanity check communicators
   MPI_Comm comm = map.comm();
@@ -171,6 +174,9 @@ void HDFWriter::write_map(const Map& map)
     write_1d_dataset_rank0(map.shape()[idx], dsetname, map.node_locs()[idx].data());
   }
   H5Gclose(mgroup_h);
+
+  std::string filepath = h5_filename + ":" + h5_groupname;
+  return filepath;
 }
 
 void HDFWriter::open_or_create_h5()

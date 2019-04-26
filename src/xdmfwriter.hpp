@@ -34,9 +34,8 @@ public:
   XDMFWriter(std::string filespec, const MPI_Comm& comm);
   ~XDMFWriter();
 
-  void write_image(const Image& image);
-
-  void write_map(const Map& map);
+  std::string write_image(const Image& image);
+  std::string write_map(const Map& map);
 
   static const std::string writer_name;
   static const std::vector<std::string> extensions;

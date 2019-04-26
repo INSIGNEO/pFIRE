@@ -40,7 +40,8 @@ def run_pfire(config_file, comm_size=1):
     """
     Run pFIRE using provided config file
     """
-    print ("Running pFIRE on {}".format(config_file))
+    config = ConfigObj(config_file)
+    print("Running pFIRE on {}".format(config_file))
     pfire_args = ['pfire', config_file]
 
     logfile_name = "{}_pfire.log".format(os.path.splitext(config_file)[0])
@@ -56,21 +57,23 @@ def run_pfire(config_file, comm_size=1):
     with open(logfile_name, 'r') as logfile:
         for line in logfile:
             if line.startswith("Saving registered image to "):
-                reg_path = line.replace("Saving registered image to ", "")
+                reg_path = line.replace("Saving registered image to ", "").strip()
             if line.startswith("Saving map to "):
-                map_path = line.replace("Saving map to ", "")
+                map_path = line.replace("Saving map to ", "").strip()
     if not reg_path:
         raise RuntimeError("Failed to extract registered image path from log")
     if not map_path:
         raise RuntimeError("Failed to extract map path from log")
 
-    return ResultObject(reg_path, map_path, logfile_name)
+    return ResultObject(reg_path, map_path, logfile_name, config['fixed'],
+                        config['moved'])
+
 
 def run_shirt(config_file):
     """
     Run ShIRT using a pfire config file for input
     """
-    print ("Running ShIRT on {}".format(config_file))
+    print("Running ShIRT on {}".format(config_file))
     config = build_shirt_config(config_file)
 
     map_path = 'map.map'
@@ -86,7 +89,7 @@ def run_shirt(config_file):
     shirt_args = ['ShIRT', 'Register', 'verbose',
                   'Fixed', config['fixed'].replace('.image', ''),
                   'Moved', config['moved'].replace('.image', ''),
-                  'Mask', config['mask'].replace('.mask',''),
+                  'Mask', config['mask'].replace('.mask', ''),
                   'NodeSpacing', config['nodespacing'],
                   'Registered', reg_path.replace('.image', ''),
                   'Map', map_path.replace('.map', '')]
@@ -102,5 +105,3 @@ def run_shirt(config_file):
 
     return ResultObject(reg_path, map_path, logfile_name, config['fixed'],
                         config['moved'])
-
-
