@@ -86,7 +86,8 @@ intvector ShIRTLoader::read_and_validate_image_header(const MPI_File &fh)
     std::vector<shirt_header_dtype> headerdata(image_header_length, 0);
 
     MPI_Status read_status;
-    mpi_err = MPI_File_read(fh, headerdata.data(), image_header_bytes, MPI_BYTE, &read_status);
+    MPI_File_seek(fh, 0, MPI_SEEK_SET);
+    MPI_File_read(fh, headerdata.data(), image_header_bytes, MPI_BYTE, &read_status);
     int read_count(0);
     MPI_Get_count(&read_status, MPI_BYTE, &read_count);
 
@@ -125,7 +126,8 @@ intvector ShIRTLoader::read_and_validate_mask_header(const MPI_File &fh)
     std::vector<shirt_header_dtype> headerdata(mask_header_length, 0);
 
     MPI_Status read_status;
-    mpi_err = MPI_File_read(fh, headerdata.data(), mask_header_bytes, MPI_BYTE, &read_status);
+    MPI_File_seek(fh, 0, MPI_SEEK_SET);
+    MPI_File_read(fh, headerdata.data(), mask_header_bytes, MPI_BYTE, &read_status);
     int read_count(0);
     MPI_Get_count(&read_status, MPI_BYTE, &read_count);
     if (mpi_err == MPI_SUCCESS && read_count == mask_header_bytes)
