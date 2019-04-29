@@ -118,7 +118,7 @@ void IniConfig::read_config_file(const std::string &config_path)
     }
     else if (std::find(bool_options.cbegin(), bool_options.cend(), key) != bool_options.cend())
     {
-      config[key] = it.second.data();
+      config[key] = boost::to_lower_copy(it.second.data());
     }
     else
     {
