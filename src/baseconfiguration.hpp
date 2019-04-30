@@ -80,10 +80,9 @@ protected:
   std::vector<std::string> arguments;
   std::string invocation_name;
 
-  static const config_map default_config;
   static const std::vector<std::string> required_options;
-  static const std::vector<std::string> arg_options;
-  static const std::vector<std::string> bool_options;
+  static const config_map arg_options;
+  static const config_map bool_options;
 };
 
 #endif // CONFIGURATION_HPP

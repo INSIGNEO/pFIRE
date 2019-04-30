@@ -25,28 +25,24 @@ const std::string ConfigurationBase::k_extension_token = "%ext%";
 const std::string ConfigurationBase::k_outer_token = "%s%";
 const std::string ConfigurationBase::k_inner_token = "%i%";
 
-const config_map ConfigurationBase::default_config = {{"verbose", "false"},
+const config_map ConfigurationBase::arg_options = {
     {"registered", "registered.xdmf"}, {"map", "map.xdmf"}, {"lambda", "auto"}, {"mask", ""},
     {"registered_h5_path", "/registered"}, {"map_h5_path", "/map"}, {"lambda_mult", "1.0"},
-    {"with_memory", "true"}, {"save_intermediate_frames", "false"},
     {"intermediate_template", "%name%-intermediate-%s%-%i%%ext%"},
     {"intermediate_map_template", "%name%-intermediate-map-%s%-%i%%ext%"},
     {"intermediate_directory", "intermediates"}, {"max_iterations", "100"}};
 
+const config_map ConfigurationBase::bool_options = {
+  {"verbose", "false"}, {"with_memory", "true"}, {"save_intermediate_frames", "false"}};
+
 const std::vector<std::string> ConfigurationBase::required_options = {
     "fixed", "moved", "nodespacing"};
 
-const std::vector<std::string> ConfigurationBase::arg_options = {"fixed", "moved", "mask",
-    "nodespacing", "registered", "map", "lambda", "lambda_mult", "intermediate_template",
-    "intermediate_directory", "max_iterations", "registered_h5_path", "map_h5_path"};
-
-const std::vector<std::string> ConfigurationBase::bool_options = {
-    "verbose", "with_memory", "save_intermediate_frames"};
-
 ConfigurationBase::ConfigurationBase(const int &argc, char const *const *argv)
-  : config(default_config), arguments(argv + 1, argv + argc),
-    invocation_name(get_invocation_name(argv[0]))
+  : arguments(argv + 1, argv + argc), invocation_name(get_invocation_name(argv[0]))
 {
+  config.insert(arg_options.cbegin(), arg_options.cend());
+  config.insert(bool_options.cbegin(), bool_options.cend());
 }
 
 void ConfigurationBase::validate_config()
@@ -59,7 +55,7 @@ void ConfigurationBase::validate_config()
       missing.push_back(req_it);
     }
   }
-  if (missing.size() > 0)
+  if (missing.empty())
   {
     std::ostringstream errmsg;
     errmsg << "Missing required argument(s) \"";

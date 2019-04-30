@@ -76,7 +76,7 @@ void IniConfig::parse_arguments()
     std::exit(0);
   }
 
-  if (vm.count("help") || !vm.count("config-file"))
+  if (vm.count("help") > 0 || vm.count("config-file") != 1 )
   {
     // TODO improve to iterate over options
     std::cout << usage() << std::endl << cmdline_visible << std::endl;
@@ -112,11 +112,11 @@ void IniConfig::read_config_file(const std::string &config_path)
   for (const auto &it : config_data)
   {
     std::string key = ba::to_lower_copy(it.first);
-    if (std::find(arg_options.cbegin(), arg_options.cend(), key) != arg_options.cend())
+    if (arg_options.find(key) != arg_options.cend())
     {
       config[key] = it.second.data();
     }
-    else if (std::find(bool_options.cbegin(), bool_options.cend(), key) != bool_options.cend())
+    else if (bool_options.find(key) != bool_options.cend())
     {
       config[key] = boost::to_lower_copy(it.second.data());
     }
@@ -126,7 +126,7 @@ void IniConfig::read_config_file(const std::string &config_path)
     }
   }
 
-  if (unknowns.size() > 0)
+  if (!unknowns.empty())
   {
     std::ostringstream unkss;
     std::copy(unknowns.begin(), unknowns.end(), std::ostream_iterator<std::string>(unkss, ", "));

@@ -81,7 +81,7 @@ void ShirtConfig::parse_arguments()
     }
 
     // now check option taking arguments
-    if (std::find(arg_options.cbegin(), arg_options.cend(), arg_lower) != arg_options.cend())
+    if (arg_options.find(arg_lower) != arg_options.cend())
     {
       // try to get associated option
       if (args_it == arguments.cend())
@@ -95,8 +95,7 @@ void ShirtConfig::parse_arguments()
       // finally insert arg-val pair into the argument map
       config[arg_lower] = optval;
     }
-    else if (
-        std::find(bool_options.cbegin(), bool_options.cend(), arg_lower) != bool_options.cend())
+    else if (bool_options.find(arg_lower) != bool_options.cend())
     {
       // insert arg-val pair into argument map
       config[arg_lower] = "true";
