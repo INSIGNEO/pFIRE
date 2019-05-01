@@ -138,9 +138,9 @@ void Elastic::innerloop(integer outer_count)
     // check convergence and break if below threshold
     floating posmax, negmax;
     PetscErrorCode perr = VecMax(*m_workspace->m_delta, nullptr, &posmax);
-    CHKERRABORT(m_comm, perr);
+    CHKERRXX(perr);
     perr = VecMin(*m_workspace->m_delta, nullptr, &negmax);
-    CHKERRABORT(m_comm, perr);
+    CHKERRXX(perr);
     floating amax = std::max(std::fabs(posmax), std::fabs(negmax));
     PetscPrintf(m_comm, "Maximum displacement: %.2f\n", amax);
     floating aavg;
@@ -169,7 +169,7 @@ void Elastic::innerstep(integer inum, bool recalculate_lambda)
   // TODO: can we reuse here?
   PetscErrorCode perr = MatTransposeMatMult(*m_workspace->m_tmat, *m_workspace->m_tmat,
       MAT_INITIAL_MATRIX, PETSC_DEFAULT, normmat.get());
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   debug_creation(*normmat, std::string("Mat_normal") + std::to_string(inum));
   // precondition tmat2
   block_precondition(*normmat, m_p_map->size(), m_p_map->m_ndim);
@@ -189,15 +189,15 @@ void Elastic::innerstep(integer inum, bool recalculate_lambda)
   floating total_mult = lapl_mult * lambda_mult * m_lambda;
   // calculate tmat2 + lambda*lapl2
   perr = MatAXPY(*normmat, total_mult, *m_p_map->laplacian(), DIFFERENT_NONZERO_PATTERN);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   // calculate rvec, to do this need to reuse stacked vector for [f-m f-m f-m f-m]
   perr = VecWAXPY(
       *m_workspace->m_globaltmps[0], -1.0, *m_p_registered->global_vec(), *m_fixed.global_vec());
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   m_workspace->duplicate_single_grad_to_stacked(0);
   perr = MatMultTranspose(*m_workspace->m_tmat, *m_workspace->m_stacktmp, *m_workspace->m_rhs);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   // apply memory term if needed
   if (configuration.grab<bool>("with_memory"))
@@ -205,15 +205,15 @@ void Elastic::innerstep(integer inum, bool recalculate_lambda)
     // build -lambda*a
     Vec_unique disp = create_unique_vec();
     perr = VecDuplicate(m_p_map->displacements(), disp.get());
-    CHKERRABORT(m_comm, perr);
+    CHKERRXX(perr);
     perr = VecCopy(m_p_map->displacements(), *disp);
-    CHKERRABORT(m_comm, perr);
+    CHKERRXX(perr);
     perr = VecScale(*disp, -total_mult);
-    CHKERRABORT(m_comm, perr);
+    CHKERRXX(perr);
 
     // calculate vecdot(lapl_2, -lambda*a) and add to rhs in one operation
     perr = MatMultAdd(*m_p_map->laplacian(), *disp, *m_workspace->m_rhs, *m_workspace->m_rhs);
-    CHKERRABORT(m_comm, perr);
+    CHKERRXX(perr);
   }
 
   // Force free tmat as no longer needed
@@ -222,17 +222,17 @@ void Elastic::innerstep(integer inum, bool recalculate_lambda)
   // solve for delta a
   KSP_unique m_ksp = create_unique_ksp();
   perr = KSPCreate(m_comm, m_ksp.get());
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   perr = KSPSetOperators(*m_ksp, *normmat, *normmat);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   perr = KSPSetUp(*m_ksp);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   perr = KSPSetFromOptions(*m_ksp);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   perr = KSPSetUp(*m_ksp);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   perr = KSPSolve(*m_ksp, *m_workspace->m_rhs, *m_workspace->m_delta);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   // update map
   m_p_map->update(*m_workspace->m_delta);
   // warp image
@@ -260,19 +260,19 @@ void Elastic::calculate_tmat(integer iternum __attribute__((unused)))
   // Calculate average intensity 0.5(f+m)
   // Constant offset needed later, does not affect gradients
   PetscErrorCode perr = VecSet(*m_workspace->m_globaltmps[m_fixed.ndim()], -1.0);
-  CHKERRABORT(PETSC_COMM_WORLD, perr);
+  CHKERRXX(perr);
   // NB Z = aX + bY + cZ has call signature VecAXPBYPCZ(Z, a, b, c, X, Y) because reasons....
   perr = VecAXPBYPCZ(*m_workspace->m_globaltmps[m_fixed.ndim()], 0.5, 0.5, 1,
       *m_fixed.global_vec(), *m_p_registered->global_vec());
-  CHKERRABORT(PETSC_COMM_WORLD, perr);
+  CHKERRXX(perr);
 
   // scatter this to local for later
   perr = DMGlobalToLocalBegin(*m_fixed.dmda(), *m_workspace->m_globaltmps[m_fixed.ndim()],
       INSERT_VALUES, *m_workspace->m_localtmp);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   perr = DMGlobalToLocalEnd(*m_fixed.dmda(), *m_workspace->m_globaltmps[m_fixed.ndim()],
       INSERT_VALUES, *m_workspace->m_localtmp);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   // find average gradients
   for (uinteger idim = 0; idim < m_fixed.ndim(); idim++)
@@ -284,7 +284,7 @@ void Elastic::calculate_tmat(integer iternum __attribute__((unused)))
 
   // Negate average intensity to get 1 - 0.5(f+m) as needed by algorithm
   perr = VecScale(*m_workspace->m_globaltmps[m_fixed.ndim()], -1.0);
-  CHKERRABORT(PETSC_COMM_WORLD, perr);
+  CHKERRXX(perr);
 
   // scatter grads into stacked vector
   m_workspace->scatter_grads_to_stacked();
@@ -292,12 +292,12 @@ void Elastic::calculate_tmat(integer iternum __attribute__((unused)))
   // 3. copy basis into p_tmat
   m_workspace->m_tmat = create_unique_mat();
   perr = MatDuplicate(*m_p_map->basis(), MAT_COPY_VALUES, m_workspace->m_tmat.get());
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   debug_creation(*m_workspace->m_tmat, std::string("Mat_tmat_") + std::to_string(iternum));
 
   // 4. left diagonal multiply p_tmat with stacked vector
   perr = MatDiagonalScale(*m_workspace->m_tmat, *m_workspace->m_stacktmp, nullptr);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 }
 
 void Elastic::save_debug_map(integer outer_count, integer inner_count)
@@ -438,19 +438,19 @@ floating Elastic::approximate_optimum_lambda(Mat& mat_a, Mat& mat_b, floating la
     if (recalc_first)
     {
       perr = MatAXPY(*mat_c, lambda_mult * x_lo, mat_b, DIFFERENT_NONZERO_PATTERN);
-      CHKERRABORT(m_comm, perr);
+      CHKERRXX(perr);
       y_lo = get_condnum_by_poweriter(*mat_c, 0.01, 100);
     }
     recalc_first = true;
 
     // Calculate at initial guess
     perr = MatAXPY(*mat_c, lambda_mult * (x_mid - x_lo), mat_b, DIFFERENT_NONZERO_PATTERN);
-    CHKERRABORT(m_comm, perr);
+    CHKERRXX(perr);
     y_mid = get_condnum_by_poweriter(*mat_c, 0.01, 100);
 
     // calculate at higher value
     perr = MatAXPY(*mat_c, lambda_mult * (x_hi - x_mid), mat_b, DIFFERENT_NONZERO_PATTERN);
-    CHKERRABORT(m_comm, perr);
+    CHKERRXX(perr);
     y_hi = get_condnum_by_poweriter(*mat_c, 0.01, 100);
 
     PetscPrintf(

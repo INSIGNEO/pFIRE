@@ -76,7 +76,7 @@ void pfire_setup(const std::vector<std::string>& petsc_args, bool silent)
   char** cstr_ptr = cstrings.data();
 
   PetscErrorCode perr = PetscInitialize(&n_cstrings, &cstr_ptr, nullptr, nullptr);
-  CHKERRABORT(PETSC_COMM_WORLD, perr);
+  CHKERRXX(perr);
 
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);

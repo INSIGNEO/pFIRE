@@ -23,32 +23,32 @@ Vec_unique fd::gradient_to_global_unique(const DM &dmda, const Vec &localvec, in
   //  (should have matching global, local and comm size)
   Vec dm_local_vec;
   PetscErrorCode perr = DMGetLocalVector(dmda, &dm_local_vec);
-  CHKERRABORT(PETSC_COMM_WORLD, perr);
+  CHKERRXX(perr);
   if (!vecs_equivalent(dm_local_vec, localvec))
   {
     throw InternalError("provided vector invalid for given dmda object", __FILE__, __LINE__);
   }
   perr = DMRestoreLocalVector(dmda, &dm_local_vec);
-  CHKERRABORT(PETSC_COMM_WORLD, perr);
+  CHKERRXX(perr);
 
   // New global vec must be a dmda global
   Vec_unique grad = create_unique_vec();
   perr = DMCreateGlobalVector(dmda, grad.get());
-  CHKERRABORT(PETSC_COMM_WORLD, perr);
+  CHKERRXX(perr);
 
   // Access local of this to have ghosts, global of grad to avoid later copy
   // Recall grad and image share a DMDA
   floating ***img_array,
       ***grad_array; // acceptable to use raw ptrs here as memory handled by PETSc
   perr = DMDAVecGetArray(dmda, localvec, &img_array);
-  CHKERRABORT(PETSC_COMM_WORLD, perr);
+  CHKERRXX(perr);
   perr = DMDAVecGetArray(dmda, *(grad.get()), &grad_array);
-  CHKERRABORT(PETSC_COMM_WORLD, perr);
+  CHKERRXX(perr);
 
   integer i_lo, i_hi, j_lo, j_hi, k_lo, k_hi;
   // This returns corners + widths so add lo to get hi
   perr = DMDAGetCorners(dmda, &i_lo, &j_lo, &k_lo, &i_hi, &j_hi, &k_hi);
-  CHKERRABORT(PETSC_COMM_WORLD, perr);
+  CHKERRXX(perr);
   i_hi += i_lo;
   j_hi += j_lo;
   k_hi += k_lo;
@@ -70,9 +70,9 @@ Vec_unique fd::gradient_to_global_unique(const DM &dmda, const Vec &localvec, in
   }
   // Release pointers and allow petsc to cleanup
   perr = DMDAVecRestoreArray(dmda, localvec, &img_array);
-  CHKERRABORT(PETSC_COMM_WORLD, perr);
+  CHKERRXX(perr);
   perr = DMDAVecRestoreArray(dmda, *(grad.get()), &grad_array);
-  CHKERRABORT(PETSC_COMM_WORLD, perr);
+  CHKERRXX(perr);
 
   return grad;
 }
@@ -83,27 +83,27 @@ void fd::gradient_existing(const DM &dmda, const Vec &srcvec, Vec &tgtvec, integ
   //  (should have matching global, local and comm size)
   Vec dm_local_vec;
   PetscErrorCode perr = DMGetLocalVector(dmda, &dm_local_vec);
-  CHKERRABORT(PETSC_COMM_WORLD, perr);
+  CHKERRXX(perr);
   if (!vecs_equivalent(dm_local_vec, srcvec))
   {
     throw InternalError("provided srcvec invalid for given dmda object", __FILE__, __LINE__);
   }
   perr = DMRestoreLocalVector(dmda, &dm_local_vec);
-  CHKERRABORT(PETSC_COMM_WORLD, perr);
+  CHKERRXX(perr);
 
   // Access local of this to have ghosts, global of grad to avoid later copy
   // Recall grad and image share a DMDA
   floating ***img_array,
       ***grad_array; // acceptable to use raw ptrs here as memory handled by PETSc
   perr = DMDAVecGetArray(dmda, srcvec, &img_array);
-  CHKERRABORT(PETSC_COMM_WORLD, perr);
+  CHKERRXX(perr);
   perr = DMDAVecGetArray(dmda, tgtvec, &grad_array);
-  CHKERRABORT(PETSC_COMM_WORLD, perr);
+  CHKERRXX(perr);
 
   integer i_lo, i_hi, j_lo, j_hi, k_lo, k_hi;
   // This returns corners + widths so add lo to get hi
   perr = DMDAGetCorners(dmda, &i_lo, &j_lo, &k_lo, &i_hi, &j_hi, &k_hi);
-  CHKERRABORT(PETSC_COMM_WORLD, perr);
+  CHKERRXX(perr);
   i_hi += i_lo;
   j_hi += j_lo;
   k_hi += k_lo;
@@ -125,7 +125,7 @@ void fd::gradient_existing(const DM &dmda, const Vec &srcvec, Vec &tgtvec, integ
   }
   // Release pointers and allow petsc to cleanup
   perr = DMDAVecRestoreArray(dmda, srcvec, &img_array);
-  CHKERRABORT(PETSC_COMM_WORLD, perr);
+  CHKERRXX(perr);
   perr = DMDAVecRestoreArray(dmda, tgtvec, &grad_array);
-  CHKERRABORT(PETSC_COMM_WORLD, perr);
+  CHKERRXX(perr);
 }

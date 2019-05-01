@@ -47,11 +47,11 @@ std::string OIIOWriter::write_image(const Image& image)
 
     floating* pixdata;
     PetscErrorCode perr = VecGetArray(*imgvec, &pixdata);
-    CHKERRABORT(_comm, perr);
+    CHKERRXX(perr);
     img->write_image(OIIO::TypeDesc::DOUBLE, pixdata);
     img->close();
     perr = VecRestoreArray(*imgvec, &pixdata);
-    CHKERRABORT(_comm, perr);
+    CHKERRXX(perr);
 
     //Manual ptr management if needed
 #if OIIO_VERSION < 10903

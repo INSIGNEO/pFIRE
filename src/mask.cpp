@@ -74,15 +74,15 @@ Mask::load_file(const std::string& path, const ImageBase* existing, MPI_Comm com
   intvector shape(3, 0), offset(3, 0);
   PetscErrorCode perr = DMDAGetCorners(
       *new_mask->dmda(), &offset[0], &offset[1], &offset[2], &shape[0], &shape[1], &shape[2]);
-  CHKERRABORT(comm, perr);
+  CHKERRXX(perr);
   // std::transform(shape.cbegin(), shape.cend(), offset.cbegin(), shape.begin(), std::minus<>());
 
   floating*** vecptr(nullptr);
   perr = DMDAVecGetArray(*new_mask->dmda(), *new_mask->global_vec(), &vecptr);
-  CHKERRABORT(comm, perr);
+  CHKERRXX(perr);
   loader->copy_scaled_chunk(vecptr, shape, offset);
   perr = DMDAVecRestoreArray(*new_mask->dmda(), *new_mask->global_vec(), &vecptr);
-  CHKERRABORT(comm, perr);
+  CHKERRXX(perr);
 
   new_mask->binarize();
 
@@ -93,7 +93,7 @@ integer Mask::npoints() const
 {
   floating total_points;
   PetscErrorCode perr = VecSum(*m_globalvec, &total_points);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   return static_cast<integer>(total_points);
 }
