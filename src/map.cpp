@@ -53,7 +53,7 @@ void Map::apply_mask_to_basis()
   // First stack basis to depth of map
   Vec_unique stacked_basis = create_unique_vec();
   PetscErrorCode perr = MatCreateVecs(*m_basis, nullptr, stacked_basis.get());
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   repeat_stack(*m_mask.global_vec(), *stacked_basis);
 
@@ -64,7 +64,7 @@ void Map::apply_mask_to_basis()
   // Mask applies directly to image side of basis
 
   perr = MatDiagonalScale(*m_basis, *stacked_basis, *map_side);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 }
 
 Vec_unique Map::calculate_map_mask(Vec& stacked_mask )
@@ -72,16 +72,16 @@ Vec_unique Map::calculate_map_mask(Vec& stacked_mask )
   // Create map mask from image mask and basis
   Vec_unique map_mask = create_unique_vec();
   PetscErrorCode perr = MatCreateVecs(*m_basis, map_mask.get(), nullptr);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   perr = MatMultTranspose(*m_basis, stacked_mask, *map_mask);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   
   // Dilate to include surrounding nodes
   // First need 1 copy in global layout
   Vec_unique map_mask_global = create_unique_vec();
   perr = DMCreateGlobalVector(*map_dmda, map_mask_global.get());
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   copy_nth_from_stack_nat_to_petsc(*map_mask_global, *map_mask, *map_dmda, 0);
 
   // Now dilate
@@ -97,7 +97,7 @@ Vec_unique Map::calculate_map_mask(Vec& stacked_mask )
 void Map::update(const Vec& delta_vec)
 {
   PetscErrorCode perr = VecAXPY(*m_displacements, 1, delta_vec);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 }
 
 std::unique_ptr<Map> Map::interpolate(const floatvector& new_spacing)
@@ -117,7 +117,7 @@ std::unique_ptr<Map> Map::interpolate(const floatvector& new_spacing)
       m_comm, map_shape, new_map->map_shape, scalings, offsets, m_ndim, m_ndim + 1);
 
   PetscErrorCode perr = MatMult(*interp, *m_displacements, *new_map->m_displacements);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   return new_map;
 }
@@ -142,10 +142,10 @@ void Map::initialize_dmda() const
       dof_per_node, stencil_width,              // dof per node, stencil size
       nullptr, nullptr, nullptr,                // partition sizes nullptr -> petsc chooses
       map_dmda.get());
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   perr = DMSetUp(*(map_dmda));
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 }
 
 void Map::alloc_displacements() { MatCreateVecs(*m_basis, m_displacements.get(), nullptr); }
@@ -154,7 +154,7 @@ intvector Map::calculate_map_shape(intvector const& image_shape, floatvector con
 {
   if (image_shape.size() != nodespacing.size())
   {
-    throw std::runtime_error("Image and nodespacing dimensions must match");
+    throw InternalError("Image and nodespacing dimensions must match", __FILE__, __LINE__);
   }
 
   // want always to have odd number of nodes so find num nodes for each half,
@@ -191,7 +191,7 @@ std::unique_ptr<Image> Map::warp(const Image& image, WorkSpace& wksp)
 
   // interpolate map to image nodes with basis
   PetscErrorCode perr = MatMult(*m_basis, *m_displacements, *wksp.m_stacktmp);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   wksp.scatter_stacked_to_grads_noreorder();
 
   // build warp matrix
@@ -206,27 +206,27 @@ std::unique_ptr<Image> Map::warp(const Image& image, WorkSpace& wksp)
   // first need image in natural ordering
   Vec_unique src_nat = create_unique_vec();
   perr = DMDACreateNaturalVector(*image.dmda(), src_nat.get());
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   debug_creation(*src_nat, "Vec_source_natural");
   perr = DMDAGlobalToNaturalBegin(*image.dmda(), *image.global_vec(), INSERT_VALUES, *src_nat);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   perr = DMDAGlobalToNaturalEnd(*image.dmda(), *image.global_vec(), INSERT_VALUES, *src_nat);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   // do mult
   Vec_unique tgt_nat = create_unique_vec();
   perr = DMDACreateNaturalVector(*image.dmda(), tgt_nat.get());
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   debug_creation(*tgt_nat, "Vec_target_natural");
   perr = MatMult(*warp, *src_nat, *tgt_nat);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   // create new image and insert data in petsc ordering
   std::unique_ptr<Image> new_image = Image::duplicate(image);
   perr =
       DMDANaturalToGlobalBegin(*image.dmda(), *tgt_nat, INSERT_VALUES, *new_image->global_vec());
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   perr = DMDANaturalToGlobalEnd(*image.dmda(), *tgt_nat, INSERT_VALUES, *new_image->global_vec());
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   return new_image;
 }
 
@@ -238,7 +238,7 @@ std::pair<intvector, intvector> Map::get_dmda_local_extents() const
   intvector widths(3, 0);
   PetscErrorCode perr =
       DMDAGetCorners(*map_dmda, &locs[0], &locs[1], &locs[2], &widths[0], &widths[1], &widths[2]);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   return std::make_pair(locs, widths);
 }
@@ -253,7 +253,7 @@ Vec_unique Map::get_raw_data_row_major(uinteger dim) const
   intvector widths(3, 0);
   PetscErrorCode perr =
       DMDAGetCorners(*map_dmda, &locs[0], &locs[1], &locs[2], &widths[0], &widths[1], &widths[2]);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   integer startelem, localsize;
   perr = VecGetOwnershipRange(*tmp_vec, &startelem, &localsize);
   localsize -= startelem;
@@ -261,7 +261,7 @@ Vec_unique Map::get_raw_data_row_major(uinteger dim) const
   // source is simple stride
   IS_unique src_is = create_unique_is();
   perr = ISCreateStride(m_comm, localsize, startelem, 1, src_is.get());
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   // do rowmaj -> colmaj scatter as in Image
   intvector cmidxn(localsize);
@@ -272,19 +272,19 @@ Vec_unique Map::get_raw_data_row_major(uinteger dim) const
       });
   IS_unique tgt_is = create_unique_is();
   perr = ISCreateGeneral(m_comm, localsize, cmidxn.data(), PETSC_USE_POINTER, tgt_is.get());
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   // now do scatter
   Vec_unique cmaj_vec(create_unique_vec());
   perr = VecDuplicate(*tmp_vec, cmaj_vec.get());
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   VecScatter_unique sct(create_unique_vecscatter());
   perr = VecScatterCreate(*tmp_vec, *src_is, *cmaj_vec, *tgt_is, sct.get());
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   perr = VecScatterBegin(*sct, *tmp_vec, *cmaj_vec, INSERT_VALUES, SCATTER_FORWARD);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   perr = VecScatterEnd(*sct, *tmp_vec, *cmaj_vec, INSERT_VALUES, SCATTER_FORWARD);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   return cmaj_vec;
 }
@@ -295,17 +295,17 @@ Vec_unique Map::get_single_dim_petsc(uinteger dim) const
   initialize_dmda();
   if (dim >= m_ndim)
   {
-    throw std::runtime_error("Index too large for map dimensions");
+    throw InternalError("Index too large for map dimensions", __FILE__, __LINE__);
   }
   // Allocate temp vec
   Vec_unique tmp_data = create_unique_vec();
   PetscErrorCode perr = DMCreateGlobalVector(*map_dmda, tmp_data.get());
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   AO ao_petsctonat; // N.B this is not going to be a leak, we are just borrowing a Petsc managed
                     // obj.
   perr = DMDAGetAO(*map_dmda, &ao_petsctonat); // Destroying this would break the dm
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   // Target range is owned part of new vec
   integer startelem, localsize;
@@ -313,9 +313,9 @@ Vec_unique Map::get_single_dim_petsc(uinteger dim) const
   localsize -= startelem;
   IS_unique tgt_is(create_unique_is());
   perr = ISCreateStride(m_comm, localsize, startelem, 1, tgt_is.get());
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   perr = AOPetscToApplicationIS(ao_petsctonat, *tgt_is);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
 <<<<<<< HEAD
   // Source range is equivalent range offset to dimension
@@ -325,16 +325,16 @@ Vec_unique Map::get_single_dim_petsc(uinteger dim) const
 >>>>>>> develop
   IS_unique src_is(create_unique_is());
   perr = ISCreateStride(m_comm, localsize, startelem + offset, 1, src_is.get());
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   VecScatter_unique sct = create_unique_vecscatter();
   perr = VecScatterCreate(*m_displacements, *src_is, *tmp_data, *tgt_is, sct.get());
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   perr = VecScatterBegin(*sct, *m_displacements, *tmp_data, INSERT_VALUES, SCATTER_FORWARD);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   perr = VecScatterEnd(*sct, *m_displacements, *tmp_data, INSERT_VALUES, SCATTER_FORWARD);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   return tmp_data;
 }*/
@@ -344,14 +344,14 @@ Vec_unique Map::get_single_dim_petsc(uinteger dim) const
   initialize_dmda();
   if (dim >= m_ndim)
   {
-    throw std::runtime_error("Index too large for map dimensions");
+    throw InternalError("Index too large for map dimensions", __FILE__, __LINE__);
   }
   // Get dim data
   Vec_unique nat_data = get_single_dim_natural(dim);
   // Allocate temp vec
   Vec_unique tmp_data(create_unique_vec());
   PetscErrorCode perr = DMCreateGlobalVector(*map_dmda, tmp_data.get());
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   DMDANaturalToGlobalBegin(*map_dmda, *nat_data, INSERT_VALUES, *tmp_data);
   DMDANaturalToGlobalEnd(*map_dmda, *nat_data, INSERT_VALUES, *tmp_data);
@@ -364,12 +364,12 @@ Vec_unique Map::get_single_dim_natural(uinteger dim) const
   initialize_dmda();
   if (dim >= m_ndim)
   {
-    throw std::runtime_error("Index too large for map dimensions");
+    throw InternalError("Index too large for map dimensions", __FILE__, __LINE__);
   }
   // Allocate temp vec
   Vec_unique tmp_data = create_unique_vec();
   PetscErrorCode perr = DMDACreateNaturalVector(*map_dmda, tmp_data.get());
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   // Target range is owned part of new vec
   integer startelem, localsize;
@@ -377,7 +377,7 @@ Vec_unique Map::get_single_dim_natural(uinteger dim) const
   localsize -= startelem;
   IS_unique tgt_is(create_unique_is());
   perr = ISCreateStride(m_comm, localsize, startelem, 1, tgt_is.get());
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   // Source range is owned part of vec offset by dimension length
   integer offset = dim * this->size();
@@ -386,12 +386,12 @@ Vec_unique Map::get_single_dim_natural(uinteger dim) const
 
   VecScatter_unique sct = create_unique_vecscatter();
   perr = VecScatterCreate(*m_displacements, *src_is, *tmp_data, *tgt_is, sct.get());
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   perr = VecScatterBegin(*sct, *m_displacements, *tmp_data, INSERT_VALUES, SCATTER_FORWARD);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   perr = VecScatterEnd(*sct, *m_displacements, *tmp_data, INSERT_VALUES, SCATTER_FORWARD);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   return tmp_data;
 }
@@ -414,12 +414,12 @@ void Map::calculate_laplacian()
 {
   integer startrow, endrow;
   PetscErrorCode perr = VecGetOwnershipRange(*m_displacements, &startrow, &endrow);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   Mat_unique lapl = build_laplacian_matrix(m_comm, map_shape, startrow, endrow, m_ndim + 1);
   perr = MatTransposeMatMult(*lapl, *lapl, MAT_INITIAL_MATRIX, PETSC_DEFAULT, m_lapl.get());
   debug_creation(*m_lapl, "Mat_l_squared");
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 }
 
 std::pair<integer, integer> Map::get_displacement_ownershiprange() const
@@ -427,7 +427,7 @@ std::pair<integer, integer> Map::get_displacement_ownershiprange() const
   std::pair<integer, integer> range;
 
   PetscErrorCode perr = VecGetOwnershipRange(*m_displacements, &range.first, &range.second);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   return range;
 }
@@ -436,14 +436,14 @@ const floating* Map::get_raw_data_ro() const
 {
   const floating* ptr;
   PetscErrorCode perr = VecGetArrayRead(*m_displacements, &ptr);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   return ptr;
 }
 
 void Map::release_raw_data_ro(const floating*& ptr) const
 {
   PetscErrorCode perr = VecRestoreArrayRead(*m_displacements, &ptr);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 }
 
 floatvector Map::low_corner() const

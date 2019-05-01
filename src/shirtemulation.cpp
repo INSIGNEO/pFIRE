@@ -81,13 +81,15 @@ void ShirtConfig::parse_arguments()
     }
 
     // now check option taking arguments
-    if (std::find(arg_options.cbegin(), arg_options.cend(), arg_lower) != arg_options.cend())
+    if (arg_options.find(arg_lower) != arg_options.cend())
     {
       // try to get associated option
       if (args_it == arguments.cend())
       {
         // no argument, this is an error
-        throw std::runtime_error("missing option for argument");
+        std::ostringstream errss;
+        errss << "missing option for argument \"" << arg_lower << "\"";
+        throw BadConfigurationError(errss.str());
       }
       // grab associated option and increment iterator
       std::string optval = *args_it;
@@ -95,8 +97,7 @@ void ShirtConfig::parse_arguments()
       // finally insert arg-val pair into the argument map
       config[arg_lower] = optval;
     }
-    else if (
-        std::find(bool_options.cbegin(), bool_options.cend(), arg_lower) != bool_options.cend())
+    else if (bool_options.find(arg_lower) != bool_options.cend())
     {
       // insert arg-val pair into argument map
       config[arg_lower] = "true";
@@ -108,7 +109,7 @@ void ShirtConfig::parse_arguments()
       errbuf << "Unhandled arguments: ";
       std::copy(
           arguments.cbegin(), arguments.cend(), std::ostream_iterator<std::string>(errbuf, " "));
-      throw std::runtime_error(errbuf.str());
+      throw BadConfigurationError(errbuf.str());
     }
   }
 }

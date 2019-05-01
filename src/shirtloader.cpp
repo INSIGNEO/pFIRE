@@ -50,13 +50,13 @@ ShIRTLoader::ShIRTLoader(const std::string &path, MPI_Comm comm)
       {
         _shape = read_and_validate_image_header(fh);
       }
-      catch (const std::runtime_error &)
+      catch (const InvalidLoaderError &)
       {
         try
         {
           _shape = read_and_validate_mask_header(fh);
         }
-        catch (const std::runtime_error &)
+        catch (const InvalidLoaderError &)
         {
           _shape[0] = -1;
         }
@@ -94,7 +94,7 @@ intvector ShIRTLoader::read_and_validate_image_header(const MPI_File &fh)
     // Currently only handle grayscale images
     if (headerdata[3] != 1)
     {
-      throw std::runtime_error("Color images not currently supported");
+      throw InvalidLoaderError("Color images not currently supported");
     }
 
     if (mpi_err == MPI_SUCCESS && read_count == image_header_bytes)
@@ -107,7 +107,7 @@ intvector ShIRTLoader::read_and_validate_image_header(const MPI_File &fh)
       }
       else
       {
-        throw std::runtime_error("Not a valid shirt image");
+        throw InvalidLoaderError("Not a valid shirt image");
       }
     }
   }
@@ -140,7 +140,7 @@ intvector ShIRTLoader::read_and_validate_mask_header(const MPI_File &fh)
       }
       else
       {
-        throw std::runtime_error("Not a valid shirt image");
+        throw InvalidLoaderError("Not a valid shirt image");
       }
     }
   }
@@ -163,8 +163,7 @@ void ShIRTLoader::copy_scaled_chunk(
       copy_chunk_mask(data, subsize, starts);
       break;
     default:
-      throw std::runtime_error(
-          "ShirtLoader attempted to load from non-shirt file type. This is a bug");
+      throw InternalError("ShirtLoader attempted to load from non-shirt file type. This is a bug", __FILE__, __LINE__);
   }
 }
 
@@ -207,7 +206,7 @@ void ShIRTLoader::copy_chunk_image(
     MPI_Error_string(mpi_err, mpi_err_str.data(), &str_size);
     mpi_err_str.resize(str_size);
     errss << "[Rank " << rank << "] Failed to set view: " << mpi_err_str;
-    throw std::runtime_error(errss.str());
+    throw InternalError(errss.str(), __FILE__, __LINE__);
   }
 
   MPI_Status read_status;
@@ -216,7 +215,7 @@ void ShIRTLoader::copy_chunk_image(
   MPI_Get_count(&read_status, image_data_mpi_type, &read_count);
   if (mpi_err != MPI_SUCCESS || read_count != dcount)
   {
-    throw std::runtime_error("Failed to read data chunk.");
+    throw InternalError("Failed to read data chunk.", __FILE__, __LINE__);
   }
 
   floating *rankdata = &data[starts[2]][starts[1]][starts[0]];
@@ -266,7 +265,7 @@ void ShIRTLoader::copy_chunk_mask(
     MPI_Error_string(mpi_err, mpi_err_str.data(), &str_size);
     mpi_err_str.resize(str_size);
     errss << "[Rank " << rank << "] Failed to set view: " << mpi_err_str;
-    throw std::runtime_error(errss.str());
+    throw InternalError(errss.str(), __FILE__, __LINE__);
   }
 
   MPI_Status read_status;
@@ -275,7 +274,7 @@ void ShIRTLoader::copy_chunk_mask(
   MPI_Get_count(&read_status, mask_data_mpi_type, &read_count);
   if (mpi_err != MPI_SUCCESS || read_count != dcount)
   {
-    throw std::runtime_error("Failed to read data chunk.");
+    throw InternalError("Failed to read data chunk.", __FILE__, __LINE__);
   }
 
   floating *rankdata = &data[starts[2]][starts[1]][starts[0]];

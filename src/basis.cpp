@@ -18,6 +18,7 @@
 #include <petscmat.h>
 
 #include "debug.hpp"
+#include "exceptions.hpp"
 #include "petsc_debug.hpp"
 #include "indexing.hpp"
 #include "iterator_routines.hpp"
@@ -125,7 +126,7 @@ Mat_unique build_basis_matrix(
   PetscErrorCode perr = MatCreateMPIAIJWithArrays(
       comm, idxn.size() - 1, PETSC_DECIDE, m_size, n_size, idxn.data(), idxm.data(), mdat.data(),
       m_basis.get());
-  CHKERRABORT(comm, perr);
+  CHKERRXX(perr);
 
 #ifdef DEBUG_VERBOSE
   matrix_dbg_print(comm, *m_basis, "Basis Matrix");
@@ -142,12 +143,12 @@ Mat_unique build_warp_matrix(
   integer mat_size = std::accumulate(img_shape.begin(), img_shape.end(), 1, std::multiplies<>());
   if (img_shape.size() < ndim)
   {
-    throw std::runtime_error("image dimensions must match ndim");
+    throw InternalError("image dimensions must match ndim", __FILE__, __LINE__);
   }
 
   if (displacements.size() < ndim)
   {
-    throw std::runtime_error("must have displacement vector for each image dimension");
+    throw InternalError("must have displacement vector for each image dimension", __FILE__, __LINE__);
   }
 
   intvector img_shape_trunc(ndim, 0);
@@ -173,7 +174,7 @@ Mat_unique build_warp_matrix(
   // lambda needed here anyway to capture comm
   auto get_raw_array = [comm](floating*& a, const Vec* v) -> void {
     PetscErrorCode p = VecGetArray(*v, &a);
-    CHKERRABORT(comm, p);
+    CHKERRXX(p);
   };
   n_ary_for_each(get_raw_array, raw_arrs.begin(), raw_arrs.end(), displacements.begin());
 
@@ -236,7 +237,7 @@ Mat_unique build_warp_matrix(
   // lambda needed here  anyway to capture comm
   auto restore_raw_array = [comm](floating*& a, const Vec* v) -> void {
     PetscErrorCode p = VecRestoreArray(*v, &a);
-    CHKERRABORT(comm, p);
+    CHKERRXX(p);
   };
   n_ary_for_each(restore_raw_array, raw_arrs.begin(), raw_arrs.end(), displacements.begin());
 
@@ -244,7 +245,7 @@ Mat_unique build_warp_matrix(
   perr = MatCreateMPIAIJWithArrays(
       comm, idxn.size() - 1, idxn.size() - 1, mat_size, mat_size, idxn.data(), idxm.data(),
       mdat.data(), warp.get());
-  CHKERRABORT(comm, perr);
+  CHKERRXX(perr);
   debug_creation(*warp, "Warp matrix");
 
   return warp;

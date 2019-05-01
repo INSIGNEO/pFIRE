@@ -58,10 +58,10 @@ void HDFWriter::write_3d_dataset_parallel(uinteger ndim, const std::vector<hsize
 
   const floating* imgdata;
   PetscErrorCode perr = VecGetArrayRead(datavec, &imgdata);
-  CHKERRABORT(_comm, perr);
+  CHKERRXX(perr);
   H5Dwrite(dset_h, H5T_NATIVE_DOUBLE, dspace_h, fspace_h, plist_h, imgdata);
   perr = VecRestoreArrayRead(datavec, &imgdata);
-  CHKERRABORT(_comm, perr);
+  CHKERRXX(perr);
 
   H5Dclose(dset_h);
   H5Sclose(fspace_h);
@@ -97,7 +97,7 @@ std::string HDFWriter::write_image(const Image& image)
   {
     std::ostringstream errss;
     errss << "Communicator mismatch between HDFWriter and provided image";
-    throw std::runtime_error(errss.str());
+    throw InternalError(errss.str(), __FILE__, __LINE__);
   }
 
   std::string groupname = h5_groupname;
@@ -126,7 +126,7 @@ std::string HDFWriter::write_map(const Map& map)
   {
     std::ostringstream errss;
     errss << "Communicator mismatch between HDFWriter and provided image";
-    throw std::runtime_error(errss.str());
+    throw InternalError(errss.str(), __FILE__, __LINE__);
   }
 
   std::string groupname = h5_groupname;
@@ -143,7 +143,7 @@ std::string HDFWriter::write_map(const Map& map)
   {
     std::ostringstream errstr;
     errstr << "Failed to create group " << h5_groupname << ".";
-    throw std::runtime_error(errstr.str());
+    throw WriterError(errstr.str());
   }
 
   for (uinteger idx = 0; idx < map.ndim(); idx++)
@@ -185,7 +185,7 @@ void HDFWriter::open_or_create_h5()
   {
     std::ostringstream err;
     err << "Attempted to reinitialize already open file, this is a pFIRE bug...";
-    throw std::runtime_error(err.str());
+    throw InternalError(err.str(), __FILE__, __LINE__);
   }
   // Open file with parallel properties
   hid_t file_props = H5Pcreate(H5P_FILE_ACCESS);
@@ -211,7 +211,7 @@ void HDFWriter::open_or_create_h5()
   {
     std::ostringstream err;
     err << "Failed to open output file " << h5_filename << ".";
-    throw std::runtime_error(err.str());
+    throw WriterError(err.str());
   }
   // Reset HDF5 error handling
   H5Eset_auto1(old_err, old_err_data);

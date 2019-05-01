@@ -67,7 +67,7 @@ Image::load_file(const std::string& path, const ImageBase* existing, MPI_Comm co
     if (!all_true(loader->shape().begin(), loader->shape().end(), existing->shape().begin(),
             existing->shape().end(), std::equal_to<>()))
     {
-      throw std::runtime_error("New image must have same shape as existing");
+      throw InternalError("New image must have same shape as existing", __FILE__, __LINE__);
     }
     new_image = Image::duplicate(*existing);
   }
@@ -79,15 +79,15 @@ Image::load_file(const std::string& path, const ImageBase* existing, MPI_Comm co
   intvector shape(3, 0), offset(3, 0);
   PetscErrorCode perr = DMDAGetCorners(
       *new_image->dmda(), &offset[0], &offset[1], &offset[2], &shape[0], &shape[1], &shape[2]);
-  CHKERRABORT(comm, perr);
+  CHKERRXX(perr);
   // std::transform(shape.cbegin(), shape.cend(), offset.cbegin(), shape.begin(), std::minus<>());
 
   floating ***vecptr(nullptr);
   perr = DMDAVecGetArray(*new_image->dmda(), *new_image->global_vec(), &vecptr);
-  CHKERRABORT(comm, perr);
+  CHKERRXX(perr);
   loader->copy_scaled_chunk(vecptr, shape, offset);
   perr = DMDAVecRestoreArray(*new_image->dmda(), *new_image->global_vec(), &vecptr);
-  CHKERRABORT(comm, perr);
+  CHKERRXX(perr);
 
   new_image->normalize();
 

@@ -97,7 +97,7 @@ std::vector<inttype> ImageBase::mpi_get_chunksize() const
   intvector sizes(3, 0);
   PetscErrorCode perr =
       DMDAGetCorners(*m_dmda, nullptr, nullptr, nullptr, &sizes[0], &sizes[1], &sizes[2]);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   std::vector<inttype> out(sizes.begin(), sizes.end());
 
@@ -113,7 +113,7 @@ std::vector<inttype> ImageBase::mpi_get_offset() const
   intvector offsets(3, 0);
   PetscErrorCode perr =
       DMDAGetCorners(*m_dmda, &offsets[0], &offsets[1], &offsets[2], nullptr, nullptr, nullptr);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   std::vector<inttype> out(offsets.begin(), offsets.end());
 

@@ -58,19 +58,19 @@ DCMLoader::DCMLoader(const std::string &path, MPI_Comm comm)
   status = dataset->findAndGetLongInt(DcmTagKey(TG_IMG, TE_ROWS), tmp);
   if (status.bad())
   {
-    throw std::runtime_error("Failed to read image shape data");
+    throw InvalidLoaderError("Failed to read image shape data");
   }
   this->_shape[0] = tmp;
   status = dataset->findAndGetLongInt(DcmTagKey(TG_IMG, TE_COLS), tmp);
   if (status.bad())
   {
-    throw std::runtime_error("Failed to read image shape data");
+    throw InvalidLoaderError("Failed to read image shape data");
   }
   this->_shape[1] = tmp;
   status = dataset->findAndGetLongInt(DcmTagKey(TG_IMG, TE_FRAMES), tmp);
   if (status.bad())
   {
-    throw std::runtime_error("Failed to read image shape data");
+    throw InvalidLoaderError("Failed to read image shape data");
   }
   this->_shape[2] = tmp;
 }
@@ -123,7 +123,7 @@ void DCMLoader::copy_scaled_chunk(
         }
         default:
         {
-          throw std::runtime_error("Unhandled image bit depth.");
+          throw InvalidLoaderError("Unhandled image bit depth.");
           break;
         }
       }

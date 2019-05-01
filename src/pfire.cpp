@@ -61,7 +61,15 @@ int main(int argc, char **argv)
     MPI_Abort(PETSC_COMM_WORLD, -1);
   }
 
-  configobj->validate_config();
+  try
+  {
+    configobj->validate_config();
+  }
+  catch (const BadConfigurationError &e)
+  {
+    std::cerr << "Error: failed to parse configuration: " << e.what() << std::endl;
+    return -1;
+  }
 
   auto tstart = std::chrono::high_resolution_clock::now();
   mainflow(configobj);
@@ -79,12 +87,15 @@ int main(int argc, char **argv)
 
 void mainflow(std::shared_ptr<ConfigurationBase> config)
 {
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
   std::unique_ptr<Image> fixed;
   try
   {
-    fixed = Image::load_file(config->grab<std::string>("fixed"));
+    fixed = Image::load_file(config->grab<std::string>("flixed"));
   }
-  catch (std::exception &e)
+  catch (const pFIREExpectedError &e)
   {
     std::cerr << "Error: Failed to load fixed image: " << e.what() << std::endl;
     return;
@@ -102,7 +113,7 @@ void mainflow(std::shared_ptr<ConfigurationBase> config)
   {
     moved = Image::load_file(config->grab<std::string>("moved"), fixed.get());
   }
-  catch (std::exception &e)
+  catch (const pFIREExpectedError &e)
   {
     std::cerr << "Error: Failed to load moved image: " << e.what() << std::endl;
     return;
@@ -125,7 +136,7 @@ void mainflow(std::shared_ptr<ConfigurationBase> config)
     {
       mask = Mask::load_file(config->grab<std::string>("mask"), fixed.get());
     }
-    catch (std::exception &e)
+    catch (const pFIREExpectedError &e)
     {
       std::cerr << "Error: Failed to load mask: " << e.what() << std::endl;
       return;

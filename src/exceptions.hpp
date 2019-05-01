@@ -22,15 +22,53 @@
 
 void abort_with_unhandled_error();
 void sigterm_handler(int signal);
+void print_abort_message();
 
-class InvalidLoaderError: public std::runtime_error {
+class pFIREBaseError: public std::runtime_error {
 public:
-  InvalidLoaderError(const std::string& filepath) : std::runtime_error(build_errstring(filepath))
+  pFIREBaseError(const std::string &msg, const std::string &file, size_t line_num)
+    : std::runtime_error(msg), _where(build_wherestring(file, line_num))
+  {
+  }
+
+  const char *where() { return _where.c_str(); }
+
+protected:
+  std::string _where;
+
+  static std::string build_wherestring(const std::string &file, size_t line_num)
+  {
+    std::ostringstream errss;
+    errss << file << ":" << line_num;
+    return errss.str();
+  }
+
+  static std::string build_errstring(const std::string &what)
+  {
+    std::ostringstream errss;
+    errss << what;
+    return errss.str();
+  }
+
+};
+
+class pFIREExpectedError: public pFIREBaseError {
+public:
+  pFIREExpectedError(const std::string &msg, const std::string& file, size_t line_num)
+    : pFIREBaseError(msg, file, line_num)
+  {}
+
+};
+
+class InvalidLoaderError: public pFIREExpectedError {
+public:
+  InvalidLoaderError(const std::string &path, std::string file = "unknown", size_t line_num = 0)
+    : pFIREExpectedError(build_errstring(path), file, line_num)
   {
   }
 
 protected:
-  static std::string build_errstring(const std::string& path)
+  static std::string build_errstring(const std::string &path)
   {
     std::ostringstream errss;
     errss << "Failed to read data from " << path << ", wrong loader or file corrupt.";
@@ -38,12 +76,15 @@ protected:
   }
 };
 
-class FileNotFoundError: public std::runtime_error {
+class FileNotFoundError: public pFIREExpectedError {
 public:
-  FileNotFoundError(const std::string& filepath) : std::runtime_error(build_errstring(filepath)) {}
+  FileNotFoundError(const std::string &path, std::string file = "unknown", size_t line_num = 0)
+    : pFIREExpectedError(build_errstring(path), file, line_num)
+  {
+  }
 
 protected:
-  static std::string build_errstring(const std::string& path)
+  static std::string build_errstring(const std::string &path)
   {
     std::ostringstream errss;
     errss << "Failed to open " << path << ", wrong permissions or file does not exist.";
@@ -51,16 +92,15 @@ protected:
   }
 };
 
-class InternalError: public std::runtime_error {
+class InternalError: public pFIREBaseError {
 public:
-  InternalError(const std::string& what, std::string file = "unknown", integer line = 0)
-    : std::runtime_error(build_errstring(what, file, line))
+  InternalError(const std::string &what, std::string file = "unknown", size_t line = 0)
+    : pFIREBaseError(build_errstring(what, file, line), file, line)
   {
   }
 
 protected:
-  static std::string build_errstring(
-      const std::string& what, std::string file, integer line)
+  std::string build_errstring(const std::string &what, const std::string &file, size_t line)
   {
     std::ostringstream errss;
     errss << "Internal error at " << file << ":" << line << " \"" << what << "\"";
@@ -68,20 +108,29 @@ protected:
   }
 };
 
-class BadConfigurationError: public std::runtime_error {
+class BadConfigurationError: public pFIREExpectedError {
 public:
-  BadConfigurationError(const std::string& what, std::string file = "unknown", integer line = 0)
-    : std::runtime_error(build_errstring(what, file, line))
+  BadConfigurationError(const std::string &msg, std::string file = "unknown", size_t line = 0)
+    : pFIREExpectedError(build_errstring(msg), file, line)
   {
   }
 
-protected:
-  static std::string build_errstring(
-      const std::string& what, std::string file, integer line)
+};
+
+class InvalidWriterError: public pFIREExpectedError {
+public:
+  InvalidWriterError(const std::string &msg, std::string file = "unknown", size_t line = 0)
+    : pFIREExpectedError(build_errstring(msg), file, line)
   {
-    std::ostringstream errss;
-    errss << "Internal error at " << file << ":" << line << " \"" << what << "\"";
-    return errss.str();
+  }
+};
+
+
+class WriterError: public pFIREExpectedError {
+public:
+  WriterError(const std::string &msg, std::string file = "unknown", size_t line = 0)
+    : pFIREExpectedError(build_errstring(msg), file, line)
+  {
   }
 };
 

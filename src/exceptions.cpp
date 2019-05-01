@@ -15,11 +15,14 @@
 
 #include "exceptions.hpp"
 
+#include <chrono>
 #include <iostream>
+#include <thread>
 
 #include <mpi.h>
 
 #include "gitstate.hpp"
+#include "versioning.hpp"
 
 constexpr std::string_view abort_info_pre = R"FATAL(!!! FATAL ERROR !!!:
 
@@ -32,17 +35,36 @@ Help is available through the pFIRE issue tracker on github, but first please en
 2. Your input files are not corrupt
 3. If you are running on HPC please check there are no hardware issues
 
-If you have checked the above and the bug still happens: https://github.com/INSIGNEO/pFIRE/issues
+If you have checked the above and the bug still occurs please report it via 
+https://github.com/INSIGNEO/pFIRE/issues
 
 Your report should include:
 
 - Input configuration file
-- Details of the images being registered
-- The exact pFIRE version: )FATAL";
+- Details of the images being registered (format, dimensions)
+- Basic hardware details, operating system and version
+- The exact pFIRE version:
+
+    - )FATAL";
+
+constexpr std::string_view abort_info_libheader = R"FATAL(
+
+- The library versions in use:
+
+)FATAL";
+
+constexpr std::string_view abort_info_petsc = "    - Petsc Version: ";
+constexpr std::string_view abort_info_boost = "    - Boost Version: ";
+
+#ifdef USE_OIIO
+constexpr std::string_view abort_info_oiio = "    - OpenImageIO Version: ";
+#endif
+
+#ifdef USE_DCMTK
+constexpr std::string_view abort_info_dcmtk = "    - DCMTK Version: ";
+#endif //USE_DCMTK
 
 constexpr std::string_view abort_info_post = R"FATAL(
-
-
 )FATAL";
 
 
@@ -52,6 +74,10 @@ void abort_with_unhandled_error(){
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   
   std::exception_ptr eptr = std::current_exception();
+
+  // Try to separate threads that arrive here together
+  // to avoid garbling stdout too much
+  std::this_thread::sleep_for(std::chrono::milliseconds(200*rank));
 
   try
   {
@@ -65,11 +91,7 @@ void abort_with_unhandled_error(){
               << e.what() << "\n\"\"\"\n";
   }
 
-  if(rank == 0){
-    std::cout << abort_info_pre
-              << git_version_string()
-              << abort_info_post;
-  }
+  print_abort_message();
 
   MPI_Abort(MPI_COMM_WORLD, -1); 
 
@@ -80,9 +102,24 @@ void sigterm_handler(int signal){
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  if(rank == 0){
+  std::cout << "Rank " << rank << " received signal " << signal;
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(50*rank));
+  print_abort_message();
+}
+
+void print_abort_message(){
+
     std::cout << abort_info_pre
               << git_version_string()
+              << abort_info_libheader
+              << abort_info_petsc << get_version_string_petsc() << "\n"
+              << abort_info_boost << get_version_string_boost() << "\n"
+#ifdef USE_OIIO
+              << abort_info_oiio << get_version_string_oiio() << "\n"
+#endif //USE_OIIO
+#ifdef USE_DCMTK
+              << abort_info_dcmtk << get_version_string_dcmtk() << "\n"
+#endif //USE_DCMTK
               << abort_info_post;
-  }
 }

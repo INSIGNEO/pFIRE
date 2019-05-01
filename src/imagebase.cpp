@@ -28,6 +28,7 @@
 #include "iterator_routines.hpp"
 #include "map.hpp"
 #include "math_utils.hpp"
+#include "exceptions.hpp"
 
 #include "baseloader.hpp"
 
@@ -49,7 +50,7 @@ ImageBase::ImageBase(const intvector& shape, MPI_Comm comm)
     }
     else
     {
-      throw std::runtime_error("image shape should be 2D or 3D");
+      throw InternalError("image shape should be 2D or 3D", __FILE__, __LINE__);
     }
   }
   if (m_shape[2] == 1)
@@ -65,26 +66,26 @@ const floating* ImageBase::get_raw_data_ro() const
 {
   const floating* ptr;
   PetscErrorCode perr = VecGetArrayRead(*m_globalvec, &ptr);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   return ptr;
 }
 
 void ImageBase::release_raw_data_ro(const floating*& ptr) const
 {
   PetscErrorCode perr = VecRestoreArrayRead(*m_globalvec, &ptr);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 }
 
 Vec_unique ImageBase::get_raw_data_row_major() const
 {
   Vec_unique rmlocalpart = create_unique_vec();
   PetscErrorCode perr = VecDuplicate(*m_globalvec, rmlocalpart.get());
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   intvector locs(3, 0);
   intvector widths(3, 0);
   perr = DMDAGetCorners(*m_dmda, &locs[0], &locs[1], &locs[2], &widths[0], &widths[1], &widths[2]);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   integer ownedlo;
   perr = VecGetOwnershipRange(*m_globalvec, &ownedlo, nullptr);
@@ -99,18 +100,18 @@ Vec_unique ImageBase::get_raw_data_row_major() const
 
   IS_unique src_is = create_unique_is();
   perr = ISCreateStride(m_comm, localsize, ownedlo, 1, src_is.get());
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   IS_unique tgt_is = create_unique_is();
   perr = ISCreateGeneral(m_comm, localsize, cmidxn.data(), PETSC_USE_POINTER, tgt_is.get());
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   VecScatter_unique sct = create_unique_vecscatter();
   perr = VecScatterCreate(*m_globalvec, *src_is, *rmlocalpart, *tgt_is, sct.get());
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   perr = VecScatterBegin(*sct, *m_globalvec, *rmlocalpart, INSERT_VALUES, SCATTER_FORWARD);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   perr = VecScatterEnd(*sct, *m_globalvec, *rmlocalpart, INSERT_VALUES, SCATTER_FORWARD);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   return rmlocalpart;
 }
@@ -118,13 +119,13 @@ Vec_unique ImageBase::get_raw_data_row_major() const
 floating ImageBase::masked_normalize(const Mask& mask)
 {
   Vec_unique tmp = create_unique_vec();
-  PetscErrorCode perr = VecDuplicate(*m_globalvec, tmp.get());CHKERRABORT(m_comm, perr);
-  perr = VecPointwiseMult(*tmp, *mask.global_vec(), *m_globalvec);CHKERRABORT(m_comm, perr);
+  PetscErrorCode perr = VecDuplicate(*m_globalvec, tmp.get());CHKERRXX(perr);
+  perr = VecPointwiseMult(*tmp, *mask.global_vec(), *m_globalvec);CHKERRXX(perr);
 
   floating norm;
-  perr = VecSum(*tmp, &norm);CHKERRABORT(m_comm, perr);
+  perr = VecSum(*tmp, &norm);CHKERRXX(perr);
   norm = mask.npoints() / norm;
-  perr = VecScale(*m_globalvec, norm);CHKERRABORT(m_comm, perr);
+  perr = VecScale(*m_globalvec, norm);CHKERRXX(perr);
 
   return norm;
 }
@@ -132,7 +133,7 @@ floating ImageBase::masked_normalize(const Mask& mask)
 void ImageBase::copy_data(const ImageBase &img)
 {
   PetscErrorCode perr = VecCopy(*img.global_vec(), *m_globalvec);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   update_local_from_global();
 }
 
@@ -141,7 +142,7 @@ Vec_unique ImageBase::gradient(integer dim)
   // New global vec must be a duplicate of image global
   Vec_shared grad = create_shared_vec();
   PetscErrorCode perr = VecDuplicate(*(m_globalvec), grad.get());
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   // Ensure we have up to date ghost cells
   DMGlobalToLocalBegin(*m_dmda, *m_globalvec, INSERT_VALUES, *m_localvec);
@@ -167,10 +168,10 @@ floating ImageBase::normalize()
 {
   floating norm;
   PetscErrorCode perr = VecMax(*m_globalvec, nullptr, &norm);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   norm = 1.0 / norm;
   perr = VecScale(*m_globalvec, norm);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   return norm;
 }
 
@@ -205,10 +206,10 @@ void ImageBase::initialize_dmda()
       dof_per_node, stencil_width,              // dof per node, stencil size
       nullptr, nullptr, nullptr,                // partition sizes nullptr -> petsc chooses
       m_dmda.get());
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   perr = DMSetUp(*(m_dmda));
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 }
 
 void ImageBase::initialize_vectors()
@@ -217,19 +218,19 @@ void ImageBase::initialize_vectors()
   m_localvec = create_shared_vec();
   m_globalvec = create_shared_vec();
   perr = DMCreateGlobalVector(*m_dmda, m_globalvec.get());
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   debug_creation(*m_globalvec, std::string("image_global_") + std::to_string(instance_id));
   perr = DMCreateLocalVector(*m_dmda, m_localvec.get());
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   debug_creation(*m_localvec, std::string("image_local_") + std::to_string(instance_id));
 }
 
 void ImageBase::update_local_from_global()
 {
   PetscErrorCode perr = DMGlobalToLocalBegin(*m_dmda, *m_globalvec, INSERT_VALUES, *m_localvec);
-  CHKERRABORT(PETSC_COMM_WORLD, perr);
+  CHKERRXX(perr);
   perr = DMGlobalToLocalEnd(*m_dmda, *m_globalvec, INSERT_VALUES, *m_localvec);
-  CHKERRABORT(PETSC_COMM_WORLD, perr);
+  CHKERRXX(perr);
 }
 
 Vec_unique ImageBase::get_raw_data_natural() const
@@ -258,19 +259,19 @@ floating ImageBase::mutual_information(const ImageBase &other)
 
   integer img_localsize;
   PetscErrorCode perr = VecGetLocalSize(*m_globalvec, &img_localsize);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   floating max1, max2;
-  perr = VecMax(*m_globalvec, nullptr, &max1);CHKERRABORT(m_comm, perr);
-  perr = VecMax(*other.global_vec(), nullptr, &max2);CHKERRABORT(m_comm, perr);
+  perr = VecMax(*m_globalvec, nullptr, &max1);CHKERRXX(perr);
+  perr = VecMax(*other.global_vec(), nullptr, &max2);CHKERRXX(perr);
   floating max = std::max(max1, max2);
 
   // Only need RO data from PETSc vecs
   floating const *x_data, *y_data;
   perr = VecGetArrayRead(*m_globalvec, &x_data);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
   perr = VecGetArrayRead(*other.global_vec(), &y_data);
-  CHKERRABORT(m_comm, perr);
+  CHKERRXX(perr);
 
   for (integer idx = 0; idx < img_localsize; idx++)
   {
