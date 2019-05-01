@@ -87,7 +87,9 @@ void ShirtConfig::parse_arguments()
       if (args_it == arguments.cend())
       {
         // no argument, this is an error
-        throw std::runtime_error("missing option for argument");
+        std::ostringstream errss;
+        errss << "missing option for argument \"" << arg_lower << "\"";
+        throw BadConfigurationError(errss.str());
       }
       // grab associated option and increment iterator
       std::string optval = *args_it;
@@ -107,7 +109,7 @@ void ShirtConfig::parse_arguments()
       errbuf << "Unhandled arguments: ";
       std::copy(
           arguments.cbegin(), arguments.cend(), std::ostream_iterator<std::string>(errbuf, " "));
-      throw std::runtime_error(errbuf.str());
+      throw BadConfigurationError(errbuf.str());
     }
   }
 }

@@ -17,6 +17,7 @@
 
 #include "baseloader.hpp"
 #include "iterator_routines.hpp"
+#include "exceptions.hpp"
 
 Mask::Mask(const intvector& shape, MPI_Comm comm)
   : ImageBase(shape, comm)
@@ -61,7 +62,7 @@ Mask::load_file(const std::string& path, const ImageBase* existing, MPI_Comm com
             loader->shape().begin(), loader->shape().end(), existing->shape().begin(),
             existing->shape().end(), std::equal_to<>()))
     {
-      throw std::runtime_error("New mask must have same shape as existing");
+      throw InternalError("New mask must have same shape as existing", __FILE__, __LINE__);
     }
     new_mask = Mask::duplicate(*existing);
   }

@@ -18,6 +18,7 @@
 #include <OpenImageIO/imageio.h>
 
 #include "image.hpp"
+#include "exceptions.hpp"
 
 const std::string OIIOWriter::writer_name = "OpenImageIO";
 const std::vector<std::string> OIIOWriter::extensions = {".png",".jpg",".jpeg",".tiff"};
@@ -39,7 +40,7 @@ std::string OIIOWriter::write_image(const Image& image)
     auto img = OIIO::ImageOutput::create(filename);
     if (img == nullptr)
     {
-      throw std::runtime_error("Failed to open image output file");
+      throw WriterError("Failed to open image output file");
     }
     OIIO::ImageSpec spec(image.shape()[0], image.shape()[1], 1, OIIO::TypeDesc::UINT16);
     img->open(filename, spec);
@@ -63,5 +64,5 @@ std::string OIIOWriter::write_image(const Image& image)
 
 std::string OIIOWriter::write_map(const Map& map __attribute__((unused)))
 {
-  throw std::runtime_error("Cannot save map using OIIO.");
+  throw InvalidWriterError("Cannot save map using OIIO.");
 }

@@ -67,7 +67,7 @@ Image::load_file(const std::string& path, const ImageBase* existing, MPI_Comm co
     if (!all_true(loader->shape().begin(), loader->shape().end(), existing->shape().begin(),
             existing->shape().end(), std::equal_to<>()))
     {
-      throw std::runtime_error("New image must have same shape as existing");
+      throw InternalError("New image must have same shape as existing", __FILE__, __LINE__);
     }
     new_image = Image::duplicate(*existing);
   }

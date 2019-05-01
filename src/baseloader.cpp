@@ -33,7 +33,7 @@ bool BaseLoader::register_loader(const std::string &name, loader_creator loader)
   }
   std::ostringstream err;
   err << "Loader named " << name << " already registered.";
-  throw std::runtime_error(err.str());
+  throw InternalError(err.str(), __FILE__, __LINE__);
 }
 
 BaseLoader_unique BaseLoader::find_loader(const std::string &path, MPI_Comm comm)
@@ -53,5 +53,5 @@ BaseLoader_unique BaseLoader::find_loader(const std::string &path, MPI_Comm comm
   }
   std::ostringstream err;
   err << "Failed to find suitable loader for \"" << path << "\".";
-  throw std::runtime_error(err.str());
+  throw InvalidLoaderError(err.str());
 }

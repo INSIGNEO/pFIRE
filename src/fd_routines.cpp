@@ -15,6 +15,8 @@
 
 #include "fd_routines.hpp"
 
+#include "exceptions.hpp"
+
 Vec_unique fd::gradient_to_global_unique(const DM &dmda, const Vec &localvec, integer dim)
 {
   //  First sanity check we have a valid local vector for the DMDA
@@ -24,7 +26,7 @@ Vec_unique fd::gradient_to_global_unique(const DM &dmda, const Vec &localvec, in
   CHKERRABORT(PETSC_COMM_WORLD, perr);
   if (!vecs_equivalent(dm_local_vec, localvec))
   {
-    throw std::runtime_error("provided vector invalid for given dmda object");
+    throw InternalError("provided vector invalid for given dmda object", __FILE__, __LINE__);
   }
   perr = DMRestoreLocalVector(dmda, &dm_local_vec);
   CHKERRABORT(PETSC_COMM_WORLD, perr);
@@ -84,7 +86,7 @@ void fd::gradient_existing(const DM &dmda, const Vec &srcvec, Vec &tgtvec, integ
   CHKERRABORT(PETSC_COMM_WORLD, perr);
   if (!vecs_equivalent(dm_local_vec, srcvec))
   {
-    throw std::runtime_error("provided srcvec invalid for given dmda object");
+    throw InternalError("provided srcvec invalid for given dmda object", __FILE__, __LINE__);
   }
   perr = DMRestoreLocalVector(dmda, &dm_local_vec);
   CHKERRABORT(PETSC_COMM_WORLD, perr);

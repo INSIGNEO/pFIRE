@@ -18,6 +18,7 @@
 #include <petscmat.h>
 
 #include "debug.hpp"
+#include "exceptions.hpp"
 #include "petsc_debug.hpp"
 #include "indexing.hpp"
 #include "iterator_routines.hpp"
@@ -142,12 +143,12 @@ Mat_unique build_warp_matrix(
   integer mat_size = std::accumulate(img_shape.begin(), img_shape.end(), 1, std::multiplies<>());
   if (img_shape.size() < ndim)
   {
-    throw std::runtime_error("image dimensions must match ndim");
+    throw InternalError("image dimensions must match ndim", __FILE__, __LINE__);
   }
 
   if (displacements.size() < ndim)
   {
-    throw std::runtime_error("must have displacement vector for each image dimension");
+    throw InternalError("must have displacement vector for each image dimension", __FILE__, __LINE__);
   }
 
   intvector img_shape_trunc(ndim, 0);

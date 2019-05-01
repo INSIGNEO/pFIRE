@@ -129,7 +129,7 @@ void Elastic::innerloop(integer outer_count)
     innerstep(inum, recalculate_lambda);
     recalculate_lambda = false;
 
-    if (configuration.grab<bool>("save_intermediate_frames"))
+    if (configuration.grab<bool>("save_intermediate_flames"))
     {
       save_debug_frame(outer_count, inum);
       save_debug_map(outer_count, inum);
@@ -149,7 +149,7 @@ void Elastic::innerloop(integer outer_count)
     PetscPrintf(m_comm, "Average displacement: %.2f\n", aavg);
     floating curr_mi = m_p_registered->mutual_information(m_fixed);
     PetscPrintf(m_comm, "Mutual information: %f\n", curr_mi);
-    if (aavg < m_convergence_thres || curr_mi <= prev_mi)
+    if (aavg < m_convergence_thres)// || curr_mi <= prev_mi)
     {
       PetscPrintf(m_comm, "Generation %i converged after %i iterations.\n\n", outer_count, inum);
       break;
@@ -326,8 +326,9 @@ void Elastic::save_debug_map(integer outer_count, integer inner_count)
     if (!bf::exists(intermediates_path))
     {
       std::ostringstream errss;
-      errss << "Intermediate frame output path " << intermediates_path << " does not exist.";
-      throw std::runtime_error(errss.str());
+      errss << "Intermediate frame output path " << intermediates_path << " does not exist, but "
+            << "should have already been created.";
+      throw InternalError(errss.str(), __FILE__, __LINE__);
     }
     output_path = intermediates_path;
   }

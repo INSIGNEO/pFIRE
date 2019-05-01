@@ -154,7 +154,7 @@ intvector Map::calculate_map_shape(intvector const& image_shape, floatvector con
 {
   if (image_shape.size() != nodespacing.size())
   {
-    throw std::runtime_error("Image and nodespacing dimensions must match");
+    throw InternalError("Image and nodespacing dimensions must match", __FILE__, __LINE__);
   }
 
   // want always to have odd number of nodes so find num nodes for each half,
@@ -295,7 +295,7 @@ Vec_unique Map::get_single_dim_petsc(uinteger dim) const
   initialize_dmda();
   if (dim >= m_ndim)
   {
-    throw std::runtime_error("Index too large for map dimensions");
+    throw InternalError("Index too large for map dimensions", __FILE__, __LINE__);
   }
   // Allocate temp vec
   Vec_unique tmp_data = create_unique_vec();
@@ -344,7 +344,7 @@ Vec_unique Map::get_single_dim_petsc(uinteger dim) const
   initialize_dmda();
   if (dim >= m_ndim)
   {
-    throw std::runtime_error("Index too large for map dimensions");
+    throw InternalError("Index too large for map dimensions", __FILE__, __LINE__);
   }
   // Get dim data
   Vec_unique nat_data = get_single_dim_natural(dim);
@@ -364,7 +364,7 @@ Vec_unique Map::get_single_dim_natural(uinteger dim) const
   initialize_dmda();
   if (dim >= m_ndim)
   {
-    throw std::runtime_error("Index too large for map dimensions");
+    throw InternalError("Index too large for map dimensions", __FILE__, __LINE__);
   }
   // Allocate temp vec
   Vec_unique tmp_data = create_unique_vec();

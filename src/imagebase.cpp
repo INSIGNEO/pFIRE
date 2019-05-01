@@ -28,6 +28,7 @@
 #include "iterator_routines.hpp"
 #include "map.hpp"
 #include "math_utils.hpp"
+#include "exceptions.hpp"
 
 #include "baseloader.hpp"
 
@@ -49,7 +50,7 @@ ImageBase::ImageBase(const intvector& shape, MPI_Comm comm)
     }
     else
     {
-      throw std::runtime_error("image shape should be 2D or 3D");
+      throw InternalError("image shape should be 2D or 3D", __FILE__, __LINE__);
     }
   }
   if (m_shape[2] == 1)

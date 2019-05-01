@@ -30,6 +30,7 @@
 namespace bf = boost::filesystem;
 
 #include "types.hpp"
+#include "exceptions.hpp"
 
 using config_map = std::map<std::string, std::string>;
 
@@ -39,29 +40,57 @@ public:
   template <typename T>
   typename std::enable_if<std::is_same<T, bool>::value, T>::type grab(const std::string key) const
   {
-    T val;
-    std::istringstream(config.at(key)) >> std::boolalpha >> val;
-    return val;
+    try
+    {
+      T val;
+      std::istringstream(config.at(key)) >> std::boolalpha >> val;
+      return val;
+    }
+    catch (std::out_of_range &err)
+    {
+      throw InternalError("Attempt to access non-existent configuration option", __FILE__, __LINE__);
+    }
   }
 
   template <typename T>
   typename std::enable_if<std::is_integral<T>::value && !std::is_same<T, bool>::value, T>::type
   grab(const std::string key) const
   {
-    return static_cast<T>(std::stoll(config.at(key)));
+    try
+    {
+      return static_cast<T>(std::stoll(config.at(key)));
+    }
+    catch (std::out_of_range &err)
+    {
+      throw InternalError("Attempt to access non-existent configuration option", __FILE__, __LINE__);
+    }
   }
 
   template <typename T>
   typename std::enable_if<std::is_floating_point<T>::value && !std::is_same<T, bool>::value, T>::type
   grab(const std::string key) const
   {
-    return static_cast<T>(std::stold(config.at(key)));
-  }
+    try
+    {
+      return static_cast<T>(std::stold(config.at(key)));
+    }
+    catch (std::out_of_range &err)
+    {
+      throw InternalError("Attempt to access non-existent configuration option", __FILE__, __LINE__);
+    }
+}
 
   template <typename T>
   typename std::enable_if<std::is_same<T, std::string>::value, T>::type grab(std::string key) const
   {
-    return config.at(key);
+    try
+    {
+      return config.at(key);
+    }
+    catch (std::out_of_range &err)
+    {
+      throw InternalError("Attempt to access non-existent configuration option", __FILE__, __LINE__);
+    }
   }
 
   static std::string get_invocation_name(const std::string& argzero);

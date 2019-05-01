@@ -25,6 +25,7 @@
 #include <mpi.h>
 
 #include "types.hpp"
+#include "exceptions.hpp"
 
 class BaseWriter {
 public:
@@ -107,7 +108,7 @@ BaseWriter::register_writer()
   }
   std::ostringstream err;
   err << "Writer named " << WriterClass::writer_name << " already registered.";
-  throw std::runtime_error(err.str());
+  throw InternalError(err.str(), __FILE__, __LINE__);
 }
 
 #endif // BASEWRITER_HPP

@@ -20,6 +20,8 @@
 
 #include <numeric>
 
+#include "exceptions.hpp"
+
 void quadratic_from_points(floating x_1, floating x_2, floating x_3,
                            floating y_1, floating y_2, floating y_3,
                            floating &a, floating &b, floating &c);
@@ -42,12 +44,12 @@ inline void explain_memory(const intvector &image_size, const intvector &map_siz
 {
   if (image_size.size() < 2 || image_size.size() > 3)
   {
-    throw std::runtime_error("Image should be 2D or 3D");
+    throw InternalError("Image should be 2D or 3D", __FILE__, __LINE__);
   }
 
   if (map_size.size() != image_size.size())
   {
-    throw std::runtime_error("Map and image dimensions should match");
+    throw InternalError("Map and image dimensions should match", __FILE__, __LINE__);
   }
 
   integer ndim = image_size.size();

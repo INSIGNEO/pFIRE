@@ -19,6 +19,8 @@
 #include <sstream>
 #include <fenv.h>
 
+#include "exceptions.hpp"
+
 floating diagonal_sum(const Mat& matrix)
 {
   MPI_Comm comm;
@@ -168,7 +170,7 @@ floating get_eigenvalue_by_poweriter(const Mat& matrix, floating conv_thres, int
 {
   if (conv_thres <= 0)
   {
-    throw std::domain_error("conv_thres must be greater than 0");
+    throw InternalError("conv_thres must be greater than 0", __FILE__, __LINE__);
   }
 
   MPI_Comm comm;
@@ -229,7 +231,7 @@ void repeat_stack(const Vec& subvec, const Vec& stacked)
   PetscObjectGetComm(reinterpret_cast<PetscObject>(subvec), &comm);
   PetscObjectGetComm(reinterpret_cast<PetscObject>(stacked), &comm2);
   if (comm != comm2){
-    throw std::runtime_error("stacked and subvec must share a communicator");
+    throw InternalError("stacked and subvec must share a communicator", __FILE__, __LINE__);
   }
 
   integer subvec_len;
@@ -241,7 +243,7 @@ void repeat_stack(const Vec& subvec, const Vec& stacked)
     std::ostringstream errss;
     errss << "stacked length (" << stacked_len << ") not a multiple of subvec length ("
           << subvec_len << ").";
-    throw std::runtime_error(errss.str());
+    throw InternalError(errss.str(), __FILE__, __LINE__);
   }
 
   // Get extents of local data in subvector
@@ -284,7 +286,7 @@ void repeat_stack_petsc_to_nat(const Vec& subvec, const Vec& stacked, const DM& 
   PetscObjectGetComm(reinterpret_cast<PetscObject>(subvec), &comm);
   PetscObjectGetComm(reinterpret_cast<PetscObject>(stacked), &comm2);
   if (comm != comm2){
-    throw std::runtime_error("stacked and subvec must share a communicator");
+    throw InternalError("stacked and subvec must share a communicator", __FILE__, __LINE__);
   }
 
   integer subvec_len;
@@ -296,7 +298,7 @@ void repeat_stack_petsc_to_nat(const Vec& subvec, const Vec& stacked, const DM& 
     std::ostringstream errss;
     errss << "stacked length (" << stacked_len << ") not a multiple of subvec length ("
           << subvec_len << ").";
-    throw std::runtime_error(errss.str());
+    throw InternalError(errss.str(), __FILE__, __LINE__);
   }
 
   AO ao_petsctonat; // N.B this is not going to be a leak, we are just borrowing a Petsc managed
@@ -347,7 +349,7 @@ void copy_nth_from_stack_nat_to_petsc(const Vec& subvec, const Vec& stacked, con
   PetscObjectGetComm(reinterpret_cast<PetscObject>(subvec), &comm);
   PetscObjectGetComm(reinterpret_cast<PetscObject>(stacked), &comm2);
   if (comm != comm2){
-    throw std::runtime_error("stacked and subvec must share a communicator");
+    throw InternalError("stacked and subvec must share a communicator", __FILE__, __LINE__);
   }
 
   integer subvec_len;
@@ -360,14 +362,14 @@ void copy_nth_from_stack_nat_to_petsc(const Vec& subvec, const Vec& stacked, con
     std::ostringstream errss;
     errss << "stacked length (" << stacked_len << ") not a multiple of subvec length ("
           << subvec_len << ").";
-    throw std::runtime_error(errss.str());
+    throw InternalError(errss.str(), __FILE__, __LINE__);
   }
 
   if (n >= stack_total)
   {
     std::ostringstream errss;
     errss << "n must be less than stacked length / subvec length.";
-    throw std::runtime_error(errss.str());
+    throw InternalError(errss.str(), __FILE__, __LINE__);
   }
 
   AO ao_petsctonat; // N.B this is not going to be a leak, we are just borrowing a Petsc managed
