@@ -66,6 +66,7 @@ void pfire_setup(const std::vector<std::string>& petsc_args, bool silent)
   // Setup terminate handler
   std::set_terminate(abort_with_unhandled_error);
   std::signal(SIGTERM, sigterm_handler);
+  std::signal(SIGABRT, sigterm_handler);
 
   std::vector<char*> cstrings;
   cstrings.resize(petsc_args.size());
@@ -104,11 +105,11 @@ void check_comm_size_and_warn_odd()
 
     if (comm_size > 2 && comm_size % 2 == 1)
     {
-      std::cout << "!!!! WARNING !!!!\n"
-                << "Using an odd number of processors is not recommended.\n"
-                << "This makes efficient subdivision of the problem much harder and will likely "
+      std::cout << "\n!!!! WARNING !!!!\n"
+                << "\tUsing an odd number of processors is not recommended.\n"
+                << "\tThis makes efficient subdivision of the problem much harder and will likely "
                 << "lead to reduced performance.\n"
-                << "Extreme cases may make viable partitioning impossible and cause job failure. "
+                << "\tExtreme cases may make viable partitioning impossible and cause job failure. "
                 << "You have been warned!\n\n"
                 << std::flush;
     }
@@ -133,3 +134,5 @@ void print_welcome_message()
 
   std::cout << welcomess.str();
 }
+
+

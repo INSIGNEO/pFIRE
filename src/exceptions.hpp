@@ -22,6 +22,7 @@
 
 void abort_with_unhandled_error();
 void sigterm_handler(int signal);
+void print_abort_message();
 
 class pFIREBaseError: public std::runtime_error {
 public:

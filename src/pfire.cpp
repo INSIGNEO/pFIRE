@@ -87,6 +87,9 @@ int main(int argc, char **argv)
 
 void mainflow(std::shared_ptr<ConfigurationBase> config)
 {
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
   std::unique_ptr<Image> fixed;
   try
   {
