@@ -93,7 +93,7 @@ void mainflow(std::shared_ptr<ConfigurationBase> config)
   std::unique_ptr<Image> fixed;
   try
   {
-    fixed = Image::load_file(config->grab<std::string>("flixed"));
+    fixed = Image::load_file(config->grab<std::string>("fixed"));
   }
   catch (const pFIREExpectedError &e)
   {
@@ -121,6 +121,23 @@ void mainflow(std::shared_ptr<ConfigurationBase> config)
 
   floatvector nodespacing(fixed->ndim(), config->grab<integer>("nodespacing"));
 
+  // Check file writer is valid
+  std::vector<std::string> configs_to_check = {"registered", "map"};
+  for(const auto &handle : configs_to_check)
+  {
+    std::string filename = config->grab<std::string>(handle);
+    try
+    {
+      BaseWriter::find_writer_for_filename(filename);
+    }
+    catch (const InvalidWriterError &e)
+    {
+      std::cerr << "Error: No suitable writer for requested output filename \""
+                << filename << "\"" << std::endl;
+      return;
+    }
+  }
+
   // explain_memory(fixed->shape(), Map::calculate_map_shape(fixed->shape(), nodespacing));
 
   fixed->normalize();
@@ -144,19 +161,35 @@ void mainflow(std::shared_ptr<ConfigurationBase> config)
   }
 
   Elastic reg(*fixed, *moved, *mask, nodespacing, *config);
-  reg.autoregister();
+  try
+  {
+    reg.autoregister();
+  }
+  catch (const pFIREExpectedError &e)
+  {
+    std::cerr << "Error: Registration failed: " << e.what() << std::endl;
+    return;
+  }
 
-  std::string outfile = config->grab<std::string>("registered");
-  std::string h5group = config->grab<std::string>("registered_h5_path");
-  std::string output_path = outfile + ":" + h5group;
-  BaseWriter_unique wtr = BaseWriter::get_writer_for_filename(output_path, fixed->comm());
-  output_path = wtr->write_image(*reg.registered());
-  PetscPrintf(PETSC_COMM_WORLD, "Saving registered image to %s\n", output_path.c_str());
+  try
+  {
+    std::string outfile = config->grab<std::string>("registered");
+    std::string h5group = config->grab<std::string>("registered_h5_path");
+    std::string output_path = outfile + ":" + h5group;
+    BaseWriter_unique wtr = BaseWriter::get_writer_for_filename(output_path, fixed->comm());
+    output_path = wtr->write_image(*reg.registered());
+    PetscPrintf(PETSC_COMM_WORLD, "Saved registered image to %s\n", output_path.c_str());
 
-  outfile = config->grab<std::string>("map");
-  h5group = config->grab<std::string>("map_h5_path");
-  output_path = outfile + ":" + h5group;
-  wtr = BaseWriter::get_writer_for_filename(output_path, fixed->comm());
-  output_path = wtr->write_map(*reg.m_p_map);
-  PetscPrintf(PETSC_COMM_WORLD, "Saving map to %s\n", output_path.c_str());
+    outfile = config->grab<std::string>("map");
+    h5group = config->grab<std::string>("map_h5_path");
+    output_path = outfile + ":" + h5group;
+    wtr = BaseWriter::get_writer_for_filename(output_path, fixed->comm());
+    output_path = wtr->write_map(*reg.m_p_map);
+    PetscPrintf(PETSC_COMM_WORLD, "Saved map to %s\n", output_path.c_str());
+  }
+  catch (const pFIREExpectedError &e)
+  {
+    std::cerr << "Error: Failed to save results: " << e.what() << std::endl;
+    return;
+  }
 }
