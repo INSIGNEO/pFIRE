@@ -129,7 +129,7 @@ void Elastic::innerloop(integer outer_count)
     innerstep(inum, recalculate_lambda);
     recalculate_lambda = false;
 
-    if (configuration.grab<bool>("save_intermediate_flames"))
+    if (configuration.grab<bool>("save_intermediate_frames"))
     {
       save_debug_frame(outer_count, inum);
       save_debug_map(outer_count, inum);

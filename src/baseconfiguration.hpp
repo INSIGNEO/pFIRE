@@ -48,7 +48,9 @@ public:
     }
     catch (std::out_of_range &err)
     {
-      throw InternalError("Attempt to access non-existent configuration option", __FILE__, __LINE__);
+      std::ostringstream errss;
+      errss << "Attempt to access non-existent configuration option \"" << key << "\"";
+      throw InternalError(errss.str(), __FILE__, __LINE__);
     }
   }
 
@@ -62,7 +64,9 @@ public:
     }
     catch (std::out_of_range &err)
     {
-      throw InternalError("Attempt to access non-existent configuration option", __FILE__, __LINE__);
+      std::ostringstream errss;
+      errss << "Attempt to access non-existent configuration option \"" << key << "\"";
+      throw InternalError(errss.str(), __FILE__, __LINE__);
     }
   }
 
@@ -76,7 +80,9 @@ public:
     }
     catch (std::out_of_range &err)
     {
-      throw InternalError("Attempt to access non-existent configuration option", __FILE__, __LINE__);
+      std::ostringstream errss;
+      errss << "Attempt to access non-existent configuration option \"" << key << "\"";
+      throw InternalError(errss.str(), __FILE__, __LINE__);
     }
 }
 
@@ -89,7 +95,9 @@ public:
     }
     catch (std::out_of_range &err)
     {
-      throw InternalError("Attempt to access non-existent configuration option", __FILE__, __LINE__);
+      std::ostringstream errss;
+      errss << "Attempt to access non-existent configuration option \"" << key << "\"";
+      throw InternalError(errss.str(), __FILE__, __LINE__);
     }
   }
 
