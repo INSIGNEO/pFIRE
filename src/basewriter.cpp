@@ -54,7 +54,7 @@ std::string BaseWriter::find_writer_for_filename(const std::string &filename)
   }
   std::ostringstream err;
   err << "No suitable writer available for extension \"" << extension << "\".";
-  throw BadConfigurationError(err.str());
+  throw InvalidWriterError(err.str());
 }
 
 BaseWriter_unique BaseWriter::get_writer_by_name(
@@ -68,7 +68,7 @@ BaseWriter_unique BaseWriter::get_writer_by_name(
   }
   std::ostringstream err;
   err << "No registered writer named \"" << name << "\".";
-  throw BadConfigurationError(err.str());
+  throw InvalidWriterError(err.str());
 }
 
 BaseWriter_unique BaseWriter::get_writer_for_filename(const std::string &filename, MPI_Comm comm)
@@ -83,7 +83,7 @@ BaseWriter_unique BaseWriter::get_writer_for_filename(const std::string &filenam
     std::ostringstream err;
     err << "No suitable writer available for file \"" << filename << "\"."
         << "\n(" << errstr.what() << ")\n";
-    throw BadConfigurationError(err.str());
+    throw InvalidWriterError(err.str());
   }
 }
 
