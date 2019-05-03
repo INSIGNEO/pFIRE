@@ -12,6 +12,63 @@ import flannel.io as fio
 default_mask_name = "default_mask.mask"
 config_defaults = {"mask": None}
 
+
+class pFIRERunnerMixin:
+    """ Mixin class to provide a pFIRE runner interface
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(pFIRERunnerMixin, self).__init__(*args, **kwargs)
+        self.pfire_fixed_path = None
+        self.pfire_moved_path = None
+        self.pfire_mask_path = None
+        self.pfire_reg_path = None
+        self.pfire_map_path = None
+
+
+    def run_pfire(self, config_path, comm_size=1):
+        """ Run pFIRE using provided config file
+        """
+        if comm_size != 1:
+            raise RuntimeError("MPI pFIRE runs not yet supported")
+
+        pfire_workdir, pfire_config = [os.path.normpath(x) for x in
+                                       os.path.split(config_path)]
+        config = ConfigObj(config_path)
+        print("Running pFIRE on {}".format(pfire_config))
+
+        self.pfire_fixed_path = os.path.join(pfire_workdir, config['fixed'])
+        self.pfire_moved_path = os.path.join(pfire_workdir, config['moved'])
+        try:
+            self.pfire_mask_path = os.path.join(pfire_workdir, config['mask'])
+        except KeyError:
+            pass
+
+        self.pfire_logfile = "{}_pfire.log".format(os.path.splitext(pfire_config)[0])
+        with open(self.pfire_logfile, 'w') as logfile:
+            pfire_args = ['pfire', pfire_config]
+            print(config_path)
+            res = sp.run(pfire_args, cwd=pfire_workdir, stdout=logfile,
+                         stderr=logfile)
+
+        if res.returncode != 0:
+            raise RuntimeError("Failed to run pFIRE, check log for details: {}"
+                               "".format(self.pfire_logfile))
+
+        with open(self.pfire_logfile, 'r') as logfile:
+            for line in logfile:
+                if line.startswith("Saved registered image to "):
+                    reg_path = line.replace("Saved registered image to ",
+                                            "").strip()
+                    self.pfire_reg_path = os.path.join(pfire_workdir, reg_path)
+                elif line.startswith("Saved map to "):
+                    map_path = line.replace("Saved map to ", "").strip()
+                    self.pfire_map_path = os.path.join(pfire_workdir, map_path)
+
+        if not (self.pfire_reg_path or self.pfire_map_path):
+            raise RuntimeError("Failed to extract result path(s) from log")
+
+
 class ResultObject:
     """
     Small object to hold registration result info
@@ -36,37 +93,6 @@ def build_shirt_config(config_file):
     defaults.merge(config)
     return defaults
 
-def run_pfire(config_file, comm_size=1):
-    """
-    Run pFIRE using provided config file
-    """
-    config = ConfigObj(config_file)
-    print("Running pFIRE on {}".format(config_file))
-    pfire_args = ['pfire', config_file]
-
-    logfile_name = "{}_pfire.log".format(os.path.splitext(config_file)[0])
-    with open(logfile_name, 'w') as logfile:
-        res = sp.run(pfire_args, stdout=logfile, stderr=logfile)
-
-    if res.returncode != 0:
-        raise RuntimeError("Failed to run pFIRE, check log for details: {}"
-                           "".format(logfile_name))
-
-    reg_path = str()
-    map_path = str()
-    with open(logfile_name, 'r') as logfile:
-        for line in logfile:
-            if line.startswith("Saving registered image to "):
-                reg_path = line.replace("Saving registered image to ", "").strip()
-            if line.startswith("Saving map to "):
-                map_path = line.replace("Saving map to ", "").strip()
-    if not reg_path:
-        raise RuntimeError("Failed to extract registered image path from log")
-    if not map_path:
-        raise RuntimeError("Failed to extract map path from log")
-
-    return ResultObject(reg_path, map_path, logfile_name, config['fixed'],
-                        config['moved'])
 
 
 def run_shirt(config_file):
