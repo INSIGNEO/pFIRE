@@ -9,8 +9,21 @@ from configobj import ConfigObj
 
 import flannel.io as fio
 
-default_mask_name = "default_mask.mask"
-config_defaults = {"mask": None}
+from .image_routines import load_image
+
+
+class ResultObject:
+    """
+    Small object to hold registration result info
+    """
+
+    def __init__(self, registered_path, map_path, log_path, fixed_path=None,
+                 moved_path=None):
+        self.registered_path = registered_path
+        self.map_path = map_path
+        self.log_path = log_path
+        self.fixed_path = fixed_path
+        self.moved_path = moved_path
 
 
 class pFIRERunnerMixin:
@@ -69,65 +82,79 @@ class pFIRERunnerMixin:
             raise RuntimeError("Failed to extract result path(s) from log")
 
 
-class ResultObject:
+
+
+class ShIRTRunnerMixin:
+    """ Mixin class to provide a ShIRT runner interface accepted a pFIRE config
+    file
     """
-    Small object to hold registration result info
-    """
 
-    def __init__(self, registered_path, map_path, log_path, fixed_path=None,
-                 moved_path=None):
-        self.registered_path = registered_path
-        self.map_path = map_path
-        self.log_path = log_path
-        self.fixed_path = fixed_path
-        self.moved_path = moved_path
+    default_mask_name = "default_mask.mask"
+    config_defaults = {"mask": None}
 
-
-def build_shirt_config(config_file):
-    """
-    Build ShIRT config object given pfire config file
-    """
-    # read pfire config and merge with default options to get full option list
-    defaults = ConfigObj(config_defaults)
-    config = ConfigObj(config_file)
-    defaults.merge(config)
-    return defaults
+    def __init__(self, *args, **kwargs):
+        super(ShIRTRunnerMixin, self).__init__(*args, **kwargs)
+        self.shirt_fixed_path = None
+        self.shirt_moved_path = None
+        self.shirt_mask_path = None
+        self.shirt_reg_path = None
+        self.shirt_map_path = None
 
 
+    def _build_shirt_config(self, config_file):
+        """
+        Build ShIRT config object given pfire config file
+        """
+        # read pfire config and merge with default options to get full option list
+        defaults = ConfigObj(self.config_defaults)
+        config = ConfigObj(config_file)
+        defaults.merge(config)
+        return defaults
 
-def run_shirt(config_file):
-    """
-    Run ShIRT using a pfire config file for input
-    """
-    print("Running ShIRT on {}".format(config_file))
-    config = build_shirt_config(config_file)
+    def run_shirt(self, config_file):
+        """
+        Run ShIRT using a pfire config file for input
+        """
+        print("Running ShIRT on {}".format(config_file))
+        config = self._build_shirt_config(config_file)
+        print(config)
 
-    map_path = 'map.map'
-    reg_path = 'registered.image'
+        configname = os.path.splitext(os.path.basename(config_file))[0]
+        configname = configname.replace(".", "_")
 
-    if config['mask'] is None:
-        maskname = default_mask_name
-        data = fio.load_image(config['fixed'])
-        data = np.full(data.shape, 1.0)
-        fio.save_image(data, maskname)
-        config['mask'] = maskname
+        self.shirt_reg_path = 'shirt_{}_registered.image'.format(configname)
+        self.shirt_map_path = 'shirt_{}_map.map'.format(configname)
 
-    shirt_args = ['ShIRT', 'Register', 'verbose',
-                  'Fixed', config['fixed'].replace('.image', ''),
-                  'Moved', config['moved'].replace('.image', ''),
-                  'Mask', config['mask'].replace('.mask', ''),
-                  'NodeSpacing', config['nodespacing'],
-                  'Registered', reg_path.replace('.image', ''),
-                  'Map', map_path.replace('.map', '')]
+        for fom in ['fixed', 'moved', 'mask']:
+            if fom == 'mask' and config[fom] is None:
+                continue
+            if config[fom].endswith(".image"):
+                setattr(self, "shirt_{}_path".format(fom), config[fom])
+            else:
+                data = load_image(config[fom])
+                newname = os.path.splitext(config[fom])[0] + '.image'
+                fio.save_image(data, newname)
+                setattr(self, "shirt_{}_path".format(fom), newname)
 
-    logfile_name = "{}_shirt.log".format(os.path.splitext(config_file)[0])
-    with open(logfile_name, 'w') as logfile:
-        sp.run(['ShIRT', 'setpath', 'DataPath', '.'])
-        res = sp.run(shirt_args, stdout=logfile, stderr=logfile)
+        if config['mask'] is None:
+            self.shirt_mask_path = self.default_mask_name
+            data = fio.load_image(config['fixed'])
+            data = np.full(data.shape, 1.0)
+            fio.save_image(data, self.shirt_mask_path)
 
-    if res.returncode != 0:
-        raise RuntimeError("Failed to run ShIRT, check log for details: {}"
-                           "".format(logfile_name))
+        shirt_args = ['ShIRT', 'Register', 'verbose',
+                      'Fixed', self.shirt_fixed_path.replace('.image', ''),
+                      'Moved', self.shirt_moved_path.replace('.image', ''),
+                      'Mask', self.shirt_mask_path.replace('.mask', ''),
+                      'NodeSpacing', config['nodespacing'],
+                      'Registered', self.shirt_reg_path.replace('.image', ''),
+                      'Map', self.shirt_map_path.replace('.map', '')]
 
-    return ResultObject(reg_path, map_path, logfile_name, config['fixed'],
-                        config['moved'])
+        logfile_name = "{}_shirt.log".format(os.path.splitext(config_file)[0])
+        with open(logfile_name, 'w') as logfile:
+            sp.run(['ShIRT', 'setpath', 'DataPath', '.'])
+            res = sp.run(shirt_args, stdout=logfile, stderr=logfile)
+
+        if res.returncode != 0:
+            raise RuntimeError("Failed to run ShIRT, check log for details: {}"
+                               "".format(logfile_name))

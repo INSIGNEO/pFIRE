@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 
 import argparse
+import os
 import sys
 
-from .analysis_routines import compare_image_results
+from docutils.core import publish_string
+
+from .analysis_routines import compare_image_results, compare_map_results
 from .testinstance import TestInstance
 from .application_routines import pFIRERunnerMixin
 
@@ -16,11 +19,14 @@ def parse_args():
     parser.add_argument("pfire_config")
     parser.add_argument("--accepted_image", type=str)
     parser.add_argument("--accepted_map", type=str)
+    parser.add_argument("--test_name", type=str, default="analysis")
 
     return parser.parse_args()
 
 
 def main():
+    """ Run a single regression test
+    """
     if sys.version_info < (3, 5):
         print("This script requires minimum python version 3.5",
               file=sys.stderr)
@@ -28,19 +34,22 @@ def main():
 
     args = parse_args()
 
-    test = ComparisonTest(args.pfire_config, accepted_image=args.accepted_image,
-                          accepted_map=args.accepted_image)
+    test = RegressionTest(args.pfire_config, name=args.test_name,
+                          accepted_image=args.accepted_image,
+                          accepted_map=args.accepted_map)
 
     test.run()
-    test.generate_report()
+    res = test.generate_report()
+
+    print("HTML report written to \"{}\"".format(res))
 
 
-class ComparisonTest(TestInstance, pFIRERunnerMixin):
+class RegressionTest(TestInstance, pFIRERunnerMixin):
     """ Test by comparing with an accepted result image/map
     """
 
     def __init__(self, pfire_config, name=None, accepted_image=None,
-                 accepted_map=None):
+                 accepted_map=None, output_path=None):
         # Check this before we go anywhere else
         if not (accepted_map or accepted_image):
             raise ValueError("At least one of accepted_image or accepted_map "
@@ -51,6 +60,7 @@ class ComparisonTest(TestInstance, pFIRERunnerMixin):
         self.accepted_image_path = accepted_image
         self.accepted_map_path = accepted_map
         self.run_errstring = None
+
 
     def run(self):
         """ Run pfire against provided config
@@ -63,14 +73,37 @@ class ComparisonTest(TestInstance, pFIRERunnerMixin):
 
         return True
 
+
     def generate_report(self):
-        
-        image_comparison = compare_image_results(self.pfire_fixed_path,
-                                                 self.pfire_moved_path,
-                                                 self.pfire_reg_path,
-                                                 self.accepted_image_path)
 
+        tables = ""
+        images = ""
 
+        if self.accepted_image_path:
+            tbl, img = compare_image_results(self.pfire_fixed_path,
+                                             self.pfire_moved_path,
+                                             self.pfire_reg_path,
+                                             self.accepted_image_path,
+                                             fig_dir=self.fig_dir,
+                                             cmpname="Accepted")
+            tables = "\n".join((tables, tbl))
+            images = "\n".join((images, img))
+
+        if self.accepted_map_path:
+            raise NotImplementedError("Need better map loader first")
+            tbl, img = compare_map_results(self.accepted_map_path,
+                                           self.pfire_map_path,
+                                           fig_dir=self.fig_dir,
+                                           cmpname="Accepted")
+            tables = "\n".join((tables, tbl))
+            images = "\n".join((images, img))
+
+        rst = "\n".join((tables, images))
+        filename = os.path.join(self.output_path, "{}.html".format(self.name))
+        with open(filename, 'wt') as fh:
+            fh.write(publish_string(rst, writer_name='html5').decode())
+
+        return filename
 
 
 if __name__ == "__main__":
