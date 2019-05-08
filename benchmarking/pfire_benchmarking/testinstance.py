@@ -16,11 +16,13 @@ class TestInstance:
             self.name = os.path.splitext(os.path.basename(pfire_config))[0]
 
         if output_path is None:
-            self.output_path = os.path.normpath('.')
+            self.output_path = os.path.normpath(os.path.join('.', self.name))
         else:
-            self.output_path = os.path.normpath(output_path)
+            self.output_path = os.path.normpath(os.path.join(output_path, self.name))
 
-        self.fig_dir = os.path.join(self.output_path, self.name)
+        os.makedirs(self.output_path, exist_ok=True)
+
+        self.report_file = os.path.join(self.output_path, self.name + '.html')
 
         self.pfire_config = pfire_config
 

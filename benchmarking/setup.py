@@ -16,5 +16,6 @@ setup(name='pfire_benchmarking',
           'console_scripts':  [
               'pfire-shirt-compare = pfire_benchmarking.cross_validate:main',
               'pfire-regression-compare = pfire_benchmarking.regression_validate:main',
+              'pfire-integration-test = pfire_benchmarking.__main__:main'
               ],
       })

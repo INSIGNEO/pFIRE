@@ -54,7 +54,7 @@ class RegressionTest(TestInstance, pFIRERunnerMixin):
         if not (accepted_map or accepted_image):
             raise ValueError("At least one of accepted_image or accepted_map "
                              "must be provided")
-        super().__init__(pfire_config, name=name)
+        super().__init__(pfire_config, name=name, output_path=output_path)
 
 
         self.accepted_image_path = accepted_image
@@ -82,28 +82,26 @@ class RegressionTest(TestInstance, pFIRERunnerMixin):
         if self.accepted_image_path:
             tbl, img = compare_image_results(self.pfire_fixed_path,
                                              self.pfire_moved_path,
-                                             self.pfire_reg_path,
                                              self.accepted_image_path,
-                                             fig_dir=self.fig_dir,
+                                             self.pfire_reg_path,
+                                             fig_dir=self.output_path,
                                              cmpname="Accepted")
             tables = "\n".join((tables, tbl))
             images = "\n".join((images, img))
 
         if self.accepted_map_path:
-            raise NotImplementedError("Need better map loader first")
             tbl, img = compare_map_results(self.accepted_map_path,
                                            self.pfire_map_path,
-                                           fig_dir=self.fig_dir,
+                                           fig_dir=self.output_path,
                                            cmpname="Accepted")
             tables = "\n".join((tables, tbl))
             images = "\n".join((images, img))
 
         rst = "\n".join((tables, images))
-        filename = os.path.join(self.output_path, "{}.html".format(self.name))
-        with open(filename, 'wt') as fh:
+        with open(self.report_file, 'wt') as fh:
             fh.write(publish_string(rst, writer_name='html5').decode())
 
-        return filename
+        return self.report_file
 
 
 if __name__ == "__main__":

@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+""" I/O routines for maps, masks and images
+"""
+
 from functools import partial
 import numpy as np
 import h5py
@@ -24,12 +27,32 @@ def load_image(imagepath):
             break
 
     if image is None:
-        raise RuntimeError("Failed to load image - {}".format(imagepath))
+        raise RuntimeError("Failed to load image \"{}\"".format(imagepath))
 
     image = image / image.max()
 
     return image
 
+
+def load_map(mappath):
+    """ Attempt to load map with known loaders
+    """
+    data = None
+    shirtloader = lambda path: fio.load_map(path)[0][0:3]
+    maploaders = [load_pfire_map, shirtloader]
+
+    for loader in maploaders:
+        try:
+            data = loader(mappath)
+        except (ValueError, OSError):
+            pass
+        if data is not None:
+            break
+
+    if data is None:
+        raise RuntimeError("Failed to load map \"{}\"".format(mappath))
+
+    return data
 
 def load_pfire_image(imagepath):
     """Load pFIRE image

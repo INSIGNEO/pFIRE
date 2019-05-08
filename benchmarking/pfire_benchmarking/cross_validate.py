@@ -46,8 +46,9 @@ class ComparisonTest(TestInstance, pFIRERunnerMixin, ShIRTRunnerMixin):
 
     def __init__(self, pfire_config, name=None, output_path=None):
 
-        super().__init__(pfire_config, name=name)
+        super().__init__(pfire_config, name=name, output_path=output_path)
         self.run_errstring = None
+        print("output_path: {}".format(self.output_path))
 
     def run(self):
         """ Run pfire against provided config
@@ -72,32 +73,30 @@ class ComparisonTest(TestInstance, pFIRERunnerMixin, ShIRTRunnerMixin):
     def generate_report(self):
         """ Generate rst for report on ShiRT/pFIRE comparison
         """
-
         tables = ""
         images = ""
 
         tbl, img = compare_image_results(self.pfire_fixed_path,
                                          self.pfire_moved_path,
-                                         self.pfire_reg_path,
                                          self.shirt_reg_path,
-                                         fig_dir=self.fig_dir,
+                                         self.pfire_reg_path,
+                                         fig_dir=self.output_path,
                                          cmpname="ShIRT")
         tables = "\n".join((tables, tbl))
         images = "\n".join((images, img))
 
         tbl, img = compare_map_results(self.shirt_map_path,
                                        self.pfire_map_path,
-                                       fig_dir=self.fig_dir,
+                                       fig_dir=self.output_path,
                                        cmpname="ShIRT")
         tables = "\n".join((tables, tbl))
         images = "\n".join((images, img))
 
         rst = "\n".join((tables, images))
-        filename = os.path.join(self.output_path, "{}.html".format(self.name))
-        with open(filename, 'wt') as fh:
+        with open(self.report_file, 'wt') as fh:
             fh.write(publish_string(rst, writer_name='html5').decode())
 
-        return filename
+        return self.report_file
 
 
 if __name__ == "__main__":

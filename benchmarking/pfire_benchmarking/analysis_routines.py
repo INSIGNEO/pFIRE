@@ -13,9 +13,7 @@ import scipy.stats as sps
 
 from tabulate import tabulate
 
-import flannel.io as fio
-
-from .image_routines import load_image, load_pfire_map
+from .image_routines import load_image, load_map
 
 MIResult = namedtuple("mi_result", ['mi', 'hist'])
 
@@ -78,7 +76,7 @@ def plot_2dhist(data, path, title):
     plt.savefig(path)
     plt.close()
 
-    return ".. image:: {}\n".format(path)
+    return ".. image:: {}\n".format(os.path.basename(path))
 
 
 def calculate_proficiency(alpha, beta):
@@ -100,6 +98,8 @@ def compare_image_results(fixed_path, moved_path, accepted_path,
     """
     if fig_dir:
         os.makedirs(os.path.normpath(fig_dir), mode=0o755, exist_ok=True)
+    else:
+        fig_dir = os.path.normpath('.')
 
     mi_start = calculate_proficiency(fixed_path, moved_path)
     mi_accepted = calculate_proficiency(fixed_path, accepted_path)
@@ -151,12 +151,11 @@ def compare_map_results(cmp_map_path, pfire_map_path, fig_dir=None,
     if fig_dir:
         os.makedirs(os.path.normpath(fig_dir), mode=0o755, exist_ok=True)
 
-    cmp_map = fio.load_map(cmp_map_path)[0][0:3]
-    pfire_map = load_pfire_map(pfire_map_path)
+    cmp_map = load_map(cmp_map_path)
+    pfire_map = load_map(pfire_map_path)
 
     table_entries = [("Map coefficients of determination (R^2), by dimension:", "")]
     image_entries = []
-
 
     for didx, dim in enumerate(['X', 'Y', 'Z']):
         try:
@@ -174,7 +173,8 @@ def compare_map_results(cmp_map_path, pfire_map_path, fig_dir=None,
                 plt.legend()
                 plt.savefig(savepath)
                 plt.close()
-                image_entries.append(".. image:: {}".format(savepath))
+                image_entries.append(".. image:: {}"
+                                     "".format(os.path.basename(savepath)))
         except IndexError:
             break
 
