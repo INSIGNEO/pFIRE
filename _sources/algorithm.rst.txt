@@ -2,6 +2,13 @@
 The pFIRE Algorithm
 ===================
 
+---------------------
+Algorithm Description
+---------------------
+
+The Registration Equation
+-------------------------
+
 The basic equation that pFIRE attempts to solve relates the fixed image :math:`\vec{f}` to the
 moved image :math:`\vec{m}` via the displacement map :math:`\vec{a}`.  This can be written in one
 of two forms, depending on if we are "pushing" the moved image onto the fixed image or pulling the
@@ -95,47 +102,47 @@ This allows the problem to be expressed in the form of a matrix equation:
 .. math::
   
   \begin{align}
-    (\bar{F} - \bar{M}) &= \bar{\bar{T}}\bar{A} = \bar{\bar{I}}\bar{\bar{\Phi}}\bar{A} \\
-    &= \begin{bmatrix} \bar{\bar{I}}_s \\ \bar{\bar{I}}_x \\ \bar{\bar{I}}_y \\ \bar{\bar{I}}_z \end{bmatrix}
-    \begin{bmatrix} \bar{\bar{\phi}} \\ \bar{\bar{\phi}} \\ \bar{\bar{\phi}} \\ \bar{\bar{\phi}} \end{bmatrix}
+    (\bar{F} - \bar{M}) &= \mathbf{{T}}\bar{A} = \mathbf{{I}}\mathbf{{\Phi}}\bar{A} \\
+    &= \begin{bmatrix} \mathbf{{I}}_s \\ \mathbf{{I}}_x \\ \mathbf{{I}}_y \\ \mathbf{{I}}_z \end{bmatrix}
+    \begin{bmatrix} \mathbf{{\phi}} \\ \mathbf{{\phi}} \\ \mathbf{{\phi}} \\ \mathbf{{\phi}} \end{bmatrix}
     \begin{bmatrix} \bar{A}_s \\ \bar{A}_x \\ \bar{A}_y \\ \bar{A}_z \end{bmatrix}
   \end{align}
 
 where :math:`\bar{F}` and :math:`\bar{M}` are column vectors containing the fixed and moved image
-intensities, :math:`\bar{\bar{I}}_\alpha` are the square, diagonal submatrices for each dimension
-of the gradient information, :math:`\bar{\bar{\phi}}` is the same submatrix for each dimension, and
+intensities, :math:`\mathbf{{I}}_\alpha` are the square, diagonal submatrices for each dimension
+of the gradient information, :math:`\mathbf{{\phi}}` is the same submatrix for each dimension, and
 :math:`A_\alpha` are column matrices containing the nodal displacements for each dimension of the
 map.
 
-The matrix :math:`T` is defined here as the product of the matrices :math:`\bar{\bar{I}}` and
-:math:`\bar{\bar{\Phi}}`, and it is, in general, non-square.  We therefore create a soluable matrix
-equation from this by multiplying both sides by the transpose :math:`\bar{\bar{T}}^t`,
+The matrix :math:`T` is defined here as the product of the matrices :math:`\mathbf{{I}}` and
+:math:`\mathbf{{\Phi}}`, and it is, in general, non-square.  We therefore create a soluable matrix
+equation from this by multiplying both sides by the transpose :math:`\mathbf{{T}}^t`,
 
 .. math::
 
-  \bar{\bar{T}}^t(\bar{F} - \bar{M}) = \bar{\bar{T}}^t\bar{\bar{T}}\bar{A}
+  \mathbf{{T}}^t(\bar{F} - \bar{M}) = \mathbf{{T}}^t\mathbf{{T}}\bar{A}
 
-yielding an equation with square matrix :math:`\bar{\bar{T}}^t\bar{\bar{T}}` which may be solved by
+yielding an equation with square matrix :math:`\mathbf{{T}}^t\mathbf{{T}}` which may be solved by
 standard numerical methods.
 
-Unfortunately :math:`\bar{\bar{T}}^t\bar{\bar{T}}` is typically singular and so we must apply some
+Unfortunately :math:`\mathbf{{T}}^t\mathbf{{T}}` is typically singular and so we must apply some
 kind of regularisation to make the problem soluable.  In this case we use the method of Tikhonov
 regularisation, which includes an additional smoothing term in the problem. In this case the
 Laplacian matrix is chosen, adding minimization of the second derivative of the map as the extra
-constraint (:math:`\bar{\bar{L}}\bar{A} = 0` and the problem becomes,
+constraint (:math:`\mathbf{{L}}\bar{A} = 0` and the problem becomes,
 
 .. math::
 
- \begin{bmatrix}\bar{\bar{T}}^t & \lambda^\frac{1}{2}\bar{\bar{L}}^t \end{bmatrix}
- \begin{bmatrix}(\bar{F} - \bar{M}) \\ \bar{\bar{0}}\end{bmatrix}
-  = \begin{bmatrix}\bar{\bar{T}}^t\bar{\bar{T}} + \lambda\bar{\bar{L}}^t\bar{\bar{L}}\end{bmatrix}\bar{A}.
+ \begin{bmatrix}\mathbf{{T}}^t & \lambda^\frac{1}{2}\mathbf{{L}}^t \end{bmatrix}
+ \begin{bmatrix}(\bar{F} - \bar{M}) \\ \mathbf{{0}}\end{bmatrix}
+  = \begin{bmatrix}\mathbf{{T}}^t\mathbf{{T}} + \lambda\mathbf{{L}}^t\mathbf{{L}}\end{bmatrix}\bar{A}.
 
 This simplifies to
 
 .. math::
 
- \bar{\bar{T}}^t(\bar{F} - \bar{M})
-  = \begin{bmatrix}\bar{\bar{T}}^t\bar{\bar{T}} + \lambda\bar{\bar{L}}^t\bar{\bar{L}}\end{bmatrix}\bar{A}
+ \mathbf{{T}}^t(\bar{F} - \bar{M})
+  = \begin{bmatrix}\mathbf{{T}}^t\mathbf{{T}} + \lambda\mathbf{{L}}^t\mathbf{{L}}\end{bmatrix}\bar{A}
 
 where :math:`\lambda` is a free parameter which is chosen to minimize the condition number of the
 regularised matrix. Adding this additional Laplacian constraint ensures that the smoothest solution
@@ -147,29 +154,29 @@ constrain the overall displacement to be maximally smooth, thus our additional c
 
 .. math::
 
-  \bar{\bar{L}}(\bar{A} + \bar{A}_p) = 0
+  \mathbf{{L}}(\bar{A} + \bar{A}_p) = 0
 
 or
 
 .. math::
 
-  \bar{\bar{L}}(\bar{A} = - \bar{A}_p)
+  \mathbf{{L}}(\bar{A} = - \bar{A}_p)
 
 
 So the equation becomes
 
 .. math::
 
- \begin{bmatrix}\bar{\bar{T}}^t & \lambda^\frac{1}{2}\bar{\bar{L}}^t \end{bmatrix}
- \begin{bmatrix}(\bar{F} - \bar{M}) \\ -\lambda^\frac{1}{2}\bar{\bar{L}}^t\bar{A}_p\end{bmatrix}
-  = \begin{bmatrix}\bar{\bar{T}}^t\bar{\bar{T}} + \lambda\bar{\bar{L}}^t\bar{\bar{L}}\end{bmatrix}\bar{A}.
+ \begin{bmatrix}\mathbf{{T}}^t & \lambda^\frac{1}{2}\mathbf{{L}}^t \end{bmatrix}
+ \begin{bmatrix}(\bar{F} - \bar{M}) \\ -\lambda^\frac{1}{2}\mathbf{{L}}^t\bar{A}_p\end{bmatrix}
+  = \begin{bmatrix}\mathbf{{T}}^t\mathbf{{T}} + \lambda\mathbf{{L}}^t\mathbf{{L}}\end{bmatrix}\bar{A}.
 
 This simplifies to
 
 .. math::
 
- \bar{\bar{T}}^t(\bar{F} - \bar{M}) - \lambda\bar{\bar{L}}^t\bar{\bar{L}}\bar{A}_p
-  = \begin{bmatrix}\bar{\bar{T}}^t\bar{\bar{T}} + \lambda\bar{\bar{L}}^t\bar{\bar{L}}\end{bmatrix}\bar{A}
+ \mathbf{{T}}^t(\bar{F} - \bar{M}) - \lambda\mathbf{{L}}^t\mathbf{{L}}\bar{A}_p
+  = \begin{bmatrix}\mathbf{{T}}^t\mathbf{{T}} + \lambda\mathbf{{L}}^t\mathbf{{L}}\end{bmatrix}\bar{A}
 
 This form of the equation "remembers" the value of the map from the previous iteration and attempts
 to enforce global smoothing on the final result and is referred to as the "memory term".  This
@@ -177,3 +184,17 @@ method of smoothing is useful for registering images where the displacement is e
 continuous and smooth, for example in the case of registration of multimodal images of the same
 structure.  In constrast, this option should be disabled in the case that image features are
 expected to move relative to each other, for example in cell-tracking applications.
+
+----------------------
+Implementation Details
+----------------------
+
+Calculating :math:`\mathbf{{T}}^t\mathbf{{T}}`
+------------------------------------------------
+
+Implementation of the algorithm can be made more efficient by understanding the structure of the
+:math:`\mathbf{{I}}` and :math:`\mathbf{{\Phi}}` matrices, as prior knowledge of the zero-patterns
+in these matrices can make calculation of the final matrix :math:`\mathbf{{T}}^t\mathbf{{T}}` much
+more efficient.  Further, since the :math:`\mathbf{{I}}` matrix is diagonal we know that the zero
+pattern of its product with any matrix will match that of the other matrix, therefore we need only
+consider the zero-pattern of the interpolation matrix :math:`\mathbf{{\Phi}}`.

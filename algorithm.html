@@ -91,7 +91,17 @@
 <li class="toctree-l1"><a class="reference internal" href="cli_quickstart.html">Running pFIRE</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cli_ref.html">pFIRE Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">pFIRE Tutorial</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">The pFIRE Algorithm</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">The pFIRE Algorithm</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#algorithm-description">Algorithm Description</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#the-registration-equation">The Registration Equation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#implementation-details">Implementation Details</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#calculating">Calculating <span class="math notranslate nohighlight">\(\mathbf{{T}}^t\mathbf{{T}}\)</span></a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 
             
@@ -157,6 +167,10 @@
             
   <div class="section" id="the-pfire-algorithm">
 <h1>The pFIRE Algorithm<a class="headerlink" href="#the-pfire-algorithm" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="algorithm-description">
+<h2>Algorithm Description<a class="headerlink" href="#algorithm-description" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="the-registration-equation">
+<h3>The Registration Equation<a class="headerlink" href="#the-registration-equation" title="Permalink to this headline">¶</a></h3>
 <p>The basic equation that pFIRE attempts to solve relates the fixed image <span class="math notranslate nohighlight">\(\vec{f}\)</span> to the
 moved image <span class="math notranslate nohighlight">\(\vec{m}\)</span> via the displacement map <span class="math notranslate nohighlight">\(\vec{a}\)</span>.  This can be written in one
 of two forms, depending on if we are “pushing” the moved image onto the fixed image or pulling the
@@ -219,36 +233,36 @@ depending on the implementation requirements.</p>
 <p>This allows the problem to be expressed in the form of a matrix equation:</p>
 <div class="math notranslate nohighlight">
 \[\begin{split}\begin{align}
-  (\bar{F} - \bar{M}) &amp;= \bar{\bar{T}}\bar{A} = \bar{\bar{I}}\bar{\bar{\Phi}}\bar{A} \\
-  &amp;= \begin{bmatrix} \bar{\bar{I}}_s \\ \bar{\bar{I}}_x \\ \bar{\bar{I}}_y \\ \bar{\bar{I}}_z \end{bmatrix}
-  \begin{bmatrix} \bar{\bar{\phi}} \\ \bar{\bar{\phi}} \\ \bar{\bar{\phi}} \\ \bar{\bar{\phi}} \end{bmatrix}
+  (\bar{F} - \bar{M}) &amp;= \mathbf{{T}}\bar{A} = \mathbf{{I}}\mathbf{{\Phi}}\bar{A} \\
+  &amp;= \begin{bmatrix} \mathbf{{I}}_s \\ \mathbf{{I}}_x \\ \mathbf{{I}}_y \\ \mathbf{{I}}_z \end{bmatrix}
+  \begin{bmatrix} \mathbf{{\phi}} \\ \mathbf{{\phi}} \\ \mathbf{{\phi}} \\ \mathbf{{\phi}} \end{bmatrix}
   \begin{bmatrix} \bar{A}_s \\ \bar{A}_x \\ \bar{A}_y \\ \bar{A}_z \end{bmatrix}
 \end{align}\end{split}\]</div>
 <p>where <span class="math notranslate nohighlight">\(\bar{F}\)</span> and <span class="math notranslate nohighlight">\(\bar{M}\)</span> are column vectors containing the fixed and moved image
-intensities, <span class="math notranslate nohighlight">\(\bar{\bar{I}}_\alpha\)</span> are the square, diagonal submatrices for each dimension
-of the gradient information, <span class="math notranslate nohighlight">\(\bar{\bar{\phi}}\)</span> is the same submatrix for each dimension, and
+intensities, <span class="math notranslate nohighlight">\(\mathbf{{I}}_\alpha\)</span> are the square, diagonal submatrices for each dimension
+of the gradient information, <span class="math notranslate nohighlight">\(\mathbf{{\phi}}\)</span> is the same submatrix for each dimension, and
 <span class="math notranslate nohighlight">\(A_\alpha\)</span> are column matrices containing the nodal displacements for each dimension of the
 map.</p>
-<p>The matrix <span class="math notranslate nohighlight">\(T\)</span> is defined here as the product of the matrices <span class="math notranslate nohighlight">\(\bar{\bar{I}}\)</span> and
-<span class="math notranslate nohighlight">\(\bar{\bar{\Phi}}\)</span>, and it is, in general, non-square.  We therefore create a soluable matrix
-equation from this by multiplying both sides by the transpose <span class="math notranslate nohighlight">\(\bar{\bar{T}}^t\)</span>,</p>
+<p>The matrix <span class="math notranslate nohighlight">\(T\)</span> is defined here as the product of the matrices <span class="math notranslate nohighlight">\(\mathbf{{I}}\)</span> and
+<span class="math notranslate nohighlight">\(\mathbf{{\Phi}}\)</span>, and it is, in general, non-square.  We therefore create a soluable matrix
+equation from this by multiplying both sides by the transpose <span class="math notranslate nohighlight">\(\mathbf{{T}}^t\)</span>,</p>
 <div class="math notranslate nohighlight">
-\[\bar{\bar{T}}^t(\bar{F} - \bar{M}) = \bar{\bar{T}}^t\bar{\bar{T}}\bar{A}\]</div>
-<p>yielding an equation with square matrix <span class="math notranslate nohighlight">\(\bar{\bar{T}}^t\bar{\bar{T}}\)</span> which may be solved by
+\[\mathbf{{T}}^t(\bar{F} - \bar{M}) = \mathbf{{T}}^t\mathbf{{T}}\bar{A}\]</div>
+<p>yielding an equation with square matrix <span class="math notranslate nohighlight">\(\mathbf{{T}}^t\mathbf{{T}}\)</span> which may be solved by
 standard numerical methods.</p>
-<p>Unfortunately <span class="math notranslate nohighlight">\(\bar{\bar{T}}^t\bar{\bar{T}}\)</span> is typically singular and so we must apply some
+<p>Unfortunately <span class="math notranslate nohighlight">\(\mathbf{{T}}^t\mathbf{{T}}\)</span> is typically singular and so we must apply some
 kind of regularisation to make the problem soluable.  In this case we use the method of Tikhonov
 regularisation, which includes an additional smoothing term in the problem. In this case the
 Laplacian matrix is chosen, adding minimization of the second derivative of the map as the extra
-constraint (<span class="math notranslate nohighlight">\(\bar{\bar{L}}\bar{A} = 0\)</span> and the problem becomes,</p>
+constraint (<span class="math notranslate nohighlight">\(\mathbf{{L}}\bar{A} = 0\)</span> and the problem becomes,</p>
 <div class="math notranslate nohighlight">
-\[\begin{split}\begin{bmatrix}\bar{\bar{T}}^t &amp; \lambda^\frac{1}{2}\bar{\bar{L}}^t \end{bmatrix}
-\begin{bmatrix}(\bar{F} - \bar{M}) \\ \bar{\bar{0}}\end{bmatrix}
- = \begin{bmatrix}\bar{\bar{T}}^t\bar{\bar{T}} + \lambda\bar{\bar{L}}^t\bar{\bar{L}}\end{bmatrix}\bar{A}.\end{split}\]</div>
+\[\begin{split}\begin{bmatrix}\mathbf{{T}}^t &amp; \lambda^\frac{1}{2}\mathbf{{L}}^t \end{bmatrix}
+\begin{bmatrix}(\bar{F} - \bar{M}) \\ \mathbf{{0}}\end{bmatrix}
+ = \begin{bmatrix}\mathbf{{T}}^t\mathbf{{T}} + \lambda\mathbf{{L}}^t\mathbf{{L}}\end{bmatrix}\bar{A}.\end{split}\]</div>
 <p>This simplifies to</p>
 <div class="math notranslate nohighlight">
-\[\bar{\bar{T}}^t(\bar{F} - \bar{M})
- = \begin{bmatrix}\bar{\bar{T}}^t\bar{\bar{T}} + \lambda\bar{\bar{L}}^t\bar{\bar{L}}\end{bmatrix}\bar{A}\]</div>
+\[\mathbf{{T}}^t(\bar{F} - \bar{M})
+ = \begin{bmatrix}\mathbf{{T}}^t\mathbf{{T}} + \lambda\mathbf{{L}}^t\mathbf{{L}}\end{bmatrix}\bar{A}\]</div>
 <p>where <span class="math notranslate nohighlight">\(\lambda\)</span> is a free parameter which is chosen to minimize the condition number of the
 regularised matrix. Adding this additional Laplacian constraint ensures that the smoothest solution
 to the problem is chosen.</p>
@@ -256,25 +270,39 @@ to the problem is chosen.</p>
 the previously accumulated displacements to refine the overall solution.  In many cases, we may want to
 constrain the overall displacement to be maximally smooth, thus our additional constraint becomes</p>
 <div class="math notranslate nohighlight">
-\[\bar{\bar{L}}(\bar{A} + \bar{A}_p) = 0\]</div>
+\[\mathbf{{L}}(\bar{A} + \bar{A}_p) = 0\]</div>
 <p>or</p>
 <div class="math notranslate nohighlight">
-\[\bar{\bar{L}}(\bar{A} = - \bar{A}_p)\]</div>
+\[\mathbf{{L}}(\bar{A} = - \bar{A}_p)\]</div>
 <p>So the equation becomes</p>
 <div class="math notranslate nohighlight">
-\[\begin{split}\begin{bmatrix}\bar{\bar{T}}^t &amp; \lambda^\frac{1}{2}\bar{\bar{L}}^t \end{bmatrix}
-\begin{bmatrix}(\bar{F} - \bar{M}) \\ -\lambda^\frac{1}{2}\bar{\bar{L}}^t\bar{A}_p\end{bmatrix}
- = \begin{bmatrix}\bar{\bar{T}}^t\bar{\bar{T}} + \lambda\bar{\bar{L}}^t\bar{\bar{L}}\end{bmatrix}\bar{A}.\end{split}\]</div>
+\[\begin{split}\begin{bmatrix}\mathbf{{T}}^t &amp; \lambda^\frac{1}{2}\mathbf{{L}}^t \end{bmatrix}
+\begin{bmatrix}(\bar{F} - \bar{M}) \\ -\lambda^\frac{1}{2}\mathbf{{L}}^t\bar{A}_p\end{bmatrix}
+ = \begin{bmatrix}\mathbf{{T}}^t\mathbf{{T}} + \lambda\mathbf{{L}}^t\mathbf{{L}}\end{bmatrix}\bar{A}.\end{split}\]</div>
 <p>This simplifies to</p>
 <div class="math notranslate nohighlight">
-\[\bar{\bar{T}}^t(\bar{F} - \bar{M}) - \lambda\bar{\bar{L}}^t\bar{\bar{L}}\bar{A}_p
- = \begin{bmatrix}\bar{\bar{T}}^t\bar{\bar{T}} + \lambda\bar{\bar{L}}^t\bar{\bar{L}}\end{bmatrix}\bar{A}\]</div>
+\[\mathbf{{T}}^t(\bar{F} - \bar{M}) - \lambda\mathbf{{L}}^t\mathbf{{L}}\bar{A}_p
+ = \begin{bmatrix}\mathbf{{T}}^t\mathbf{{T}} + \lambda\mathbf{{L}}^t\mathbf{{L}}\end{bmatrix}\bar{A}\]</div>
 <p>This form of the equation “remembers” the value of the map from the previous iteration and attempts
 to enforce global smoothing on the final result and is referred to as the “memory term”.  This
 method of smoothing is useful for registering images where the displacement is expected to be
 continuous and smooth, for example in the case of registration of multimodal images of the same
 structure.  In constrast, this option should be disabled in the case that image features are
 expected to move relative to each other, for example in cell-tracking applications.</p>
+</div>
+</div>
+<div class="section" id="implementation-details">
+<h2>Implementation Details<a class="headerlink" href="#implementation-details" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="calculating">
+<h3>Calculating <span class="math notranslate nohighlight">\(\mathbf{{T}}^t\mathbf{{T}}\)</span><a class="headerlink" href="#calculating" title="Permalink to this headline">¶</a></h3>
+<p>Implementation of the algorithm can be made more efficient by understanding the structure of the
+<span class="math notranslate nohighlight">\(\mathbf{{I}}\)</span> and <span class="math notranslate nohighlight">\(\mathbf{{\Phi}}\)</span> matrices, as prior knowledge of the zero-patterns
+in these matrices can make calculation of the final matrix <span class="math notranslate nohighlight">\(\mathbf{{T}}^t\mathbf{{T}}\)</span> much
+more efficient.  Further, since the <span class="math notranslate nohighlight">\(\mathbf{{I}}\)</span> matrix is diagonal we know that the zero
+pattern of its product with any matrix will match that of the other matrix, therefore we need only
+consider the zero-pattern of the interpolation matrix <span class="math notranslate nohighlight">\(\mathbf{{\Phi}}\)</span>.</p>
+</div>
+</div>
 </div>
 
 
