@@ -63,6 +63,7 @@ Index
   cli_quickstart.rst
   cli_ref.rst
   tutorial.rst
+  algorithm.rst
 
 .. **pFIRE API Reference**
 
