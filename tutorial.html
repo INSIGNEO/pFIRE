@@ -36,6 +36,7 @@
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
     <link rel="top" title="pFIRE 0.2 documentation" href="index.html"/>
+        <link rel="next" title="The pFIRE Algorithm" href="algorithm.html"/>
         <link rel="prev" title="pFIRE Configuration" href="cli_ref.html"/> 
 
   
@@ -143,6 +144,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#further-reading">Further Reading</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="algorithm.html">The pFIRE Algorithm</a></li>
 </ul>
 
             
@@ -519,7 +521,8 @@ images. It takes a pair of input images, and overlays them to show how closely t
 <p>For example, overlaying the results of the first registration we performed above,</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> tutorial_files/faces_1
 <span class="gp">$</span> overlay_images.py happy.png sad2happy_default.png comparison.png --flip
-<span class="go">Saved comparison.png</span>
+<span class="go">/usr/lib64/python3.6/site-packages/skimage/io/_io.py:49: UserWarning: `as_grey` has been deprecated in favor of `as_gray`</span>
+<span class="go">  warn(&#39;`as_grey` has been deprecated in favor of `as_gray`&#39;)</span>
 </pre></div>
 </div>
 <p>produces the following result:</p>
@@ -734,7 +737,10 @@ in Python. The script takes four arguments:</p>
 navigate to that folder and run</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> tutorial_files/faces_1
 <span class="gp">$</span> mapplot2d.py --flip --invert-map sad2happy_default.png sad.png sad2happy_default.xdmf.h5 sad2happy_map_render.png
-<span class="go">Saved sad2happy_map_render.png</span>
+<span class="go">/usr/lib64/python3.6/site-packages/skimage/io/_io.py:49: UserWarning: `as_grey` has been deprecated in favor of `as_gray`</span>
+<span class="go">  warn(&#39;`as_grey` has been deprecated in favor of `as_gray`&#39;)</span>
+<span class="go">/home/telemin/repos/pfire/reglab/mapplot2d.py:44: FutureWarning: arrays to stack must be passed as a &quot;sequence&quot; type such as list or tuple. Support for non-sequence iterables such as generators is deprecated as of NumPy 1.16 and will raise an error in the future.</span>
+<span class="go">  method=&quot;cubic&quot;) for rv in rev_vecs)</span>
 </pre></div>
 </div>
 <p>which results in:</p>
@@ -985,6 +991,8 @@ DOI:<a class="reference external" href="https://doi.org/10.1016/j.media.2007.06.
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="algorithm.html" class="btn btn-neutral float-right" title="The pFIRE Algorithm" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="cli_ref.html" class="btn btn-neutral" title="pFIRE Configuration" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
