@@ -36,6 +36,7 @@
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
     <link rel="top" title="pFIRE 0.2 documentation" href="index.html"/>
+        <link rel="next" title="Using the Integration Test Suite" href="testsuite.html"/>
         <link rel="prev" title="pFIRE Tutorial" href="tutorial.html"/> 
 
   
@@ -102,6 +103,7 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="testsuite.html">Using the Integration Test Suite</a></li>
 </ul>
 
             
@@ -228,22 +230,25 @@ for <span class="math notranslate nohighlight">\(\alpha=1,2,3\)</span> respectiv
 diagonal tensors, and in the subsequent steps will become a concatentation of four diagonal
 matrices.</p>
 <p>The complexity of implementation may be eased by electing to explicitly flatten the indices
-<span class="math notranslate nohighlight">\(x,y,z\)</span> and <span class="math notranslate nohighlight">\(\mu,\nu,\omega\)</span>, using either row-major or column-major indexing,
-depending on the implementation requirements.</p>
+<span class="math notranslate nohighlight">\(x,y,z\)</span> and <span class="math notranslate nohighlight">\(\mu,\nu,\omega\)</span>. In the case of pFIRE indexing is performed such that the
+x index varies fastest - this is the same indexing scheme as used by PETSc:</p>
+<div class="math notranslate nohighlight">
+\[n(x, y, z) = (z * Y + y)*X + x\]</div>
+<p>where <span class="math notranslate nohighlight">\((X,Y,Z)\)</span> is the size of the mesh.</p>
 <p>This allows the problem to be expressed in the form of a matrix equation:</p>
 <div class="math notranslate nohighlight">
 \[\begin{split}\begin{align}
-  (\bar{F} - \bar{M}) &amp;= \mathbf{{T}}\bar{A} = \mathbf{{I}}\mathbf{{\Phi}}\bar{A} \\
-  &amp;= \begin{bmatrix} \mathbf{{I}}_s \\ \mathbf{{I}}_x \\ \mathbf{{I}}_y \\ \mathbf{{I}}_z \end{bmatrix}
+  (\bar{F} - \bar{M}) &amp;= \mathbf{{T}}\bar{A} = \mathbf{{G}}\mathbf{{\Phi}}\bar{A} \\
+  &amp;= \begin{bmatrix} \mathbf{{G}}_s \\ \mathbf{{G}}_x \\ \mathbf{{G}}_y \\ \mathbf{{G}}_z \end{bmatrix}
   \begin{bmatrix} \mathbf{{\phi}} \\ \mathbf{{\phi}} \\ \mathbf{{\phi}} \\ \mathbf{{\phi}} \end{bmatrix}
   \begin{bmatrix} \bar{A}_s \\ \bar{A}_x \\ \bar{A}_y \\ \bar{A}_z \end{bmatrix}
 \end{align}\end{split}\]</div>
 <p>where <span class="math notranslate nohighlight">\(\bar{F}\)</span> and <span class="math notranslate nohighlight">\(\bar{M}\)</span> are column vectors containing the fixed and moved image
-intensities, <span class="math notranslate nohighlight">\(\mathbf{{I}}_\alpha\)</span> are the square, diagonal submatrices for each dimension
+intensities, <span class="math notranslate nohighlight">\(\mathbf{{G}}_\alpha\)</span> are the square, diagonal submatrices for each dimension
 of the gradient information, <span class="math notranslate nohighlight">\(\mathbf{{\phi}}\)</span> is the same submatrix for each dimension, and
 <span class="math notranslate nohighlight">\(A_\alpha\)</span> are column matrices containing the nodal displacements for each dimension of the
 map.</p>
-<p>The matrix <span class="math notranslate nohighlight">\(T\)</span> is defined here as the product of the matrices <span class="math notranslate nohighlight">\(\mathbf{{I}}\)</span> and
+<p>The matrix <span class="math notranslate nohighlight">\(T\)</span> is defined here as the product of the matrices <span class="math notranslate nohighlight">\(\mathbf{{G}}\)</span> and
 <span class="math notranslate nohighlight">\(\mathbf{{\Phi}}\)</span>, and it is, in general, non-square.  We therefore create a soluable matrix
 equation from this by multiplying both sides by the transpose <span class="math notranslate nohighlight">\(\mathbf{{T}}^t\)</span>,</p>
 <div class="math notranslate nohighlight">
@@ -296,11 +301,46 @@ expected to move relative to each other, for example in cell-tracking applicatio
 <div class="section" id="calculating">
 <h3>Calculating <span class="math notranslate nohighlight">\(\mathbf{{T}}^t\mathbf{{T}}\)</span><a class="headerlink" href="#calculating" title="Permalink to this headline">¶</a></h3>
 <p>Implementation of the algorithm can be made more efficient by understanding the structure of the
-<span class="math notranslate nohighlight">\(\mathbf{{I}}\)</span> and <span class="math notranslate nohighlight">\(\mathbf{{\Phi}}\)</span> matrices, as prior knowledge of the zero-patterns
+<span class="math notranslate nohighlight">\(\mathbf{{G}}\)</span> and <span class="math notranslate nohighlight">\(\mathbf{{\Phi}}\)</span> matrices, as prior knowledge of the zero-patterns
 in these matrices can make calculation of the final matrix <span class="math notranslate nohighlight">\(\mathbf{{T}}^t\mathbf{{T}}\)</span> much
-more efficient.  Further, since the <span class="math notranslate nohighlight">\(\mathbf{{I}}\)</span> matrix is diagonal we know that the zero
+more efficient.  Further, since the <span class="math notranslate nohighlight">\(\mathbf{{G}}\)</span> matrix is diagonal we know that the zero
 pattern of its product with any matrix will match that of the other matrix, therefore we need only
 consider the zero-pattern of the interpolation matrix <span class="math notranslate nohighlight">\(\mathbf{{\Phi}}\)</span>.</p>
+<p>Revisiting the definition of <span class="math notranslate nohighlight">\(\mathbf{\phi}\)</span> (for flattened indices) and a single dimension:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\phi_{\mu}^{i} = \begin{cases}
+  \prod_{n=1,2,3} (1 - | x^n_{i} - x^n_{\mu}| ) &amp;\mathrm{if}\
+    \forall\ (x^n_{i} - x^n_{\mu}) &lt; 1\\
+  0 &amp;\mathrm{otherwise}
+\end{cases}\end{split}\]</div>
+<p>with <span class="math notranslate nohighlight">\(\mu\)</span> the map indices and <span class="math notranslate nohighlight">\(i\)</span> the image indices. So when calculating</p>
+<div class="math notranslate nohighlight">
+\[\mathbf{{T}}^t\mathbf{{T}} = \mathbf{\phi}^\mu_i\mathbf{G}^i_j\mathbf{G}^j_k\mathbf{\phi}^k_\nu\]</div>
+<p>the <span class="math notranslate nohighlight">\(\mathbf{G}\)</span> matrices function as Kronecker deltas for the purposes of discerning the
+zero-pattern, and so we can determine a zero-pattern matrix <span class="math notranslate nohighlight">\(\mathbf{Z}\)</span> for the matrix product
+<span class="math notranslate nohighlight">\(\mathbf{\phi}^t\mathbf{\phi}\)</span></p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\mathbf{Z} = \sum_i
+\begin{cases}
+    1 &amp;\mathrm{if}\ \forall\ (x^n_{i} - x^n_{\mu}) &lt; 1\\
+    0 &amp;\mathrm{otherwise}
+  \end{cases}
+  \times
+  \begin{cases}
+   1 &amp;\mathrm{if}\ \forall\ (x^n_{i} - x^n_{\nu}) &lt; 1\\
+   0 &amp;\mathrm{otherwise}
+  \end{cases}.\end{split}\]</div>
+<p>From this we see that there will only be a non-zero entry in the map if the image pixel at point
+<span class="math notranslate nohighlight">\(i\)</span> is a contributor to the map node at both points <span class="math notranslate nohighlight">\(\mu\)</span> and <span class="math notranslate nohighlight">\(\nu\)</span>.  Because we
+are using nearest neighbor interpolation, this means there are two classes of non-zero entry in
+<span class="math notranslate nohighlight">\(\mathbf{\phi}\)</span>: diagonal entries, for which <span class="math notranslate nohighlight">\(\mu = \nu\)</span>; and off diagonal entries, for
+which <span class="math notranslate nohighlight">\(\mu = \nu \pm \{1,U,U*V\}\)</span> (where <span class="math notranslate nohighlight">\(U\)</span> and <span class="math notranslate nohighlight">\(U*V\)</span> are the two multiplicative
+factors used in flattening the indexing). This gives a total of 9 non-zero entries per row.  If the
+domain splitting is carefully chosen, this can lead to an optimal communication pattern where
+information need only be exchanged with nearest neighbour ranks, rather than requiring all-to-all
+communication. In practice this optimal scheme is not implemented by pFIRE since it requires fixing
+the problem size per processor. Instead dynamic communication patterns are used to communicate only
+the required data regardless of its location.</p>
 </div>
 </div>
 </div>
@@ -314,6 +354,8 @@ consider the zero-pattern of the interpolation matrix <span class="math notransl
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="testsuite.html" class="btn btn-neutral float-right" title="Using the Integration Test Suite" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="tutorial.html" class="btn btn-neutral" title="pFIRE Tutorial" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

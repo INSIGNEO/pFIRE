@@ -64,6 +64,7 @@ Index
   cli_ref.rst
   tutorial.rst
   algorithm.rst
+  testsuite.rst
 
 .. **pFIRE API Reference**
 
