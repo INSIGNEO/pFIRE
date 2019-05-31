@@ -14,7 +14,7 @@ moved image :math:`\vec{m}` via the displacement map :math:`\vec{a}`.  This can 
 of two forms, depending on if we are "pushing" the moved image onto the fixed image or pulling the
 fixed onto the moved image.
 
-.. math:: 
+.. math::
 
   \vec{f}(\vec{x}) = \vec{m}(\vec{x}+\vec{a}(\vec{x}))
 
@@ -37,7 +37,7 @@ Combining these two expressions yields a single registration equation to be solv
 :math:`\vec{a}(\vec{x})` which includes the information from both images:
 
 .. math::
- 
+
   \vec{f} - \vec{m} = \frac{1}{2}\nabla[\vec{f}(\vec{x}) + \vec{m}(\vec{x})]\cdot\vec{a}(\vec{x}).
 
 The above registration equation has the images and map in the form on continuous functions,
@@ -55,7 +55,7 @@ given by
 .. math::
 
   \phi_{\mu\nu\omega}^{ijk} = \begin{cases}
-    \prod_{n=1,2,3} (1 - | x^n_{ijk} - x^n_{\mu\nu\omega}| ) &\mathrm{if}\ 
+    \prod_{n=1,2,3} (1 - | x^n_{ijk} - x^n_{\mu\nu\omega}| ) &\mathrm{if}\
       \forall\ (x^n_{ijk} - x^n_{\mu\nu\omega}) < 1\\
     0 &\mathrm{otherwise}
   \end{cases}
@@ -94,27 +94,33 @@ matrices.
 
 
 The complexity of implementation may be eased by electing to explicitly flatten the indices
-:math:`x,y,z` and :math:`\mu,\nu,\omega`, using either row-major or column-major indexing,
-depending on the implementation requirements.
+:math:`x,y,z` and :math:`\mu,\nu,\omega`. In the case of pFIRE indexing is performed such that the
+x index varies fastest - this is the same indexing scheme as used by PETSc:
+
+.. math::
+
+  n(x, y, z) = (z * Y + y)*X + x
+
+where :math:`(X,Y,Z)` is the size of the mesh.
 
 This allows the problem to be expressed in the form of a matrix equation:
 
 .. math::
-  
+
   \begin{align}
-    (\bar{F} - \bar{M}) &= \mathbf{{T}}\bar{A} = \mathbf{{I}}\mathbf{{\Phi}}\bar{A} \\
-    &= \begin{bmatrix} \mathbf{{I}}_s \\ \mathbf{{I}}_x \\ \mathbf{{I}}_y \\ \mathbf{{I}}_z \end{bmatrix}
+    (\bar{F} - \bar{M}) &= \mathbf{{T}}\bar{A} = \mathbf{{G}}\mathbf{{\Phi}}\bar{A} \\
+    &= \begin{bmatrix} \mathbf{{G}}_s \\ \mathbf{{G}}_x \\ \mathbf{{G}}_y \\ \mathbf{{G}}_z \end{bmatrix}
     \begin{bmatrix} \mathbf{{\phi}} \\ \mathbf{{\phi}} \\ \mathbf{{\phi}} \\ \mathbf{{\phi}} \end{bmatrix}
     \begin{bmatrix} \bar{A}_s \\ \bar{A}_x \\ \bar{A}_y \\ \bar{A}_z \end{bmatrix}
   \end{align}
 
 where :math:`\bar{F}` and :math:`\bar{M}` are column vectors containing the fixed and moved image
-intensities, :math:`\mathbf{{I}}_\alpha` are the square, diagonal submatrices for each dimension
+intensities, :math:`\mathbf{{G}}_\alpha` are the square, diagonal submatrices for each dimension
 of the gradient information, :math:`\mathbf{{\phi}}` is the same submatrix for each dimension, and
 :math:`A_\alpha` are column matrices containing the nodal displacements for each dimension of the
 map.
 
-The matrix :math:`T` is defined here as the product of the matrices :math:`\mathbf{{I}}` and
+The matrix :math:`T` is defined here as the product of the matrices :math:`\mathbf{{G}}` and
 :math:`\mathbf{{\Phi}}`, and it is, in general, non-square.  We therefore create a soluable matrix
 equation from this by multiplying both sides by the transpose :math:`\mathbf{{T}}^t`,
 
@@ -190,11 +196,56 @@ Implementation Details
 ----------------------
 
 Calculating :math:`\mathbf{{T}}^t\mathbf{{T}}`
-------------------------------------------------
+----------------------------------------------
 
 Implementation of the algorithm can be made more efficient by understanding the structure of the
-:math:`\mathbf{{I}}` and :math:`\mathbf{{\Phi}}` matrices, as prior knowledge of the zero-patterns
+:math:`\mathbf{{G}}` and :math:`\mathbf{{\Phi}}` matrices, as prior knowledge of the zero-patterns
 in these matrices can make calculation of the final matrix :math:`\mathbf{{T}}^t\mathbf{{T}}` much
-more efficient.  Further, since the :math:`\mathbf{{I}}` matrix is diagonal we know that the zero
+more efficient.  Further, since the :math:`\mathbf{{G}}` matrix is diagonal we know that the zero
 pattern of its product with any matrix will match that of the other matrix, therefore we need only
 consider the zero-pattern of the interpolation matrix :math:`\mathbf{{\Phi}}`.
+
+Revisiting the definition of :math:`\mathbf{\phi}` (for flattened indices) and a single dimension:
+
+.. math::
+
+  \phi_{\mu}^{i} = \begin{cases}
+    \prod_{n=1,2,3} (1 - | x^n_{i} - x^n_{\mu}| ) &\mathrm{if}\
+      \forall\ (x^n_{i} - x^n_{\mu}) < 1\\
+    0 &\mathrm{otherwise}
+  \end{cases}
+
+with :math:`\mu` the map indices and :math:`i` the image indices. So when calculating
+
+.. math::
+
+  \mathbf{{T}}^t\mathbf{{T}} = \mathbf{\phi}^\mu_i\mathbf{G}^i_j\mathbf{G}^j_k\mathbf{\phi}^k_\nu
+
+the :math:`\mathbf{G}` matrices function as Kronecker deltas for the purposes of discerning the
+zero-pattern, and so we can determine a zero-pattern matrix :math:`\mathbf{Z}` for the matrix product
+:math:`\mathbf{\phi}^t\mathbf{\phi}`
+
+.. math::
+
+  \mathbf{Z} = \sum_i
+  \begin{cases}
+      1 &\mathrm{if}\ \forall\ (x^n_{i} - x^n_{\mu}) < 1\\
+      0 &\mathrm{otherwise}
+    \end{cases}
+    \times
+    \begin{cases}
+     1 &\mathrm{if}\ \forall\ (x^n_{i} - x^n_{\nu}) < 1\\
+     0 &\mathrm{otherwise}
+    \end{cases}.
+
+From this we see that there will only be a non-zero entry in the map if the image pixel at point
+:math:`i` is a contributor to the map node at both points :math:`\mu` and :math:`\nu`.  Because we
+are using nearest neighbor interpolation, this means there are two classes of non-zero entry in
+:math:`\mathbf{\phi}`: diagonal entries, for which :math:`\mu = \nu`; and off diagonal entries, for
+which :math:`\mu = \nu \pm \{1,U,U*V\}` (where :math:`U` and :math:`U*V` are the two multiplicative
+factors used in flattening the indexing). This gives a total of 9 non-zero entries per row.  If the
+domain splitting is carefully chosen, this can lead to an optimal communication pattern where
+information need only be exchanged with nearest neighbour ranks, rather than requiring all-to-all
+communication. In practice this optimal scheme is not implemented by pFIRE since it requires fixing
+the problem size per processor. Instead dynamic communication patterns are used to communicate only
+the required data regardless of its location.

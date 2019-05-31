@@ -26,7 +26,17 @@ def main():
 
     testsuite = TestDespatcher(output_dir=args.output)
 
-    testsuite.find_tests(args.dir)
+    if not os.path.exists(args.dir):
+        print("Error, path {} does not exist".format(args.dir))
+        return
+
+    if os.path.isfile(args.dir):
+        testsuite.add_test(args.dir)
+    else:
+        ntests = testsuite.find_tests(args.dir)
+        if ntests == 0:
+            print("No tests found.")
+            return
 
     testsuite.run_tests()
 

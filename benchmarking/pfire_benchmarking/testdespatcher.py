@@ -79,14 +79,17 @@ class TestDespatcher:
     def find_tests(self, search_dir):
         """ Find all tests in a directory tree
         """
+        testcount = 0
         for dirname, _, fnames in os.walk(search_dir):
             for fname in fnames:
                 if fname.endswith(".testconf"):
                     testpath = os.path.join(dirname, fname)
                     try:
                         self.add_test(testpath)
+                        testcount += 1
                     except RuntimeError as err:
                         print("Error adding {}: {}".format(testpath, err))
+        return testcount
 
     def run_tests(self):
         """ Run all tests producing report files
