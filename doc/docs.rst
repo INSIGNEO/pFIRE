@@ -1,14 +1,9 @@
-.. pFIRE documentation master file, created by
-   sphinx-quickstart on Tue Jul 24 10:49:47 2018.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 =====
 pFIRE
 =====
 
 pFIRE is a parallel framework for the elastic registration of large images by the method of Barber
-and Hose [1]_ [2]_. It is implemented in C++ using the PETSc scientific toolkit to
+and Hose. [1]_ [2]_ It is implemented in C++ using the PETSc scientific toolkit to
 provide parallelised mathematical routines.
 
 
@@ -46,36 +41,13 @@ ability to measure and describe nonlinear transformations is potentially extreme
 determination of stress inside a deformed mechanical structure.
 
 
-Index
------
-
-**Getting Started**
-
-* :doc:`install`
-* :doc:`cli_quickstart`
-
 .. toctree::
-  :maxdepth: 1
-  :hidden:
-  :caption: Getting Started
-  
-  install.rst
-  cli_quickstart.rst
-  cli_ref.rst
-  tutorial.rst
-  algorithm.rst
-  testsuite.rst
-
-.. **pFIRE API Reference**
-
-.. * :doc:`api_highlevel`
-
-.. .. toctree::
   :maxdepth: 2
   :hidden:
-  :caption: API Reference
-
-..  api_highlevel.rst
+  
+  getting_started/index
+  user_docs/index
+  developer_docs/index
 
 .. [1] Barber D, Hose D. Automatic segmentation of medical images using image registration:
        diagnostic and simulation applications. *Journal of medical engineering & technology*,

@@ -4,7 +4,7 @@ Running pFIRE
 
 Interaction with pFIRE on the command line is achieved through the `pfire` executable. Registration
 options are passed to pFIRE through a configuration file. All the available options are documented
-in the :doc:`command reference<cli_ref>`.
+in the :doc:`command reference<user_docs/cli_ref>`.
 
 Elastic Registration
 --------------------

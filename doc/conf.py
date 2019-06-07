@@ -25,7 +25,7 @@ author = 'Phil Tooley'
 # The short X.Y version
 version = ''
 # The full version, including alpha/beta/rc tags
-release = '0.2'
+release = '0.5.0'
 
 
 # -- General configuration ---------------------------------------------------
@@ -48,7 +48,8 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
-    'sphinx_autorun'
+    'sphinx_autorun',
+    'breathe',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -177,3 +178,10 @@ intersphinx_mapping = {'https://docs.python.org/': None}
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
+
+# -- Options for breathe extension -------------------------------------------
+
+# Set doxygen xml location(s)
+breathe_projects = {"pFIRE_sources" : "../doxygen/xml/"}
+
+breathe_default_project = "pFIRE_sources"
