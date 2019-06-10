@@ -16,6 +16,8 @@
 #ifndef ITERATOR_ROUTINES_HPP
 #define ITERATOR_ROUTINES_HPP
 
+#include <iterator>
+
 template <typename Functor, typename OutputIterator, typename Input1, typename... Inputs>
 OutputIterator
 n_ary_transform(Functor f, OutputIterator out, Input1 first1, Input1 last1, Inputs... firsts)
@@ -48,11 +50,8 @@ bool all_true(InputIt1 first1, InputIt1 last1, InputIt2 first2, InputIt2 last2, 
       return false;
     }
   }
-  if (first1 != last1 || first2 != last2)
-  {
-    return false;
-  }
-  return true;
+  
+  return (first1 == last1 || first2 == last2);
 }
 
 template <typename InputIt1, typename InputIt2, typename BinaryPredicate>
@@ -67,6 +66,48 @@ bool all_true_varlen(
     }
   }
   return true;
+}
+
+
+template <typename InputIt1, typename InputIt2, typename BinaryPredicate>
+bool any_true(InputIt1 first1, InputIt1 last1, InputIt2 first2, BinaryPredicate p)
+{
+  for (; first1 != last1; first1++, first2++)
+  {
+    if (p(*first1, *first2))
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
+template <typename container>
+class reverse_iterator_adapter
+{
+public:
+  reverse_iterator_adapter(container& iterable)
+    : _iterable(iterable)
+  {};
+
+  auto begin() { return std::rbegin(_iterable);}
+  auto end() { return std::rend(_iterable); }
+  auto cbegin() { return std::crbegin(_iterable);}
+  auto cend() { return std::crend(_iterable);}
+
+private:
+  container& _iterable;
+};
+
+template <typename InputIt1, typename InputIt2, typename mathtype, typename TrinaryOperator>
+mathtype accumulate(InputIt1 first1, InputIt1 last1, InputIt2 first2, mathtype init, TrinaryOperator op)
+{
+  for(; first1 != last1; ++first1, ++first2)
+  {
+    init = op(std::move(init), *first1, *first2);
+  }
+
+  return init;
 }
 
 #endif

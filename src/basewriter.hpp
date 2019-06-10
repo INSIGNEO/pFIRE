@@ -41,7 +41,7 @@ public:
   virtual ~BaseWriter() = default;
 
   virtual std::string write_image(const Image& image) = 0;
-  virtual std::string write_map(const Map& map) = 0;
+  virtual std::string write_map(const MapBase& map) = 0;
 
   template <typename WriterClass>
   static BaseWriter_unique create_writer(const std::string &path, MPI_Comm comm)
@@ -49,36 +49,41 @@ public:
     return BaseWriter_unique(new WriterClass(path, comm));
   }
 
+  const std::string& filename() const { return _filename; }
+  const std::string& extra_path() const { return _extra_path; }
+  const MPI_Comm& comm() const { return _comm;}
+
+  static const std::vector<std::string>& components() { return _components;}
+
   template <typename WriterClass>
   static bool
   //typename std::enable_if<std::is_convertible<WriterClass*, BaseWriter*>::value, bool>::type 
   register_writer();
 
-  static std::string find_writer_for_filename(const std::string& filename);
+  static std::string find_writer_for_filename(const std::string& _filename);
 
   static BaseWriter_unique get_writer_by_name(const std::string& name,
-                                              const std::string& filename,
+                                              const std::string& _filename,
                                               MPI_Comm comm = PETSC_COMM_WORLD);
 
-  static BaseWriter_unique get_writer_for_filename(const std::string& filename,
+  static BaseWriter_unique get_writer_for_filename(const std::string& _filename,
                                                     MPI_Comm comm = PETSC_COMM_WORLD);
 
   static string_pair split_filespec(std::string input);
 
-  static bool check_truncated(const std::string& filename);
-  static void mark_truncated(std::string filename);
+  static bool check_truncated(const std::string& _filename);
+  static void mark_truncated(std::string _filename);
 
   static const std::string writer_name;
   static const std::vector<std::string> extensions;
 
-protected:
-  std::string filename;
-  std::string extra_path;
+private:
+  std::string _filename;
+  std::string _extra_path;
   MPI_Comm _comm;
 
   static const std::vector<std::string> _components;
 
-private:
   static std::unique_ptr<creator_map> _creators;
   static std::unique_ptr<extension_map> _extension_handlers;
   static std::unique_ptr<stringset> _truncated_files;

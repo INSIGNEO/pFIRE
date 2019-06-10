@@ -1,7 +1,7 @@
 #!/bin/bash
 
 (
-basedir="$HOME/repos/pfire"
+basedir="$PWD"
 docdir="${basedir}/doc/"
 ghpdir="${basedir}/gh-pages"
 

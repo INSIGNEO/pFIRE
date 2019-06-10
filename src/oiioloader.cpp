@@ -56,7 +56,7 @@ OIIOLoader::OIIOLoader(const std::string &path, MPI_Comm comm) : BaseLoader(path
     throw_if_nonexistent(path);
     throw InvalidLoaderError(path);
   }
-  this->_shape = {spec->width, spec->height, spec->depth};
+  this->set_shape({spec->width, spec->height, spec->depth});
 }
 
 void OIIOLoader::copy_scaled_chunk(
@@ -68,12 +68,12 @@ void OIIOLoader::copy_scaled_chunk(
   std::transform(size.cbegin(), size.cend(), corner_lo.cbegin(), corner_hi.begin(), std::plus<>());
   // OIIO scales floating point data between 0 and 1 internally on conversion
   bool res = cache->get_pixels(
-      OIIO::ustring(_path), 0, 0, corner_lo[0], corner_hi[0], corner_lo[1], corner_hi[1],
+      OIIO::ustring(this->path()), 0, 0, corner_lo[0], corner_hi[0], corner_lo[1], corner_hi[1],
       corner_lo[2], corner_hi[2], 0, 1, OIIO::TypeDesc::DOUBLE, dataptr, OIIO::AutoStride,
       OIIO::AutoStride, OIIO::AutoStride);
   if (!res)
   {
-    throw_if_nonexistent(_path);
-    throw InvalidLoaderError(_path);
+    throw_if_nonexistent(this->path());
+    throw InvalidLoaderError(this->path());
   }
 }

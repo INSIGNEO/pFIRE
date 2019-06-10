@@ -26,6 +26,8 @@ void pfire_setup(const std::vector<std::string> &petsc_args, bool silent=false);
 void check_comm_size_and_warn_odd();
 void print_welcome_message();
 
+void vmem_report();
+
 void pfire_teardown();
 
 #endif // SETUP_HPP

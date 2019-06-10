@@ -14,29 +14,23 @@
 //   limitations under the License.
 
 #include <chrono>
+#include <cstdlib>
 
+#include "types.hpp"
 #include "baseconfiguration.hpp"
 #include "iniconfiguration.hpp"
 #include "setup.hpp"
 #include "shirtemulation.hpp"
 
+#include "mapmanager.hpp"
 #include "exceptions.hpp"
-#include "elastic.hpp"
 #include "image.hpp"
-#include "infix_iterator.hpp"
-#include "laplacian.hpp"
-#include "map.hpp"
-#include "types.hpp"
-#include "math_utils.hpp"
+#include "mapbase.hpp"
+#include "mask.hpp"
+#include "elasticregistration.hpp"
+#include "basewriter.hpp"
 
-#include "xdmfwriter.hpp"
-
-void mainflow(std::shared_ptr<ConfigurationBase> config);
-
-void usage()
-{
-  PetscPrintf(PETSC_COMM_WORLD, "Usage: pfire fixed moved nodespacing\n");
-}
+void mainflow(const std::shared_ptr<ConfigurationBase>& config);
 
 int main(int argc, char **argv)
 {
@@ -57,8 +51,8 @@ int main(int argc, char **argv)
   }
   catch (const BadConfigurationError &err)
   {
-    PetscPrintf(PETSC_COMM_WORLD, "Failed to parse configuration: %s", err.what());
-    MPI_Abort(PETSC_COMM_WORLD, -1);
+    PetscPrintf(MPI_COMM_WORLD, "Failed to parse configuration: %s", err.what());
+    MPI_Abort(MPI_COMM_WORLD, -1);
   }
 
   try
@@ -78,22 +72,27 @@ int main(int argc, char **argv)
 
   std::chrono::duration<double> diff = tend - tstart;
 
-  PetscPrintf(PETSC_COMM_WORLD, "Elapsed time: %g s\n", diff.count());
+  PetscPrintf(MPI_COMM_WORLD, "Elapsed time: %g s\n", diff.count());
+
+  if(configobj->grab<bool>("memory_report"))
+  {
+    vmem_report();
+  }
 
   pfire_teardown();
 
   return 0;
 }
 
-void mainflow(std::shared_ptr<ConfigurationBase> config)
+void mainflow(const std::shared_ptr<ConfigurationBase>& config)
 {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  std::unique_ptr<Image> fixed;
+  std::shared_ptr<Image> fixed;
   try
   {
-    fixed = Image::load_file(config->grab<std::string>("fixed"));
+    fixed = ImageBase::load_image<Image>(config->grab<std::string>("fixed"));
   }
   catch (const pFIREExpectedError &e)
   {
@@ -101,17 +100,10 @@ void mainflow(std::shared_ptr<ConfigurationBase> config)
     return;
   }
 
-  std::ostringstream immsg;
-  immsg << "Loaded fixed image of shape ";
-  std::copy_n(
-      fixed->shape().cbegin(), fixed->ndim(), infix_ostream_iterator<integer>(immsg, " x "));
-  immsg << ".\n";
-  PetscPrintf(PETSC_COMM_WORLD, immsg.str().c_str());
-
-  std::unique_ptr<Image> moved;
+  std::shared_ptr<Image> moved;
   try
   {
-    moved = Image::load_file(config->grab<std::string>("moved"), fixed.get());
+    moved = ImageBase::load_image<Image>(config->grab<std::string>("moved"), fixed.get());
   }
   catch (const pFIREExpectedError &e)
   {
@@ -119,57 +111,18 @@ void mainflow(std::shared_ptr<ConfigurationBase> config)
     return;
   }
 
-  floatvector nodespacing(fixed->ndim(), config->grab<integer>("nodespacing"));
+  intcoord mapshape = {config->grab<integer>("nodespacing"),
+                       config->grab<integer>("nodespacing"),
+                       config->grab<integer>("nodespacing")};
 
-  // Check file writer is valid
-  std::vector<std::string> configs_to_check = {"registered", "map"};
-  for(const auto &handle : configs_to_check)
-  {
-    std::string filename = config->grab<std::string>(handle);
-    try
-    {
-      BaseWriter::find_writer_for_filename(filename);
-    }
-    catch (const InvalidWriterError &e)
-    {
-      std::cerr << "Error: No suitable writer for requested output filename \""
-                << filename << "\"" << std::endl;
-      return;
-    }
-  }
+  auto mask = Mask::create_filled_mask(*fixed);
 
-  // explain_memory(fixed->shape(), Map::calculate_map_shape(fixed->shape(), nodespacing));
+  auto reg = ElasticRegistration(fixed, moved, mask, mapshape, *config);
 
-  fixed->normalize();
-  moved->normalize();
+  auto minmax = fixed->minmax();
+  PetscPrintf(MPI_COMM_WORLD, "Fixed minmax: %f, %f\n", minmax.first, minmax.second); 
 
-  std::unique_ptr<Mask> mask;
-  if(config->grab<std::string>("mask").empty()){
-    mask = Mask::full_image(*fixed);
-  }
-  else
-  {
-    try
-    {
-      mask = Mask::load_file(config->grab<std::string>("mask"), fixed.get());
-    }
-    catch (const pFIREExpectedError &e)
-    {
-      std::cerr << "Error: Failed to load mask: " << e.what() << std::endl;
-      return;
-    }
-  }
-
-  Elastic reg(*fixed, *moved, *mask, nodespacing, *config);
-  try
-  {
-    reg.autoregister();
-  }
-  catch (const pFIREExpectedError &e)
-  {
-    std::cerr << "Error: Registration failed: " << e.what() << std::endl;
-    return;
-  }
+  reg.autoregister();
 
   try
   {
@@ -184,12 +137,14 @@ void mainflow(std::shared_ptr<ConfigurationBase> config)
     h5group = config->grab<std::string>("map_h5_path");
     output_path = outfile + ":" + h5group;
     wtr = BaseWriter::get_writer_for_filename(output_path, fixed->comm());
-    output_path = wtr->write_map(*reg.m_p_map);
+    output_path = wtr->write_map(reg.result_map());
     PetscPrintf(PETSC_COMM_WORLD, "Saved map to %s\n", output_path.c_str());
+
   }
   catch (const pFIREExpectedError &e)
   {
     std::cerr << "Error: Failed to save results: " << e.what() << std::endl;
     return;
   }
+
 }

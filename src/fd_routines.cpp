@@ -17,23 +17,11 @@
 
 #include "exceptions.hpp"
 
-Vec_unique fd::gradient_to_global_unique(const DM &dmda, const Vec &localvec, integer dim)
+Vec_unique gradient_to_global_unique(const DM& dmda, const Vec& localvec, integer dim)
 {
-  //  First sanity check we have a valid local vector for the DMDA
-  //  (should have matching global, local and comm size)
-  Vec dm_local_vec;
-  PetscErrorCode perr = DMGetLocalVector(dmda, &dm_local_vec);
-  CHKERRXX(perr);
-  if (!vecs_equivalent(dm_local_vec, localvec))
-  {
-    throw InternalError("provided vector invalid for given dmda object", __FILE__, __LINE__);
-  }
-  perr = DMRestoreLocalVector(dmda, &dm_local_vec);
-  CHKERRXX(perr);
-
   // New global vec must be a dmda global
   Vec_unique grad = create_unique_vec();
-  perr = DMCreateGlobalVector(dmda, grad.get());
+  PetscErrorCode perr = DMCreateGlobalVector(dmda, grad.get());
   CHKERRXX(perr);
 
   // Access local of this to have ghosts, global of grad to avoid later copy
@@ -77,25 +65,13 @@ Vec_unique fd::gradient_to_global_unique(const DM &dmda, const Vec &localvec, in
   return grad;
 }
 
-void fd::gradient_existing(const DM &dmda, const Vec &srcvec, Vec &tgtvec, integer dim)
+void gradient_existing(const DM& dmda, const Vec& srcvec, Vec& tgtvec, integer dim)
 {
-  //  First sanity check we have valid local vectors for the DMDA
-  //  (should have matching global, local and comm size)
-  Vec dm_local_vec;
-  PetscErrorCode perr = DMGetLocalVector(dmda, &dm_local_vec);
-  CHKERRXX(perr);
-  if (!vecs_equivalent(dm_local_vec, srcvec))
-  {
-    throw InternalError("provided srcvec invalid for given dmda object", __FILE__, __LINE__);
-  }
-  perr = DMRestoreLocalVector(dmda, &dm_local_vec);
-  CHKERRXX(perr);
-
   // Access local of this to have ghosts, global of grad to avoid later copy
   // Recall grad and image share a DMDA
   floating ***img_array,
       ***grad_array; // acceptable to use raw ptrs here as memory handled by PETSc
-  perr = DMDAVecGetArray(dmda, srcvec, &img_array);
+  PetscErrorCode perr = DMDAVecGetArray(dmda, srcvec, &img_array);
   CHKERRXX(perr);
   perr = DMDAVecGetArray(dmda, tgtvec, &grad_array);
   CHKERRXX(perr);
@@ -127,5 +103,10 @@ void fd::gradient_existing(const DM &dmda, const Vec &srcvec, Vec &tgtvec, integ
   perr = DMDAVecRestoreArray(dmda, srcvec, &img_array);
   CHKERRXX(perr);
   perr = DMDAVecRestoreArray(dmda, tgtvec, &grad_array);
+  CHKERRXX(perr);
+
+  perr = DMLocalToLocalBegin(dmda, tgtvec, INSERT_VALUES, tgtvec);
+  CHKERRXX(perr);
+  perr = DMLocalToLocalEnd(dmda, tgtvec, INSERT_VALUES, tgtvec);
   CHKERRXX(perr);
 }

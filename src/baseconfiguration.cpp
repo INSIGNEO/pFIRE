@@ -34,7 +34,8 @@ const config_map ConfigurationBase::arg_options = {{"fixed", ""}, {"moved", ""},
     {"intermediate_directory", "intermediates"}, {"max_iterations", "100"}};
 
 const config_map ConfigurationBase::bool_options = {
-    {"verbose", "false"}, {"with_memory", "true"}, {"save_intermediate_frames", "false"}};
+    {"verbose", "false"}, {"with_memory", "true"}, {"save_intermediate_frames", "false"},
+    {"memory_report", "true"}};
 
 const std::vector<std::string> ConfigurationBase::required_options = {
     "fixed", "moved", "nodespacing"};

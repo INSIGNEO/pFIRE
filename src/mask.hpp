@@ -16,25 +16,22 @@
 #ifndef MASK_HPP
 #define MASK_HPP
 
-#include "image.hpp"
+#include "types.hpp"
 
-class Mask: public ImageBase {
+#include "imagebase.hpp"
+
+class Mask : public ImageBase
+{
 public:
-  explicit Mask(const intvector& shape, MPI_Comm comm = PETSC_COMM_WORLD);
 
-  static std::unique_ptr<Mask> duplicate(const ImageBase& img);
-  static std::unique_ptr<Mask> copy(const ImageBase& img);
-  static std::unique_ptr<Mask> full_image(const ImageBase& img); 
-
-  static std::unique_ptr<Mask> load_file(
-      const std::string& filename, const ImageBase* existing = nullptr,
-      MPI_Comm comm = PETSC_COMM_WORLD);
-
-  integer npoints() const;
-
+  static std::shared_ptr<Mask> create_filled_mask(const ImageBase& pattern);
 
 protected:
-  explicit Mask(const ImageBase& mask);
+
+  Mask(const ImageBase& pattern)
+    : ImageBase(pattern) 
+  {
+  }
 };
 
-#endif // MASK_HPP
+#endif //MASK_HPP

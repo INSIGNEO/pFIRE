@@ -23,17 +23,16 @@
 #include "image.hpp"
 #include "indexing.hpp"
 #include "infix_iterator.hpp"
-#include "map.hpp"
+#include "mapbase.hpp"
 
 namespace bf = boost::filesystem;
 
 const std::string XDMFWriter::writer_name = "xdmf";
 const std::vector<std::string> XDMFWriter::extensions = {".xdmf"};
 
-XDMFWriter::XDMFWriter(std::string filespec, const MPI_Comm &comm)
-  : HDFWriter(h5name_from_xdmfname(filespec), comm), rank(-1),
-    xdmf_filename(split_filespec(filespec).first), xdmf_groupname(split_filespec(filespec).second),
-    xdmf_tree(pt::ptree())
+XDMFWriter::XDMFWriter(const std::string& filespec, const MPI_Comm& comm)
+  : HDFWriter(h5name_from_xdmfname(filespec), comm), rank(-1), xdmf_filename(split_filespec(filespec).first),
+    xdmf_groupname(split_filespec(filespec).second), xdmf_tree(pt::ptree())
 {
   // Only want to do reading/writing of the text file from rank 0
   // but still to hdf5 writing from all ranks
@@ -46,11 +45,9 @@ XDMFWriter::XDMFWriter(std::string filespec, const MPI_Comm &comm)
   }
 }
 
-XDMFWriter::~XDMFWriter()
-{
-}
+XDMFWriter::~XDMFWriter() {}
 
-std::string XDMFWriter::write_image(const Image &image)
+std::string XDMFWriter::write_image(const Image& image)
 {
   // First need to write the hdf data
   HDFWriter::write_image(image);
@@ -63,35 +60,34 @@ std::string XDMFWriter::write_image(const Image &image)
   // Assuming success, if rank 0 go ahead and populate grid information
   if (rank == 0)
   {
-    pt::ptree &domain_tree = xdmf_tree.get_child("Xdmf.Domain");
-    pt::ptree &grid = domain_tree.add("Grid", "");
+    pt::ptree& domain_tree = xdmf_tree.get_child("Xdmf.Domain");
+    pt::ptree& grid = domain_tree.add("Grid", "");
     grid.add("<xmlattr>.Name", xdmf_groupname + std::string("_grid"));
     grid.add("<xmlattr>.GridType", "Uniform");
 
     // Define topology type
     {
-      pt::ptree &topo = grid.add("Topology", "");
+      pt::ptree& topo = grid.add("Topology", "");
       topo.add("<xmlattr>.TopologyType", "3DCoRectMesh");
-      intvector meshdims(image.shape());
-      std::for_each(meshdims.begin(), meshdims.end(), [](integer &i) { i += 1; });
+      intcoord meshdims(image.shape().reverse());
+      std::for_each(meshdims.begin(), meshdims.end(), [](integer& i) { i += 1; });
       std::ostringstream topodims;
-      std::copy(
-          meshdims.cbegin(), meshdims.cend(), infix_ostream_iterator<integer>(topodims, " "));
+      std::copy(meshdims.cbegin(), meshdims.cend(), infix_ostream_iterator<integer>(topodims, " "));
       topo.add("<xmlattr>.Dimensions", topodims.str());
     }
 
     // Define geometry
     {
-      pt::ptree &geom = grid.add("Geometry", "");
+      pt::ptree& geom = grid.add("Geometry", "");
       geom.add("<xmlattr>.GeometryType", "Origin_DxDyDz");
       // Origin
-      pt::ptree &origin = geom.add("DataItem", "0 0 0");
+      pt::ptree& origin = geom.add("DataItem", "0 0 0");
       origin.add("<xmlattr>.Name", "Origin");
       origin.add("<xmlattr>.Dimensions", "3");
       origin.add("<xmlattr>.NumberType", "Float");
       origin.add("<xmlattr>.Format", "XML");
       // Spacing
-      pt::ptree &spacing = geom.add("DataItem", "1 1 1");
+      pt::ptree& spacing = geom.add("DataItem", "1 1 1");
       spacing.add("<xmlattr>.Name", "Spacing");
       spacing.add("<xmlattr>.Dimensions", "3");
       spacing.add("<xmlattr>.NumberType", "Float");
@@ -100,7 +96,7 @@ std::string XDMFWriter::write_image(const Image &image)
 
     // Finally add image data attribute
     {
-      pt::ptree &attr = grid.add("Attribute", "");
+      pt::ptree& attr = grid.add("Attribute", "");
       attr.add("<xmlattr>.Name", xdmf_groupname);
       attr.add("<xmlattr>.AttributeType", "Scalar");
       attr.add("<xmlattr>.Center", "Cell");
@@ -109,10 +105,9 @@ std::string XDMFWriter::write_image(const Image &image)
       std::ostringstream datapath;
       datapath << bf::path(h5_filename).filename().string() << ":" << h5_groupname;
       std::ostringstream imgdims;
-      std::copy(image.shape().cbegin(), image.shape().cend(),
-          infix_ostream_iterator<integer>(imgdims, " "));
+      std::copy(image.shape().crbegin(), image.shape().crend(), infix_ostream_iterator<integer>(imgdims, " "));
 
-      pt::ptree &imdata = attr.add("DataItem", datapath.str());
+      pt::ptree& imdata = attr.add("DataItem", datapath.str());
       imdata.add("<xmlattr>.Format", "HDF");
       imdata.add("<xmlattr>.Dimensions", imgdims.str());
     }
@@ -126,7 +121,7 @@ std::string XDMFWriter::write_image(const Image &image)
   return filepath;
 }
 
-std::string XDMFWriter::write_map(const Map &map)
+std::string XDMFWriter::write_map(const MapBase& map)
 {
   HDFWriter::write_map(map);
 
@@ -138,32 +133,30 @@ std::string XDMFWriter::write_map(const Map &map)
   // Assuming success, if rank 0 go ahead and populate grid information
   if (rank == 0)
   {
-    pt::ptree &domain_tree = xdmf_tree.get_child("Xdmf.Domain");
-    pt::ptree &grid = domain_tree.add("Grid", "");
+    pt::ptree& domain_tree = xdmf_tree.get_child("Xdmf.Domain");
+    pt::ptree& grid = domain_tree.add("Grid", "");
     grid.add("<xmlattr>.Name", xdmf_groupname + std::string("_grid"));
     grid.add("<xmlattr>.GridType", "Uniform");
 
     // Define topology type
     {
-      pt::ptree &topo = grid.add("Topology", "");
+      pt::ptree& topo = grid.add("Topology", "");
       topo.add("<xmlattr>.TopologyType", "3DCoRectMesh");
-      intvector meshdims(map.shape());
+      intcoord meshdims(map.shape().reverse());
       std::ostringstream topodims;
-      std::copy(
-          meshdims.cbegin(), meshdims.cend(), infix_ostream_iterator<integer>(topodims, " "));
+      std::copy(meshdims.cbegin(), meshdims.cend(), infix_ostream_iterator<integer>(topodims, " "));
       topo.add("<xmlattr>.Dimensions", topodims.str());
     }
 
     // Define geometry
     {
-      pt::ptree &geom = grid.add("Geometry", "");
+      pt::ptree& geom = grid.add("Geometry", "");
       geom.add("<xmlattr>.GeometryType", "Origin_DxDyDz");
       // Origin
       std::ostringstream originss;
-      floatvector originvec = map.low_corner();
-      std::copy(
-          originvec.cbegin(), originvec.cend(), infix_ostream_iterator<floating>(originss, " "));
-      pt::ptree &origin = geom.add("DataItem", originss.str());
+      floatcoord originvec = map.lower_corner();
+      std::copy(originvec.cbegin(), originvec.cend(), infix_ostream_iterator<floating>(originss, " "));
+      pt::ptree& origin = geom.add("DataItem", originss.str());
       origin.add("<xmlattr>.Name", "Origin");
       origin.add("<xmlattr>.Dimensions", "3");
       origin.add("<xmlattr>.NumberType", "Float");
@@ -171,8 +164,8 @@ std::string XDMFWriter::write_map(const Map &map)
       // Spacing
       std::ostringstream spacingss;
       std::copy(map.spacing().cbegin(), map.spacing().cend(),
-          infix_ostream_iterator<floating>(spacingss, " "));
-      pt::ptree &spacing = geom.add("DataItem", spacingss.str());
+                infix_ostream_iterator<floating>(spacingss, " "));
+      pt::ptree& spacing = geom.add("DataItem", spacingss.str());
       spacing.add("<xmlattr>.Name", "Spacing");
       spacing.add("<xmlattr>.Dimensions", "3");
       spacing.add("<xmlattr>.NumberType", "Float");
@@ -181,7 +174,7 @@ std::string XDMFWriter::write_map(const Map &map)
 
     // Finally add map data attribute
     {
-      pt::ptree &attr = grid.add("Attribute", "");
+      pt::ptree& attr = grid.add("Attribute", "");
       attr.add("<xmlattr>.Name", xdmf_groupname);
       attr.add("<xmlattr>.AttributeType", "Vector");
       attr.add("<xmlattr>.Center", "Node");
@@ -189,35 +182,34 @@ std::string XDMFWriter::write_map(const Map &map)
       // Have separate datasets in hdf5 so use join
       std::ostringstream joinfunc;
       joinfunc << "join(";
-      for (uinteger idx = 0; idx < map.ndim(); idx++)
+      for (integer idx = 0; idx < map.ndim(); idx++)
       {
         if (idx != 0)
         {
           joinfunc << ", ";
         }
-        joinfunc << "$"
-                 << static_cast<unsigned long>(
-                        idx); // resolve ambiguity due to lack of explicit << overload
+        joinfunc << "$" << static_cast<unsigned long>(idx); // resolve ambiguity due to lack of explicit <<
+                                                            // overload
       }
       joinfunc << ")";
       std::ostringstream mapdims;
-      std::copy(
-          map.shape().cbegin(), map.shape().cend(), infix_ostream_iterator<integer>(mapdims, " "));
+      std::copy(map.shape().crbegin(), map.shape().crend(), infix_ostream_iterator<integer>(mapdims, " "));
       std::ostringstream vecdims;
       vecdims << mapdims.str() << " " << static_cast<unsigned>(map.ndim());
-      pt::ptree &vecdat = attr.add("DataItem", "");
+      pt::ptree& vecdat = attr.add("DataItem", "");
       vecdat.add("<xmlattr>.ItemType", "Function");
       vecdat.add("<xmlattr>.Dimensions", vecdims.str());
       vecdat.add("<xmlattr>.Function", joinfunc.str());
 
       // And link to hdf5 datasets
-      for (uinteger idx = 0; idx < map.ndim(); idx++)
+      for (integer idx = 0; idx < map.ndim(); idx++)
       {
         std::ostringstream datapath;
-        datapath << bf::path(h5_filename).filename().string() << ":" << h5_groupname << "/" << _components[idx];
+        datapath << bf::path(h5_filename).filename().string() << ":" << h5_groupname << "/"
+                 << BaseWriter::components()[idx];
 
-        pt::ptree &imdata = attr.add("DataItem", datapath.str());
-        imdata.add("<xmlattr>.Name", std::string("d") + _components[idx]);
+        pt::ptree& imdata = attr.add("DataItem", datapath.str());
+        imdata.add("<xmlattr>.Name", std::string("d") + BaseWriter::components()[idx]);
         imdata.add("<xmlattr>.Format", "HDF");
         imdata.add("<xmlattr>.Dimensions", mapdims.str());
       }
@@ -232,7 +224,7 @@ std::string XDMFWriter::write_map(const Map &map)
   return filepath;
 }
 
-std::string XDMFWriter::h5name_from_xdmfname(const std::string &filename)
+std::string XDMFWriter::h5name_from_xdmfname(const std::string& filename)
 {
   string_pair pp = split_filespec(filename);
   return pp.first + std::string(".h5") + ":" + pp.second;
