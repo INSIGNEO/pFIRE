@@ -1,0 +1,1032 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>pFIRE Tutorial &mdash; pFIRE 0.5.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="pFIRE 0.5.0 documentation" href="../index.html"/>
+        <link rel="up" title="Getting Started" href="index.html"/>
+        <link rel="next" title="User Documentation" href="../user_docs/index.html"/>
+        <link rel="prev" title="Running pFIRE" href="cli_quickstart.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../docs.html" class="icon icon-home"> pFIRE
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Getting Started</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="install.html">Installing pFIRE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli_quickstart.html">Running pFIRE</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">pFIRE Tutorial</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#the-pfire-configuration-file">The pFIRE Configuration File</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#minimum-requirements">Minimum Requirements</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#output-files">Output Files</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#registration-example-cartoon-faces">Registration Example: Cartoon Faces</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#customizing-the-registration">Customizing the Registration</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#the-smoothing-parameter-lambda">The Smoothing Parameter <span class="math notranslate nohighlight">\(\lambda\)</span></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#the-memory-term">The Memory Term</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#visualising-the-result">Visualising the Result</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#unregisterable-images">Unregisterable Images</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-displacement-map">The Displacement Map</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#applying-the-map">Applying the Map</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#the-hdf5-xdmf-map-format">The HDF5/XDMF Map Format</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#visualising-the-map">Visualising The Map</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#intermediate-frames">Intermediate Frames</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#controlling-the-output">Controlling The Output</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#intermediate-frames-example">Intermediate Frames Example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#application-examples">Application Examples</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#multimodal-image-alignment">Multimodal Image Alignment</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#further-reading">Further Reading</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../user_docs/index.html">User Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_docs/index.html">Developer Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../docs.html">pFIRE</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../docs.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Getting Started</a> &raquo;</li>
+        
+      <li>pFIRE Tutorial</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/getting_started/tutorial.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="pfire-tutorial">
+<h1>pFIRE Tutorial<a class="headerlink" href="#pfire-tutorial" title="Permalink to this headline">¶</a></h1>
+<p>This tutorial is designed to provide a hands-on walkthrough of the capabilities of pFIRE.  We will
+begin with an example that uses the default configuration of pFIRE.  After this we will look at
+some of the more advanced options that allow us to control both how pFIRE performs its
+registration, and the output formats that can be written.</p>
+<p>All the tutorial files can be found on the <a class="reference external" href="https://github.com/INSIGNEO/pFIRE/tree/master/doc/tutorial_files">pFIRE Github</a>, or may be downloaded in a
+<a class="reference download internal" download="" href="../_downloads/96c9f4eee26e62820ae23adf696c62ae/pfire_tutorial_files.zip"><code class="xref download docutils literal notranslate"><span class="pre">zip</span> <span class="pre">archive</span></code></a>.</p>
+<p>In order to perform registration, pFIRE requires a pair of images: a reference image, and a second
+image that is deformed until it is the same as the reference image. These are referred to as the
+<strong>fixed</strong> and <strong>moved</strong> images respectively.  These are set in the configuration file using the
+keys <code class="docutils literal notranslate"><span class="pre">fixed</span></code> and <code class="docutils literal notranslate"><span class="pre">moved</span></code>.</p>
+<p>When performing the registration the applied deformation field is initially very coarse grained,
+with just 3 grid nodes per dimension.  This is repeatedly refined to increase the number of nodes
+in the registration until the required resolution is reached.  This is expressed in the
+configuration file using the parameter <code class="docutils literal notranslate"><span class="pre">nodespacing</span></code>, which gives the spacing between nodes in
+image pixels.</p>
+<div class="section" id="the-pfire-configuration-file">
+<h2>The pFIRE Configuration File<a class="headerlink" href="#the-pfire-configuration-file" title="Permalink to this headline">¶</a></h2>
+<p>pFIRE is run from the command line, with all the configuration options set in a configuration file.
+This file uses <code class="docutils literal notranslate"><span class="pre">.ini</span></code> syntax, with <code class="docutils literal notranslate"><span class="pre">key</span> <span class="pre">=</span> <span class="pre">value</span></code> pairs.</p>
+<div class="section" id="minimum-requirements">
+<h3>Minimum Requirements<a class="headerlink" href="#minimum-requirements" title="Permalink to this headline">¶</a></h3>
+<p>The minimum information pFIRE requires to perform a registration is a fixed image, a moved image,
+and a target nodespacing. If the parameters <code class="docutils literal notranslate"><span class="pre">fixed</span></code>, <code class="docutils literal notranslate"><span class="pre">moved</span></code> and <code class="docutils literal notranslate"><span class="pre">nodespacing</span></code> are not set in
+the configuration file, pFIRE will abort with an error. The two images must have the same
+dimensions in order to perform registration.  Supported image formats include typical 2D formats
+such as <code class="docutils literal notranslate"><span class="pre">.png</span></code>, <code class="docutils literal notranslate"><span class="pre">.jpeg</span></code> or <code class="docutils literal notranslate"><span class="pre">.tiff</span></code> (see the <a class="reference external" href="https://sites.google.com/site/openimageio/home">OpenImageIO</a> documentation for a full list), as
+well as 2D and 3D dicom files.</p>
+<p>A minimal configuration file will look like this:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="na">fixed</span> <span class="o">=</span> <span class="s">path/to/fixed.img</span>
+<span class="na">moved</span> <span class="o">=</span> <span class="s">path/to/moved.img</span>
+<span class="na">nodespacing</span> <span class="o">=</span> <span class="s">10</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="output-files">
+<h3>Output Files<a class="headerlink" href="#output-files" title="Permalink to this headline">¶</a></h3>
+<p>pFIRE produces a pair of output files: the registered image, and the corresponding displacement
+map.  The registered image is generated by warping the moved image using the final displacement
+map. In the ideal case this will be identical to the fixed image. In practical usage, the
+registered image may be compared with the fixed image to determine the quality of the registration.</p>
+<p>The filename and format of the registered image may be chosen using the <code class="docutils literal notranslate"><span class="pre">registered</span> <span class="pre">=</span></code>
+configuration parameter. By default the image is be saved with the filename <code class="docutils literal notranslate"><span class="pre">registered</span> <span class="pre">=</span>
+<span class="pre">registered.xdmf</span></code>. This produces an <a class="reference external" href="http://www.xdmf.org/index.php/XDMF_Model_and_Format">XDMF</a> metadata file and an <a class="reference external" href="https://portal.hdfgroup.org/display/HDF5/HDF5">HDF5</a> binary data file which may be
+plotted with <a class="reference external" href="https://www.paraview.org/">ParaView</a>, <a class="reference external" href="https://wci.llnl.gov/simulation/computer-codes/visit/">VisIt</a> or similar scientific viewer software.  Alternatively, for 2D
+images, an image extension such as <code class="docutils literal notranslate"><span class="pre">.png</span></code> or <code class="docutils literal notranslate"><span class="pre">.jpeg</span></code>, may be specified, and the image will be
+output in this format (as with image reading, see the <a class="reference external" href="https://sites.google.com/site/openimageio/home">OpenImageIO</a> documentation for a full list).</p>
+<p>The output path for the map may also be specified using the <code class="docutils literal notranslate"><span class="pre">map</span> <span class="pre">=</span></code> parameter.  At the current time, the only
+available output format is <a class="reference external" href="https://portal.hdfgroup.org/display/HDF5/HDF5">HDF5</a>, either with or without the <a class="reference external" href="http://www.xdmf.org/index.php/XDMF_Model_and_Format">XDMF</a> metatdata file.  If the map
+filename ends with <code class="docutils literal notranslate"><span class="pre">.xdmf</span></code> both files will be created, if it ends with <code class="docutils literal notranslate"><span class="pre">.h5</span></code> only the binary
+data will be stored.</p>
+<p>As an example, the minimal configuration above can be extended to output the image to
+<code class="docutils literal notranslate"><span class="pre">myimage.png</span></code> and the map to <code class="docutils literal notranslate"><span class="pre">mymap.xdmf</span></code> with:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="na">fixed</span> <span class="o">=</span> <span class="s">path/to/fixed.img</span>
+<span class="na">moved</span> <span class="o">=</span> <span class="s">path/to/moved.img</span>
+<span class="na">nodespacing</span> <span class="o">=</span> <span class="s">10</span>
+<span class="na">registered</span> <span class="o">=</span> <span class="s">myimage.png</span>
+<span class="na">map</span> <span class="o">=</span> <span class="s">mymap.xdmf</span>
+</pre></div>
+</div>
+<p>An HDF5 file can contain many datasets, similar to the way a filesystem can can
+contain many files with different names.  In HDF5, directories are called groups and may contain
+any number of uniquely named datasets. It is therefore possible to place the registered image data
+and map data in the same file.  The name of the group that the dataset should be placed in can be
+chosen with the syntax <code class="docutils literal notranslate"><span class="pre">path/to/file:/path/to/dataset</span></code>.  Note that while the image is a single dataset,
+the map is made up of multiple datasets and only the group name can be set. (For more information
+see <a class="reference internal" href="#the-hdf5-xdmf-map-format">The HDF5/XDMF Map Format</a>)</p>
+<p>The below example would cause the image and map data to both be placed in <code class="docutils literal notranslate"><span class="pre">results.xdmf.h5</span></code>, with
+the image data in a dataset named <code class="docutils literal notranslate"><span class="pre">registered_image</span></code> and the map datasets in a group called
+<code class="docutils literal notranslate"><span class="pre">registration_map</span></code>:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="na">fixed</span> <span class="o">=</span> <span class="s">path/to/fixed.img</span>
+<span class="na">moved</span> <span class="o">=</span> <span class="s">path/to/moved.img</span>
+<span class="na">nodespacing</span> <span class="o">=</span> <span class="s">10</span>
+<span class="na">registered</span> <span class="o">=</span> <span class="s">results.xdmf:/registered_image</span>
+<span class="na">map</span> <span class="o">=</span> <span class="s">results.xdmf:/registration_map/</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="registration-example-cartoon-faces">
+<h3>Registration Example: Cartoon Faces<a class="headerlink" href="#registration-example-cartoon-faces" title="Permalink to this headline">¶</a></h3>
+<p>This example is located in the <code class="docutils literal notranslate"><span class="pre">faces_1</span></code> directory, here you will find the files <code class="docutils literal notranslate"><span class="pre">happy.png</span></code>,
+<code class="docutils literal notranslate"><span class="pre">sad.png</span></code> and <code class="docutils literal notranslate"><span class="pre">sad2happy_default.conf</span></code>.  If you open <code class="docutils literal notranslate"><span class="pre">sad2happy_default.conf</span></code> in an editor
+you will find the following:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="na">fixed</span> <span class="o">=</span> <span class="s">happy.png</span>
+<span class="na">moved</span> <span class="o">=</span> <span class="s">sad.png</span>
+<span class="na">nodespacing</span> <span class="o">=</span> <span class="s">20</span>
+<span class="na">registered</span> <span class="o">=</span> <span class="s">sad2happy_default.png</span>
+<span class="na">map</span> <span class="o">=</span> <span class="s">sad2happy_default.xdmf</span>
+</pre></div>
+</div>
+<p>This instructs pFIRE to register the image in <code class="docutils literal notranslate"><span class="pre">sad.png</span></code> to the image in <code class="docutils literal notranslate"><span class="pre">happy.png</span></code> using a
+final nodespacing of 10.  The <code class="docutils literal notranslate"><span class="pre">registered</span></code> parameter instructs pFIRE to store the registered
+image in the file <code class="docutils literal notranslate"><span class="pre">sad2happy_default.png</span></code>.</p>
+<table class="docutils align-center">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><img alt="happy" src="../_images/happy.png" /></p></td>
+<td><p><img alt="sad" src="../_images/sad.png" /></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">happy.png</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">sad.png</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<p>This example can be run with:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>user@machine $ pfire sad2happy_default.conf
+</pre></div>
+</div>
+<p>or using MPI with X tasks:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>user@machine % mpirun -np X sad2happy_default.conf
+</pre></div>
+</div>
+<p>This will produce a pair of output files: <code class="docutils literal notranslate"><span class="pre">sad2happy_default.png</span></code> and <code class="docutils literal notranslate"><span class="pre">map.xdmf</span></code>.  We will look
+at the map output later in the tutorial. For now, viewing <code class="docutils literal notranslate"><span class="pre">sad2happy_default.png</span></code> shows the
+results of the registration, with <code class="docutils literal notranslate"><span class="pre">happy.png</span></code> for comparison:</p>
+<table class="docutils align-center">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><img alt="sad2happy" src="../_images/sad2happy_default.png" /></p></td>
+<td><p><img alt="happy" src="../_images/happy.png" /></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">sad2happy_default.png</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">happy.png</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<p>If the registration was perfect <code class="docutils literal notranslate"><span class="pre">sad2happy_default.png</span></code> would be identical to <code class="docutils literal notranslate"><span class="pre">happy.png</span></code>, however, we
+can see that there a still differences: the mouth is somewhat distorted, and there are changes to
+the eyes in the registered image even though they are identical in both the source images. This is
+a result of the smoothing behaviour of pFIRE, which tries to ensure that the calculated
+displacement is globally smooth. This is typically the desired behaviour, but in certain situations
+the default smoothing behaviour is non-optimal for the problem at hand. To help with this, pFIRE
+offers several configuration parameters to help control the smoothing behaviour.</p>
+</div>
+</div>
+<div class="section" id="customizing-the-registration">
+<h2>Customizing the Registration<a class="headerlink" href="#customizing-the-registration" title="Permalink to this headline">¶</a></h2>
+<p>pFIRE has two key parameters that allow the user to optimize the registration, these are the value
+of the smoothing parameter <span class="math notranslate nohighlight">\(\lambda\)</span>, and whether or not the memory term is used in the
+registration.  Both of these parameters have an effect on how smooth the displacement field is.</p>
+<div class="section" id="the-smoothing-parameter-lambda">
+<h3>The Smoothing Parameter <span class="math notranslate nohighlight">\(\lambda\)</span><a class="headerlink" href="#the-smoothing-parameter-lambda" title="Permalink to this headline">¶</a></h3>
+<p>The registration equation includes a smoothing constraint through the laplacian matrix,
+which imposes a requirement for smoothness on the solution to the equation, and therefore on the
+displacement field.  The value of the parameter <span class="math notranslate nohighlight">\(\lambda\)</span> determines the relative strength of
+the smoothing constraint relative to the registration constraint.</p>
+<p>By default the value of <span class="math notranslate nohighlight">\(\lambda\)</span> is automatically calculated such that the condition number
+of the registration matrix <span class="math notranslate nohighlight">\(\mathbf{T}^t\mathbf{T} + \lambda\mathbf{L}^t\mathbf{L}\)</span> is
+minimized, however, in certain situations it may be useful to customize the smoothing behaviour.</p>
+<p>The value and behaviour of <span class="math notranslate nohighlight">\(\lambda\)</span> can be controlled by two configuration options:
+<code class="docutils literal notranslate"><span class="pre">lambda_mult</span></code>, which allows the user to provide a scaling multiplier for the automatically
+determined value of <span class="math notranslate nohighlight">\(\lambda\)</span>; and <code class="docutils literal notranslate"><span class="pre">lambda</span></code>, which allows the user to specify a fixed value
+of <span class="math notranslate nohighlight">\(\lambda\)</span>.</p>
+<div class="section" id="the-lambda-parameter">
+<h4>The <code class="docutils literal notranslate"><span class="pre">lambda</span></code> parameter<a class="headerlink" href="#the-lambda-parameter" title="Permalink to this headline">¶</a></h4>
+<p>The default value of the <code class="docutils literal notranslate"><span class="pre">lambda</span></code> parameter is <code class="docutils literal notranslate"><span class="pre">auto</span></code>, if a value of <code class="docutils literal notranslate"><span class="pre">lambda</span></code> is not
+specified in the configuration file then it defaults to this value.  If <code class="docutils literal notranslate"><span class="pre">lambda</span> <span class="pre">=</span> <span class="pre">auto</span></code> then the
+value of lambda is calculated to minimize the condition number of the matrix
+<span class="math notranslate nohighlight">\(\mathbf{T}^t\mathbf{T} + \lambda\mathbf{L}^t\mathbf{L}\)</span> as this maximises the robustness of
+the algorithm.</p>
+<p>An example configuration file for running pFIRE with a fixed value of <span class="math notranslate nohighlight">\(\lambda\)</span> is provided
+in the file <code class="docutils literal notranslate"><span class="pre">faces_1/sad2happy_fixed_lambda.conf</span></code>.</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="na">fixed</span> <span class="o">=</span> <span class="s">happy.png</span>
+<span class="na">moved</span> <span class="o">=</span> <span class="s">sad.png</span>
+<span class="na">nodespacing</span> <span class="o">=</span> <span class="s">20</span>
+<span class="na">lambda</span> <span class="o">=</span> <span class="s">10</span>
+<span class="na">registered</span> <span class="o">=</span> <span class="s">sad2happy_fixed_lambda.png</span>
+</pre></div>
+</div>
+<p>This will register the same images as above, but with a large fixed <code class="docutils literal notranslate"><span class="pre">lambda</span> <span class="pre">=</span> <span class="pre">10</span></code>.</p>
+<table class="docutils align-center">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><img alt="sad2happy_fixed_lambda" src="../_images/sad2happy_fixed_lambda.png" /></p></td>
+<td><p><img alt="happy" src="../_images/happy.png" /></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">sad2happy_fixed_lambda.png</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">happy.png</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<p>Setting <code class="docutils literal notranslate"><span class="pre">lambda</span> <span class="pre">=</span> <span class="pre">10</span></code> in this way causes the algorithm to always give the smoothing 10 times the
+weight of the registration when solving for the displacement field, and so in this case oversmooths
+the image resulting in a poor registration. Additionally, fixing lambda in this way potentially
+causes the registration matrix to be ill-conditioned and so can cause the solver to be unstable.
+This functionality is included as it is sometimes appropriate for advanced users, however its use
+in not generally recommended.  If the results are over- or under-smoothed, the <code class="docutils literal notranslate"><span class="pre">lambda_mult</span></code>
+parameter can be used to make relative adjustments to the smoothing.</p>
+</div>
+<div class="section" id="the-lambda-mult-parameter">
+<h4>The <code class="docutils literal notranslate"><span class="pre">lambda_mult</span></code> parameter<a class="headerlink" href="#the-lambda-mult-parameter" title="Permalink to this headline">¶</a></h4>
+<p>The <code class="docutils literal notranslate"><span class="pre">lambda_mult</span></code> parameter is intended to be used in conjunction with <code class="docutils literal notranslate"><span class="pre">lambda</span> <span class="pre">=</span> <span class="pre">auto</span></code> to
+allow the amount of smoothing to be adjusted relative to the calculated optimum.  This allows the
+user some control of the amount of smoothing whilst retaining reasonable stability of the
+registration algorithm.</p>
+<p>In the first example above we saw that the mouth was not precisely registered because the image is
+smoothed too strongly, therefore we might wish to try reducing the smoothing by setting the
+parameter <code class="docutils literal notranslate"><span class="pre">lambda_mult</span> <span class="pre">=</span> <span class="pre">0.5</span></code>.</p>
+<p>An example configuration file for this is provided in <code class="docutils literal notranslate"><span class="pre">faces_1/sad2happy_relative_lambda.conf</span></code>:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="na">fixed</span> <span class="o">=</span> <span class="s">happy.png</span>
+<span class="na">moved</span> <span class="o">=</span> <span class="s">sad.png</span>
+<span class="na">nodespacing</span> <span class="o">=</span> <span class="s">20</span>
+<span class="na">lambda_mult</span> <span class="o">=</span> <span class="s">0.5</span>
+<span class="na">registered</span> <span class="o">=</span> <span class="s">sad2happy_relative_lambda.png</span>
+</pre></div>
+</div>
+<p>This registers the same images once again, but reducing the smoothing by a factor of 0.5:</p>
+<table class="docutils align-center">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><img alt="sad2happy_relative_lambda" src="../_images/sad2happy_relative_lambda.png" /></p></td>
+<td><p><img alt="happy" src="../_images/happy.png" /></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">sad2happy_relative_lambda.png</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">happy.png</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<p>This results in a registration that is very similar to the first, the registration of the details
+of the mouth is improved, but there are still issues with the rest of the image. This is a problem
+with the way the image is smoothed, and cannot be solved by simply changing the smoothing strength;
+instead we must change the fundamental smoothing behaviour.</p>
+</div>
+</div>
+<div class="section" id="the-memory-term">
+<h3>The Memory Term<a class="headerlink" href="#the-memory-term" title="Permalink to this headline">¶</a></h3>
+<p>The registration algorithm implemented by pFIRE is an iterative one which applies the same equation
+repeatedly to incrementally improve the displacement field until the registration is complete.  The
+equation includes an optional extra smoothing term which depends on the total displacement field
+calculated so far.  This acts to ensure that the displacement field remains globally smooth even
+after many iterations, and is enabled by default.  For many registration operations this is
+desirable behaviour: if the images being registered are related by some kind of global
+transformation, for example a stretching, scaling or warping as might be encountered when
+registering images of two different organs, or growth of a structure over time.  In other cases
+this may lead to a poorer registration, particularly if there are localised deformations in the
+image pair, examples of such situations might include determining the relative motion of two
+structures, or identifying small localised changes over a large image.  The memory term is
+controlled by the <code class="docutils literal notranslate"><span class="pre">with_memory</span></code> parameter and defaults to <code class="docutils literal notranslate"><span class="pre">with_memory</span> <span class="pre">=</span> <span class="pre">true</span></code>.</p>
+<p>The cartoon faces we have used for demonstration so far are an excellent example of a situation
+where there are localised changes: in the registration of the sad face to the happy face the border
+of the face and the eyes are unchanged between the two images and only the mouth changes.  In all
+the registration examples so far the global smoothing has caused distortion of these static
+structures as well as limiting the accuracy of registration of the mouth area.</p>
+<p>The file <code class="docutils literal notranslate"><span class="pre">faces_1/sad2happy_no_memory.conf</span></code> disables the memory term and hence the global
+smoothing:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="na">fixed</span> <span class="o">=</span> <span class="s">happy.png</span>
+<span class="na">moved</span> <span class="o">=</span> <span class="s">sad.png</span>
+<span class="na">nodespacing</span> <span class="o">=</span> <span class="s">20</span>
+<span class="na">with_memory</span> <span class="o">=</span> <span class="s">false</span>
+<span class="na">registered</span> <span class="o">=</span> <span class="s">sad2happy_no_memory.png</span>
+</pre></div>
+</div>
+<p>Running the registration with these parameters produces the following result:</p>
+<table class="docutils align-center">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><img alt="sad2happy_no_memory" src="../_images/sad2happy_no_memory.png" /></p></td>
+<td><p><img alt="happy" src="../_images/happy.png" /></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">sad2happy_no_memory.png</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">happy.png</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<p>With the global smoothing term disabled the quality of the registration is vastly improved.  The
+mouth is cleanly registered with much smaller error, and the border of the face, along with the
+eyes remain static through the registration.</p>
+<p><em>The</em> <code class="docutils literal notranslate"><span class="pre">with</span> <span class="pre">memory</span></code> <em>parameter provides control over the global smoothing of the displacement
+field.  The appropriateness of the global smoothing is problem specific, and for more unusual
+problems some experimentation may be required to find the optimal smoothing behaviour.</em></p>
+</div>
+</div>
+<div class="section" id="visualising-the-result">
+<h2>Visualising the Result<a class="headerlink" href="#visualising-the-result" title="Permalink to this headline">¶</a></h2>
+<p>The primary purpose of outputting the registered image is to compare it with the fixed image to
+determine the quality of the registration.  This can be done in many ways, a common approach being
+to simply overlay the two images and visually determine how well the registration has performed.</p>
+<p>An example script called <code class="docutils literal notranslate"><span class="pre">overlay_images.py</span></code> is provided with pFIRE to demonstrate this for 2D
+images. It takes a pair of input images, and overlays them to show how closely they are aligned:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> overlay_images.py --help
+<span class="go">usage: overlay_images.py [-h] [--flip] fixed moved output</span>
+
+<span class="go">Overlay images with transparency</span>
+
+<span class="go">positional arguments:</span>
+<span class="go">  fixed       Path to fixed image</span>
+<span class="go">  moved       Path to moved image</span>
+<span class="go">  output      Path to save output png.</span>
+
+<span class="go">optional arguments:</span>
+<span class="go">  -h, --help  show this help message and exit</span>
+<span class="go">  --flip      Flip image vertically (origin top-left)</span>
+</pre></div>
+</div>
+<p>For example, overlaying the results of the first registration we performed above,</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> tutorial_files/faces_1
+<span class="gp">$</span> overlay_images.py happy.png sad2happy_default.png comparison.png --flip
+<span class="go">/usr/lib64/python3.6/site-packages/skimage/io/_io.py:49: UserWarning: `as_grey` has been deprecated in favor of `as_gray`</span>
+<span class="go">  warn(&#39;`as_grey` has been deprecated in favor of `as_gray`&#39;)</span>
+</pre></div>
+</div>
+<p>produces the following result:</p>
+<table class="docutils align-center">
+<colgroup>
+<col style="width: 100%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><img alt="comparison" src="../_images/comparison.png" /></p></td>
+</tr>
+</tbody>
+</table>
+<p>The fixed image is shown in grey, and the moved image in red, with the composite dark red areas
+showing where the images are overlaid.</p>
+</div>
+<div class="section" id="unregisterable-images">
+<h2>Unregisterable Images<a class="headerlink" href="#unregisterable-images" title="Permalink to this headline">¶</a></h2>
+<p>It is important to realise that there are a large class of image pairs for which pFIRE cannot provide a
+satisfactory registration.  In order for two images to be registerable they must have all the same
+features (topologically speaking they must be <a class="reference external" href="http://mathworld.wolfram.com/Homotopic.html">homotopic</a>) such that one can be continuously
+deformed into the other.</p>
+<p>As a practical example consider the pair of images we registered in the example above.  There, the
+sad face can be registered into the happy face by displacing the sides of the mouth upwards and a
+smooth displacement field can be used to do this.</p>
+<p>In comparison, consider the two images below:</p>
+<table class="docutils align-center">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><img alt="grin" src="../_images/grin.png" /></p></td>
+<td><p><img alt="sad" src="../_images/sad.png" /></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">grin.png</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">sad.png</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<p>In this case the grinning face does not have the same features as the sad face.  In order to
+distort the sad face into the grinning face the pixels of the mouth would have to be simultaneously
+displaced upwards to form the top of the grinning mouth, and downwards to form the bottom of it.
+Since the displacement field must be single valued this is not possible, and so the images cannot
+be registered.</p>
+<p>These images are located in the <code class="docutils literal notranslate"><span class="pre">faces_2</span></code> example folder. A sample registration configuration is
+provided in <code class="docutils literal notranslate"><span class="pre">sad2grin.conf</span></code>.  Performing the registration should result in:</p>
+<table class="docutils align-center">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><img alt="sad2grin" src="../_images/sad2grin.png" /></p></td>
+<td><p><img alt="grin" src="../_images/grin.png" /></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">sad2grin.png</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">grin.png</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<p>As you can see: <em>pFIRE will always produce a result. It is entirely up to the user to determine if
+two images are suitable to be registered, and to check the results are sane!</em></p>
+</div>
+<div class="section" id="the-displacement-map">
+<h2>The Displacement Map<a class="headerlink" href="#the-displacement-map" title="Permalink to this headline">¶</a></h2>
+<p>The primary output of pFIRE is the displacement map.  This is a 2-D or 3-D vector field describing
+how the moved image is related to the fixed image.  Specifically, pFIRE outputs a map which for a
+given point in the fixed image, describes the location in the moved image that this point
+corresponds to.  This can be expressed as</p>
+<div class="math notranslate nohighlight">
+\[f(\bar{x}) = m(\bar{x} + \bar{R}(\bar{x}))\]</div>
+<p>where <span class="math notranslate nohighlight">\(f(\bar{x})\)</span> and <span class="math notranslate nohighlight">\(m(\bar{x})\)</span> are the intensity values at the point
+<span class="math notranslate nohighlight">\(\bar{x}\)</span> of the fixed and moved images respectively, and <span class="math notranslate nohighlight">\(\bar{R}(\bar{x})\)</span> is the
+displacement field at that point.  The displacement field is calculated on a regular grid by pFIRE,
+with values between grid nodes found by linear interpolation.</p>
+<div class="section" id="applying-the-map">
+<h3>Applying the Map<a class="headerlink" href="#applying-the-map" title="Permalink to this headline">¶</a></h3>
+<p>The output map is also the form of the mapping used internally in pFIRE to transform the moved
+image to the fixed image: Each pixel in the fixed image is mapped to a location in the moved image.
+The moved image is then sampled to determine the value of the pixel in the fixed image. The
+sampling point may not be exactly located in the centre of a pixel, in which case linear
+interpolation is used to sample the four nearest pixels to the sample point.  This can be
+considered as “pulling” the moved image to line up with the fixed image.</p>
+<p>Often, however, we will in fact want to “push” something that we know the coordinates of the in
+fixed image, in order to determine its location in the moved image.  This might be the location of
+manually determined landmark, or another image. For example, in the case of segmentation by
+registration the moved image is registered to a fixed image which is already segmented.  This
+segmentation information may then be mapped back to the moved image by displacing the segmentated
+volumes using the displacement field.</p>
+<p>Specific examples of using the map in this way are demonstrated later in this tutorial.</p>
+<div class="section" id="reversing-the-mapping">
+<h4>Reversing the Mapping<a class="headerlink" href="#reversing-the-mapping" title="Permalink to this headline">¶</a></h4>
+<p>It is often desirable to invert the mapping. This allows objects with known coordinates in
+the moved image to be “pushed” to their corresponding location in the fixed image, or to be
+“pulled” from the fixed image to the moved image.</p>
+<p>The mapping is given by the displacement field, where for a point <span class="math notranslate nohighlight">\(\bar{x}\)</span> in the fixed
+image, the corresponding point in the moved image <span class="math notranslate nohighlight">\(\bar{x}'\)</span> is given by</p>
+<div class="math notranslate nohighlight">
+\[\bar{x}' = \bar{x} + \bar{R}(\bar{x}),\]</div>
+<p>and since mapping goes both ways, we can also write the location of <span class="math notranslate nohighlight">\(\bar{x}\)</span> in terms of
+<span class="math notranslate nohighlight">\(\bar{x}'\)</span> using the reverse mapping <span class="math notranslate nohighlight">\(\bar{R}'(\bar{x}')\)</span> as</p>
+<div class="math notranslate nohighlight">
+\[\bar{x} = \bar{x}' + \bar{R}'(\bar{x})'.\]</div>
+<p>Equating these two expressions we find that</p>
+<div class="math notranslate nohighlight">
+\[\bar{R}'(\bar{x})' = -\bar{R}(\bar{x}).\]</div>
+<p>This means we can get the reverse mapping by simply reversing the direction of the displacement
+field, <strong>but we must also remember to move the nodes</strong>. The locations of the nodes for the reverse
+mapping are found by pushing the nodes from the forward mapping from the fixed image to the moved
+image.</p>
+<p>This relationship is demonstrated graphically below:</p>
+<table class="docutils align-center">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../_images/mapping_forward.svg"><img alt="forward_mapping" src="../_images/mapping_forward.svg" /></a></p></td>
+<td><p><a class="reference internal" href="../_images/mapping_reverse.svg"><img alt="reverse_mapping" src="../_images/mapping_reverse.svg" width="100%" /></a></p></td>
+</tr>
+<tr class="row-even"><td><p>Foward Mapping</p></td>
+<td><p>Reverse Mapping</p></td>
+</tr>
+</tbody>
+</table>
+<p>If the inverse mapping field is needed at the original node coordinates this can be found by
+interpolating the reverse mapping at the desired points.</p>
+</div>
+</div>
+<div class="section" id="the-hdf5-xdmf-map-format">
+<h3>The HDF5/XDMF Map Format<a class="headerlink" href="#the-hdf5-xdmf-map-format" title="Permalink to this headline">¶</a></h3>
+<p>The primary output format that pFIRE uses for displacement maps is an <a class="reference external" href="https://portal.hdfgroup.org/display/HDF5/HDF5">HDF5</a> file, with <a class="reference external" href="http://www.xdmf.org/index.php/XDMF_Model_and_Format">XDMF</a>
+metatdata file, both of which are well known and standardised formats.  The HDF5 file is a binary
+format which contains the map as arrays of displacement field values and node locations.  The XDMF
+file is a small metadata file which describes the layout of the data within the HDF5 file, and is
+intended to be consumed by visualisation programs such as <a class="reference external" href="https://www.paraview.org/">ParaView</a> or <a class="reference external" href="https://wci.llnl.gov/simulation/computer-codes/visit/">VisIt</a>.</p>
+<div class="section" id="hdf5-data-layout">
+<h4>HDF5 Data Layout<a class="headerlink" href="#hdf5-data-layout" title="Permalink to this headline">¶</a></h4>
+<p>A HDF5 file may contain multiple datasets organised into groups, similar to the way that files may
+be organised into folders in a computer filesystem.  For pFIRE map data, the map data is stored in
+4 or 6 datasets, depending on the dimensionality of the image. These datasets will be stored in a
+group, the name of which can be chosen by the user in the configuration file (the default is
+<code class="docutils literal notranslate"><span class="pre">/map</span></code>).</p>
+<p>The displacement field data itself is stored in 2 or 3 2D or 3D array datasets, one per spatial
+component, named <cite>x</cite>, <cite>y</cite>, and, if the problem is 3D, <cite>z</cite>.  The node location data is stored in 2
+or 3 1D array datasets, named <cite>nodes_x</cite>, <cite>nodes_y</cite>, and <cite>nodes_z</cite>, listing the node locations along
+each axis. For example, with the default group naming of <code class="docutils literal notranslate"><span class="pre">map</span></code>, a 2D dimensional problem with a
+<span class="math notranslate nohighlight">\(13\times 11\)</span> displacement field, would result in an HDF5 file with the following structure:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span>                        <span class="n">Group</span>
+<span class="o">/</span><span class="nb">map</span>                     <span class="n">Group</span>
+<span class="o">/</span><span class="nb">map</span><span class="o">/</span><span class="n">nodes_x</span>             <span class="n">Dataset</span> <span class="p">{</span><span class="mi">13</span><span class="p">}</span>
+<span class="o">/</span><span class="nb">map</span><span class="o">/</span><span class="n">nodes_y</span>             <span class="n">Dataset</span> <span class="p">{</span><span class="mi">11</span><span class="p">}</span>
+<span class="o">/</span><span class="nb">map</span><span class="o">/</span><span class="n">x</span>                   <span class="n">Dataset</span> <span class="p">{</span><span class="mi">13</span><span class="p">,</span> <span class="mi">11</span><span class="p">}</span>
+<span class="o">/</span><span class="nb">map</span><span class="o">/</span><span class="n">y</span>                   <span class="n">Dataset</span> <span class="p">{</span><span class="mi">13</span><span class="p">,</span> <span class="mi">11</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>This HDF5 file may be opened and used by and program or library which supports it.  However, for
+simply viewing the map, the supplied XDMF metadata file makes it straightforward to view the map
+using standard visualisation software such as Paraview.</p>
+</div>
+</div>
+<div class="section" id="visualising-the-map">
+<h3>Visualising The Map<a class="headerlink" href="#visualising-the-map" title="Permalink to this headline">¶</a></h3>
+<p>Visualisation of the map can be performed in multiple ways using either existing visualisation
+software, or by writing custom analysis and plotting routines.  This tutorial includes a simple
+demonstration of both of these methods.</p>
+<div class="section" id="the-mapplot2d-script">
+<h4>The <code class="docutils literal notranslate"><span class="pre">mapplot2d</span></code> script<a class="headerlink" href="#the-mapplot2d-script" title="Permalink to this headline">¶</a></h4>
+<p>A small python script called <code class="docutils literal notranslate"><span class="pre">mapplot2d.py</span></code> is supplied with pFIRE.  It is intended to be both a
+simple viewer tool for 2D problems and as a teaching aid to demonstrate working with the map data
+in Python. The script takes four arguments:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> mapplot2d.py --help
+<span class="go">usage: mapplot2d.py [-h] [--group GROUP] [--flip] [--invert-map]</span>
+<span class="go">                    registered moved map output</span>
+
+<span class="go">Show registered images with map data overlaid.</span>
+
+<span class="go">positional arguments:</span>
+<span class="go">  registered     Path to registered image</span>
+<span class="go">  moved          Path to moved image</span>
+<span class="go">  map            Path to map file</span>
+<span class="go">  output         Path to save output png.</span>
+
+<span class="go">optional arguments:</span>
+<span class="go">  -h, --help     show this help message and exit</span>
+<span class="go">  --group GROUP  Group name of map.</span>
+<span class="go">  --flip         Flip image vertically (origin top-left)</span>
+<span class="go">  --invert-map   Invert mapping before plotting</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">fixed</dt>
+<dd class="field-odd"><p>The path to the fixed image.</p>
+</dd>
+<dt class="field-even">moved</dt>
+<dd class="field-even"><p>The path to the moved image.</p>
+</dd>
+<dt class="field-odd">map</dt>
+<dd class="field-odd"><p>The path to the map hdf5 file.</p>
+</dd>
+<dt class="field-even">output</dt>
+<dd class="field-even"><p>Path to output the resulting image (png)</p>
+</dd>
+<dt class="field-odd">–group</dt>
+<dd class="field-odd"><p>Specify the group name of the map in HDF5 file (default “map”)</p>
+</dd>
+<dt class="field-even">–flip</dt>
+<dd class="field-even"><p>Flip image vertically (puts origin in the upper left)</p>
+</dd>
+<dt class="field-odd">–invert-map</dt>
+<dd class="field-odd"><p>Invert the mapping to show direction of motion from moved to fixed image.</p>
+</dd>
+</dl>
+<p>For example, to render the results of the first sample problem in <code class="docutils literal notranslate"><span class="pre">faces_1/sad2happy_default.png</span></code>,
+navigate to that folder and run</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> tutorial_files/faces_1
+<span class="gp">$</span> mapplot2d.py --flip --invert-map sad2happy_default.png sad.png sad2happy_default.xdmf.h5 sad2happy_map_render.png
+<span class="go">/usr/lib64/python3.6/site-packages/skimage/io/_io.py:49: UserWarning: `as_grey` has been deprecated in favor of `as_gray`</span>
+<span class="go">  warn(&#39;`as_grey` has been deprecated in favor of `as_gray`&#39;)</span>
+<span class="go">/home/telemin/repos/pfire/reglab/mapplot2d.py:44: FutureWarning: arrays to stack must be passed as a &quot;sequence&quot; type such as list or tuple. Support for non-sequence iterables such as generators is deprecated as of NumPy 1.16 and will raise an error in the future.</span>
+<span class="go">  method=&quot;cubic&quot;) for rv in rev_vecs)</span>
+</pre></div>
+</div>
+<p>which results in:</p>
+<table class="docutils align-center">
+<colgroup>
+<col style="width: 100%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><img alt="sad2happy_map_render" src="../_images/sad2happy_map_render.png" /></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">sad2happy_map_render.png</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<p>The resulting image shows the moved image in red, and the registered image in grey, with the map
+vector field overlaid. In this case the map is inverted to show the direction of motion of the
+pixels between the moved and fixed images.</p>
+</div>
+<div class="section" id="id1">
+<h4>ParaView<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h4>
+<p>To visualise the map using ParaView, open the XDMF file produced by pFIRE.  This will instruct
+ParaView how to interpret the accompanying HDF5 file.  After opening the file using the
+<em>file-&gt;open</em> dialog, the dataset will appear in the list on the left hand pane of the screen.
+Clicking apply will cause ParaView to render the map data.  Now the data is loaded, the mapping can
+be visualised using glyphs.  The glyph filter can be applied by selecting <em>filters-&gt;common-&gt;glyph</em>
+from the menu bar, and again clicking apply in the left hand pane.</p>
+</div>
+</div>
+</div>
+<div class="section" id="intermediate-frames">
+<h2>Intermediate Frames<a class="headerlink" href="#intermediate-frames" title="Permalink to this headline">¶</a></h2>
+<p>pFIRE is capable of outputting all intermediate image frames in the registration.  This is
+primarily intended as a debugging feature but can be instructive in understanding how the elastic
+registration process proceeds.</p>
+<p>The creation of intermediate frames is controlled by the <code class="docutils literal notranslate"><span class="pre">save_intermediate_frames</span></code> parameter.
+Setting this to <code class="docutils literal notranslate"><span class="pre">save_intermediate_frames</span> <span class="pre">=</span> <span class="pre">true</span></code> will cause pFIRE to output all intermediate
+frames. By default these will be in the same format as requested for the registered image and be
+collected in a subdirectory named <code class="docutils literal notranslate"><span class="pre">intermediates</span></code>, placed in the same directory as the registered
+image.</p>
+<div class="section" id="controlling-the-output">
+<h3>Controlling The Output<a class="headerlink" href="#controlling-the-output" title="Permalink to this headline">¶</a></h3>
+<p>The naming, format and location of the intermediate frames may be controlled by two parameters,
+<code class="docutils literal notranslate"><span class="pre">intermediate_template</span></code> allows control of the file format and filename, and
+<code class="docutils literal notranslate"><span class="pre">intermediate_directory</span></code> allows naming of the subdirectory in which the frames are saved.</p>
+<div class="section" id="the-intermediate-directory-parameter">
+<h4>The <code class="docutils literal notranslate"><span class="pre">intermediate_directory</span></code> Parameter<a class="headerlink" href="#the-intermediate-directory-parameter" title="Permalink to this headline">¶</a></h4>
+<p>The <code class="docutils literal notranslate"><span class="pre">intermediate_directory</span></code> parameter sets the path to the directory where the intermediate
+frames will be stored. If this is a relative path, it is set relative to the location of the
+registered image and the directory will be created if necessary.  If it is an absolute path then
+the directory must already exist.  The default value is <code class="docutils literal notranslate"><span class="pre">intermediate_directory</span> <span class="pre">=</span> <span class="pre">intermediates</span></code>
+which will cause the images to be collected in subdirectory named <code class="docutils literal notranslate"><span class="pre">intermediates</span></code>, placed in the
+same directory as the registered image.</p>
+</div>
+<div class="section" id="the-intermediate-template-parameter">
+<h4>The <code class="docutils literal notranslate"><span class="pre">intermediate_template</span></code> Parameter<a class="headerlink" href="#the-intermediate-template-parameter" title="Permalink to this headline">¶</a></h4>
+<p>By default <code class="docutils literal notranslate"><span class="pre">intermediate_template</span></code> has the value <code class="docutils literal notranslate"><span class="pre">intermediate_template</span> <span class="pre">=</span>
+<span class="pre">%name%-intermediate-%s%-%i%.%ext%</span></code>, where the tokens surrounded by <code class="docutils literal notranslate"><span class="pre">%</span></code> characters will be
+replaced before output.  This allows customization of the output file name using elements of the
+registered filename as well as the step and iteration number:</p>
+<dl class="field-list">
+<dt class="field-odd"><code class="docutils literal notranslate"><span class="pre">%name%</span></code></dt>
+<dd class="field-odd"><p>This will be replaced with the name of the registered image without the extension. For
+example, if the configuration file contains <code class="docutils literal notranslate"><span class="pre">registered</span> <span class="pre">=</span> <span class="pre">reg.png</span></code>, then the string
+<em>%name%</em> will be replaced with <em>reg</em> in the final filename.</p>
+</dd>
+<dt class="field-even"><code class="docutils literal notranslate"><span class="pre">%ext%</span></code></dt>
+<dd class="field-even"><p>This will be replaced with the file extension of the registered image. For example, if
+the configuration file contains <code class="docutils literal notranslate"><span class="pre">registered</span> <span class="pre">=</span> <span class="pre">reg.png</span></code>, then the string <em>%ext%</em>
+will be replaced with <em>png</em> in the final filename.</p>
+<p>Using this allows the format of the intermediate frames to be automatically matched to
+the registered image.  Alternatively it can be set as a different format by using the
+extension string directly instead of the <code class="docutils literal notranslate"><span class="pre">%ext%</span></code> placeholder, e.g
+<em>%name%-mydebug-%s%-%i%.png</em>.</p>
+</dd>
+<dt class="field-odd"><code class="docutils literal notranslate"><span class="pre">%s%</span></code></dt>
+<dd class="field-odd"><p>This will be replaced with the algorithm step number. Step number 0 corresponds to the
+coarsest nodespacing and increments by one each time the nodespacing is refined.</p>
+</dd>
+<dt class="field-even"><code class="docutils literal notranslate"><span class="pre">%i%</span></code></dt>
+<dd class="field-even"><p>This will be replaced by the iteration number. This is reset to zero every time the
+nodespacing is refined.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="intermediate-frames-example">
+<h3>Intermediate Frames Example<a class="headerlink" href="#intermediate-frames-example" title="Permalink to this headline">¶</a></h3>
+<p>An example for outputting the intermediate frames, with custom parameters is given in the
+<code class="docutils literal notranslate"><span class="pre">intermediate_frames</span></code> directory of the tutorial examples.</p>
+<p>The configuration file is named <code class="docutils literal notranslate"><span class="pre">intermediate_frames/custom_intermediates.conf</span></code>:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="na">fixed</span> <span class="o">=</span> <span class="s">fixed_triangle.png</span>
+<span class="na">moved</span> <span class="o">=</span> <span class="s">moved_triangle.png</span>
+<span class="na">nodespacing</span> <span class="o">=</span> <span class="s">20</span>
+<span class="na">with_memory</span> <span class="o">=</span> <span class="s">false</span>
+<span class="na">save_intermediate_frames</span> <span class="o">=</span> <span class="s">true</span>
+<span class="na">intermediate_template</span> <span class="o">=</span> <span class="s">intermediates-%s%-%i%.jpeg</span>
+<span class="na">intermediate_directory</span> <span class="o">=</span> <span class="s">intermediate_frames</span>
+<span class="na">registered</span> <span class="o">=</span> <span class="s">registered_triangle.png</span>
+</pre></div>
+</div>
+<p>In this case, the intermediate frames will be saved to the <code class="docutils literal notranslate"><span class="pre">intermediate_frames</span></code> folder and be
+named <code class="docutils literal notranslate"><span class="pre">intermediates-00-000.jpeg</span></code>.  Note that using this template format pFIRE has been instructed
+to output the intermediate frames as jpeg images even though the registered image is output in png
+format.</p>
+<p>This results in an image series like the following (animated gif):</p>
+<table class="docutils align-center">
+<colgroup>
+<col style="width: 100%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../_images/loop.gif"><img alt="intermediates_anim" src="../_images/loop.gif" style="width: 200.0px; height: 200.0px;" /></a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="section" id="application-examples">
+<h2>Application Examples<a class="headerlink" href="#application-examples" title="Permalink to this headline">¶</a></h2>
+<p>This section highlights some of the applications for elastic registration. Providing hands-on
+examples with additional exemplar code to demonstrate the pre- or post-processing steps involved in
+the application.</p>
+<p><em>Please note that this additional code is designed purely for teaching purposes and has not been
+tested or verified in any way for use in any other context.</em></p>
+<div class="section" id="multimodal-image-alignment">
+<h3>Multimodal Image Alignment<a class="headerlink" href="#multimodal-image-alignment" title="Permalink to this headline">¶</a></h3>
+<p>A common application for image registration is the correct alignment of multiple images of the same
+sample, taken via different modalities.  For example the alignment of CT and MRI scans of the same
+organ, or the alignment of multiple histological samples.  This latter case is what we use for this
+example. Alignment of such histological samples is particularly difficult due to non-linear
+distortion introduced into the sample during the preparation process.</p>
+<p>The tutorial folders <code class="docutils literal notranslate"><span class="pre">lung_lesions</span></code> and <code class="docutils literal notranslate"><span class="pre">lung_lobes</span></code> contain sets of 2D histological microscopy
+tissue slices, stained with a variety of different stains. Along with the images, the dataset also
+includes a set of manually identified tissue landmarks.  These are located on the same structures
+in each sample and can be used to validate the registration of the image. This dataset is made
+available under a creative commons license (CC-BY-SA) by <a class="reference external" href="http://cmp.felk.cvut.cz/~borovji3/?page=dataset">Jiří Borovec</a> (see <a class="reference internal" href="#dataset-information"><span class="std std-ref">below</span></a>).</p>
+<p>The typical use case for image registration with datasets such as this is to choose one image as
+the fixed image and register all the other images to that image. This produces a new dataset
+comprised of a set of aligned images for direct comparison of the same tissue location with various
+different stains.</p>
+<p>An example registration configuration is provided in each directory, these should be copied and
+modified to optimise the registration of the various images.</p>
+<p>An additional demonstration analysis script <code class="docutils literal notranslate"><span class="pre">plot_annotations.py</span></code> is provided to demonstrate how
+the manually identified landmarks can be used to determine the goodness of the registration.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span>  plot_annotations.py --help
+<span class="go">usage: plot_annotations.py [-h] [--map_group MAP_GROUP]</span>
+<span class="go">                           fixed_img fixed_annot moved_img moved_annot map</span>
+<span class="go">                           output</span>
+
+<span class="go">Plot annotated histology slides with map displacements</span>
+
+<span class="go">positional arguments:</span>
+<span class="go">  fixed_img             Fixed image</span>
+<span class="go">  fixed_annot           Fixed image annotation csv</span>
+<span class="go">  moved_img             Moved image</span>
+<span class="go">  moved_annot           Moved image annotation csv</span>
+<span class="go">  map                   pFIRE Map Output</span>
+<span class="go">  output                Output image</span>
+
+<span class="go">optional arguments:</span>
+<span class="go">  -h, --help            show this help message and exit</span>
+<span class="go">  --map_group MAP_GROUP</span>
+<span class="go">                        Map hdf5 group</span>
+</pre></div>
+</div>
+<p>Running this results in an image like the following:</p>
+<table class="docutils align-center">
+<colgroup>
+<col style="width: 100%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../_images/mapped_annotations.png"><img alt="mapped_annotations" src="../_images/mapped_annotations.png" style="width: 400.0px; height: 800.0px;" /></a></p></td>
+</tr>
+</tbody>
+</table>
+<p>The script plots the fixed (black) and moved (red) images along with the annotated landmarks and
+shows the displacement that would be applied to each node in the moved image if warped using the
+pFIRE map.  If the registration is correct each red node should be linked directly to a black node
+by a displacement vector.  In this case the registration is poor and the displacment field does not
+correctly map all the nodes. Optimisation of registration parameters will likely improve the
+quality, but this is an exercise left to the dedicated reader.</p>
+<div class="section" id="dataset-information">
+<span id="id2"></span><h4>Dataset Information<a class="headerlink" href="#dataset-information" title="Permalink to this headline">¶</a></h4>
+<p>This dataset <a class="footnote-reference brackets" href="#id8" id="id3">1</a> was curated by <a class="reference external" href="http://cmp.felk.cvut.cz/~borovji3/?page=dataset">Jiří Borovec</a>, Center for Machine Perception, Department of
+Cybernetics, Faculty of Electrical Engineering, Czech Technical University in Prague, from images
+provided by Prof. Arrate Munoz-Barrutia, Center for Applied Medical Research (CIMA), University of
+Navarra, Pamplona Spain <a class="footnote-reference brackets" href="#id9" id="id4">2</a>; and Prof. Ortiz de Solórzano, Center for Applied Medical Research
+(CIMA), University of Navarra, Pamplona Spain <a class="footnote-reference brackets" href="#id10" id="id5">3</a>.</p>
+</div>
+</div>
+</div>
+<div class="section" id="further-reading">
+<h2>Further Reading<a class="headerlink" href="#further-reading" title="Permalink to this headline">¶</a></h2>
+<p>For further information on the algorithm implemented by pFIRE, the original papers describing the
+algorithm are Barber and Hose 2005 <a class="footnote-reference brackets" href="#id11" id="id6">4</a> and Barber et al. 2007 <a class="footnote-reference brackets" href="#id13" id="id7">5</a>.</p>
+<dl class="footnote brackets">
+<dt class="label" id="id8"><span class="brackets"><a class="fn-backref" href="#id3">1</a></span></dt>
+<dd><p>J. Borovec, A. Munoz-Barrutia, and J. Kybic, “Benchmarking of Image Registration Methods for
+Differently Stained Histological Slides,” <em>IEEE International Conference on Image Processing
+(ICIP)</em>, 2018, pp. 3368–3372, DOI: <a class="reference external" href="https://doi.org/10.1109/icip.2018.8451040">10.1109/icip.2018.8451040</a>.</p>
+</dd>
+<dt class="label" id="id9"><span class="brackets"><a class="fn-backref" href="#id4">2</a></span></dt>
+<dd><p>J. Borovec, J. Kybic, M. Bušta, C. Ortiz-de-Solorzano, and A. Munoz-Barrutia, “Registration of
+multiple stained histological sections,” in IEEE International Symposium on Biomedical
+Imaging (ISBI), 2013, pp. 1034–1037, DOI: <a class="reference external" href="https://doi.org/10.1109/ISBI.2013.6556654">10.1109/ISBI.2013.6556654</a>.</p>
+</dd>
+<dt class="label" id="id10"><span class="brackets"><a class="fn-backref" href="#id5">3</a></span></dt>
+<dd><p>R. Fernandez-Gonzalez et al., “System for combined three-dimensional morphological and
+molecular analysis of thick tissue specimens,” Microsc. Res. Tech., vol. 59, no. 6, pp. 522–530,
+2002, DOI: <a class="reference external" href="https://doi.org/10.1002/jemt.10233">10.1002/jemt.10233</a>.</p>
+</dd>
+<dt class="label" id="id11"><span class="brackets"><a class="fn-backref" href="#id6">4</a></span></dt>
+<dd><p>Barber D, Hose D., “Automatic segmentation of medical images using image registration:
+diagnostic and simulation applications,” <em>Journal of medical engineering &amp; technology</em>,
+<strong>29(2)</strong>, 2005, pp. 53-63, DOI:<a class="reference external" href="https://doi.org/10.1080/03091900412331289889">10.1080/03091900412331289889</a>.</p>
+</dd>
+<dt class="label" id="id13"><span class="brackets"><a class="fn-backref" href="#id7">5</a></span></dt>
+<dd><p>Barber DC, Oubel E, Frangi AF, Hose D., “Efficient computational fluid dynamics mesh
+generation by image registration,” <em>Medical image analysis</em>, <strong>11(6)</strong>, 2007, pp. 648–662,
+DOI:<a class="reference external" href="https://doi.org/10.1016/j.media.2007.06.011">10.1016/j.media.2007.06.011</a>.</p>
+</dd>
+</dl>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../user_docs/index.html" class="btn btn-neutral float-right" title="User Documentation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="cli_quickstart.html" class="btn btn-neutral" title="Running pFIRE" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; 2018, University of Sheffield. 
+	</p>
+	<p>
+	Development of pFIRE is supported by the European Union’s Horizon 2020
+	research and innovation programme under grant agreement No 675451.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.5.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="../_static/language_data.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

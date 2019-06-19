@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Running pFIRE &mdash; pFIRE 0.2 documentation</title>
+  <title>Running pFIRE &mdash; pFIRE 0.5.0 documentation</title>
   
 
   
@@ -35,8 +35,8 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="pFIRE 0.2 documentation" href="index.html"/>
-        <link rel="next" title="pFIRE Configuration" href="cli_ref.html"/>
+    <link rel="top" title="pFIRE 0.5.0 documentation" href="index.html"/>
+        <link rel="next" title="pFIRE Tutorial" href="tutorial.html"/>
         <link rel="prev" title="Installing pFIRE" href="install.html"/> 
 
   
@@ -94,10 +94,11 @@
 <li class="toctree-l2"><a class="reference internal" href="#shirt-compatibility">ShIRT Compatibility</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="cli_ref.html">pFIRE Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">pFIRE Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli_ref.html">pFIRE Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="algorithm.html">The pFIRE Algorithm</a></li>
 <li class="toctree-l1"><a class="reference internal" href="testsuite.html">Using the Integration Test Suite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Source Documentation</a></li>
 </ul>
 
             
@@ -170,7 +171,37 @@ in the <a class="reference internal" href="cli_ref.html"><span class="doc">comma
 <h2>Elastic Registration<a class="headerlink" href="#elastic-registration" title="Permalink to this headline">¶</a></h2>
 <p>pFIRE is invoked from the console:</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> pfire --help
-<span class="go">bash: line 1: pfire: command not found</span>
+<span class="go">                   .................................................   ......................</span>
+<span class="go">                   :####################::########::################:  :####################:</span>
+<span class="go">                   :####################::########::######:&quot;&quot;&quot;&quot;:#####: :####################:</span>
+<span class="go">                    :######:&quot;&quot;&quot;&quot;&quot;&quot;&quot;:####: :######:  :#####:     :#####: :######:&quot;&quot;&quot;&quot;&quot;&quot;&quot;:####:</span>
+<span class="go">.....   .........    :#####:       &quot;&quot;&quot;&quot;&quot;&quot;  :####:    :####:     :#####:  :#####:       &quot;&quot;&quot;&quot;&quot;&quot;</span>
+<span class="go">:####...#########:   :#####:               :####:    :####:     :#####:  :#####:</span>
+<span class="go">:#################:  :######:.........     :####:    :####:....:#####:   :######:.........</span>
+<span class="go">::######:&quot;&quot;&quot;:######: :###############:     :####:    :#############:     :###############:</span>
+<span class="go"> :#####:     :#####: :###############:     :####:    :####:&quot;&quot;&quot;&quot;:#####:   :###############:</span>
+<span class="go"> :#####:     :#####: :######&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;     :####:    :####:     :#####:  :######:&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;</span>
+<span class="go"> :#####:     :#####: :#####:               :####:    :####:     :#####:  :#####:</span>
+<span class="go"> :#####:    :######: :#####:               :####:    :####:     :#####:  :#####:       ......</span>
+<span class="go"> :#####:...:#######::#######:             :######:  :#####:     :#####: :######:......:#####:</span>
+<span class="go"> :################::########:            :########::######:     :#####::####################:</span>
+<span class="go"> :##############:  :########:            :########::######:     :#####::####################:</span>
+<span class="go"> :######:&quot;&quot;&quot;&quot;&quot;&quot;&quot;   &quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;            &quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;     &quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;</span>
+<span class="go"> :#####:</span>
+<span class="go"> :#####:</span>
+<span class="go">:#######:   Development build (commit:3b284244c71500a52a72ee81fb88fb1481251137-dirty)</span>
+<span class="go">:#######:</span>
+<span class="go">:#######:</span>
+<span class="go">&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;</span>
+
+<span class="go">Running on 1 processes</span>
+<span class="go">pFIRE (Parallel Framework for Image Registration)</span>
+
+<span class="go">Usage: pfire &lt;config_file&gt; [-h,--help]</span>
+
+<span class="go">Options:</span>
+<span class="go">  config_file		configuration file to read options from</span>
+<span class="go">  -h [ --help ]         print this message</span>
 </pre></div>
 </div>
 <p>It takes a single argument - the name of a configuration file.  This is a deliberate design
@@ -220,7 +251,7 @@ $ shirt register fixed fixed.image moved moved.image mask mask.mask nodespacing 
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="cli_ref.html" class="btn btn-neutral float-right" title="pFIRE Configuration" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="tutorial.html" class="btn btn-neutral float-right" title="pFIRE Tutorial" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="install.html" class="btn btn-neutral" title="Installing pFIRE" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
@@ -257,7 +288,7 @@ $ shirt register fixed fixed.image moved moved.image mask mask.mask nodespacing 
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.2',
+            VERSION:'0.5.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
@@ -267,7 +298,8 @@ $ shirt register fixed fixed.image moved moved.image mask mask.mask nodespacing 
       <script type="text/javascript" src="_static/jquery.js"></script>
       <script type="text/javascript" src="_static/underscore.js"></script>
       <script type="text/javascript" src="_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="_static/language_data.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 

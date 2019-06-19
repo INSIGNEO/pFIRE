@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>pFIRE &mdash; pFIRE 0.2 documentation</title>
+  <title>pFIRE &mdash; pFIRE 0.5.0 documentation</title>
   
 
   
@@ -35,8 +35,8 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="pFIRE 0.2 documentation" href="index.html"/>
-        <link rel="next" title="Installing pFIRE" href="install.html"/> 
+    <link rel="top" title="pFIRE 0.5.0 documentation" href="index.html"/>
+        <link rel="next" title="Getting Started" href="getting_started/index.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -85,14 +85,10 @@
               
             
             
-              <p class="caption"><span class="caption-text">Getting Started</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="install.html">Installing pFIRE</a></li>
-<li class="toctree-l1"><a class="reference internal" href="cli_quickstart.html">Running pFIRE</a></li>
-<li class="toctree-l1"><a class="reference internal" href="cli_ref.html">pFIRE Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorial.html">pFIRE Tutorial</a></li>
-<li class="toctree-l1"><a class="reference internal" href="algorithm.html">The pFIRE Algorithm</a></li>
-<li class="toctree-l1"><a class="reference internal" href="testsuite.html">Using the Integration Test Suite</a></li>
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user_docs/index.html">User Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developer_docs/index.html">Developer Documentation</a></li>
 </ul>
 
             
@@ -159,16 +155,16 @@
   <div class="section" id="pfire">
 <h1>pFIRE<a class="headerlink" href="#pfire" title="Permalink to this headline">¶</a></h1>
 <p>pFIRE is a parallel framework for the elastic registration of large images by the method of Barber
-and Hose <a class="footnote-reference" href="#id3" id="id1">[1]</a> <a class="footnote-reference" href="#id5" id="id2">[2]</a>. It is implemented in C++ using the PETSc scientific toolkit to
+and Hose. <a class="footnote-reference brackets" href="#id3" id="id1">1</a> <a class="footnote-reference brackets" href="#id5" id="id2">2</a> It is implemented in C++ using the PETSc scientific toolkit to
 provide parallelised mathematical routines.</p>
 <p>There are two ways to use pFIRE:</p>
 <ol class="arabic simple">
-<li>Use the provided executable tools to interact with pFIRE from the command line. These tools
+<li><p>Use the provided executable tools to interact with pFIRE from the command line. These tools
 expose the majority of pFIRE’s functionality through a simple interface.  If you just have a
-pair of images to register, start here.</li>
-<li>Embed pFIRE functionality within your own code using the API.  This is primarily intended for
+pair of images to register, start here.</p></li>
+<li><p>Embed pFIRE functionality within your own code using the API.  This is primarily intended for
 more experienced users and developers to embed elastic registration within larger workflows or
-to extend pFIRE’s functionality.</li>
+to extend pFIRE’s functionality.</p></li>
 </ol>
 <div class="section" id="what-is-elastic-registration">
 <h2>What is Elastic Registration?<a class="headerlink" href="#what-is-elastic-registration" title="Permalink to this headline">¶</a></h2>
@@ -177,44 +173,32 @@ as possible.  The image which is transformed is known as the <strong>moved image
 to which is is matched the <strong>fixed image</strong>.</p>
 <p>There are two types of image registration:</p>
 <ol class="arabic simple">
-<li><strong>Rigid registration</strong> uses global transformations which affect the whole image in the same way.
+<li><p><strong>Rigid registration</strong> uses global transformations which affect the whole image in the same way.
 <em>Translation, scaling, linear shearing</em> and <em>rotation</em> are all examples of rigid registration.
 These are relatively simple to compute but cannot describe all changes to an image, such as
-non-linear shearing or local deformations.</li>
-<li><strong>Elastic registration</strong> creates a displacement map or field which describes how individual
+non-linear shearing or local deformations.</p></li>
+<li><p><strong>Elastic registration</strong> creates a displacement map or field which describes how individual
 image pixels are moved to transform between the moved and fixed images.  This map can have an
 arbitrary resolution and can therefore, in principle, describe any transformation of one image
-to another.</li>
+to another.</p></li>
 </ol>
 <p>Elastic registration is far more computationally intensive than rigid registration, however, the
 ability to measure and describe nonlinear transformations is potentially extremely useful for e.g
 determination of stress inside a deformed mechanical structure.</p>
-</div>
-<div class="section" id="index">
-<h2>Index<a class="headerlink" href="#index" title="Permalink to this headline">¶</a></h2>
-<p><strong>Getting Started</strong></p>
-<ul class="simple">
-<li><a class="reference internal" href="install.html"><span class="doc">Installing pFIRE</span></a></li>
-<li><a class="reference internal" href="cli_quickstart.html"><span class="doc">Running pFIRE</span></a></li>
-</ul>
 <div class="toctree-wrapper compound">
 </div>
-<table class="docutils footnote" frame="void" id="id3" rules="none">
-<colgroup><col class="label" /><col /></colgroup>
-<tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td>Barber D, Hose D. Automatic segmentation of medical images using image registration:
+<dl class="footnote brackets">
+<dt class="label" id="id3"><span class="brackets"><a class="fn-backref" href="#id1">1</a></span></dt>
+<dd><p>Barber D, Hose D. Automatic segmentation of medical images using image registration:
 diagnostic and simulation applications. <em>Journal of medical engineering &amp; technology</em>,
-<strong>29(2)</strong>, pp. 53-63, (2005), DOI:<a class="reference external" href="https://doi.org/10.1080/03091900412331289889">10.1080/03091900412331289889</a>.</td></tr>
-</tbody>
-</table>
-<table class="docutils footnote" frame="void" id="id5" rules="none">
-<colgroup><col class="label" /><col /></colgroup>
-<tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id2">[2]</a></td><td>Barber DC, Oubel E, Frangi AF, Hose D. Efficient computational fluid dynamics mesh
+<strong>29(2)</strong>, pp. 53-63, (2005), DOI:<a class="reference external" href="https://doi.org/10.1080/03091900412331289889">10.1080/03091900412331289889</a>.</p>
+</dd>
+<dt class="label" id="id5"><span class="brackets"><a class="fn-backref" href="#id2">2</a></span></dt>
+<dd><p>Barber DC, Oubel E, Frangi AF, Hose D. Efficient computational fluid dynamics mesh
 generation by image registration. <em>Medical image analysis</em>, <strong>11(6)</strong>, pp. 648–662, (2007),
-DOI:<a class="reference external" href="https://doi.org/10.1016/j.media.2007.06.011">10.1016/j.media.2007.06.011</a>.</td></tr>
-</tbody>
-</table>
+DOI:<a class="reference external" href="https://doi.org/10.1016/j.media.2007.06.011">10.1016/j.media.2007.06.011</a>.</p>
+</dd>
+</dl>
 </div>
 </div>
 
@@ -228,7 +212,7 @@ DOI:<a class="reference external" href="https://doi.org/10.1016/j.media.2007.06.
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="install.html" class="btn btn-neutral float-right" title="Installing pFIRE" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="getting_started/index.html" class="btn btn-neutral float-right" title="Getting Started" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
     </div>
@@ -263,7 +247,7 @@ DOI:<a class="reference external" href="https://doi.org/10.1016/j.media.2007.06.
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.2',
+            VERSION:'0.5.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
@@ -273,7 +257,8 @@ DOI:<a class="reference external" href="https://doi.org/10.1016/j.media.2007.06.
       <script type="text/javascript" src="_static/jquery.js"></script>
       <script type="text/javascript" src="_static/underscore.js"></script>
       <script type="text/javascript" src="_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="_static/language_data.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 

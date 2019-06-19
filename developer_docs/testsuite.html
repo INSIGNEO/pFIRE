@@ -1,0 +1,321 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Using the Integration Test Suite &mdash; pFIRE 0.5.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="pFIRE 0.5.0 documentation" href="../index.html"/>
+        <link rel="up" title="Developer Documentation" href="index.html"/>
+        <link rel="next" title="Source Documentation" href="api.html"/>
+        <link rel="prev" title="Developer Documentation" href="index.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../docs.html" class="icon icon-home"> pFIRE
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_docs/index.html">User Documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Developer Documentation</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Using the Integration Test Suite</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#integration-testing">Integration Testing</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#installation">Installation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#running-integration-tests">Running Integration Tests</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#included-tests">Included Tests</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#integration-test-configuration">Integration Test Configuration</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="api.html">Source Documentation</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../docs.html">pFIRE</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../docs.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Developer Documentation</a> &raquo;</li>
+        
+      <li>Using the Integration Test Suite</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/developer_docs/testsuite.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="using-the-integration-test-suite">
+<h1>Using the Integration Test Suite<a class="headerlink" href="#using-the-integration-test-suite" title="Permalink to this headline">¶</a></h1>
+<p>Along with the pFIRE library and executable, the codebase also includes unit tests and integration
+tests for validation, benchmarking and validation of pFIRE’s functionality.  The use of these is
+documented in detail here.</p>
+<div class="section" id="integration-testing">
+<h2>Integration Testing<a class="headerlink" href="#integration-testing" title="Permalink to this headline">¶</a></h2>
+<p>Integration testing involves running the complete program against various input data and comparing
+either to an accepted result, either in the form of predetermined result file or the output of
+another program (this could be an earlier version of pFIRE or a different image registration code).</p>
+<p>Integration testing for pFIRE can be performed using the <cite>pfire_benchmarking</cite> python module,
+located in the <cite>benchmarking/</cite> subdirectory of the source code repository.</p>
+<div class="section" id="installation">
+<h3>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h3>
+<p>Since it is provided as
+a standard python module the test suite may be installed on any system with python version 3.5 or
+later, either using pip or by manually running the provided setup.py:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> benchmarking
+<span class="gp">#</span> <span class="k">then</span>
+<span class="gp">$</span> pip install --user .
+<span class="gp">#</span>or
+<span class="gp">$</span> python3 setup.py
+</pre></div>
+</div>
+<p>The test suite is dependent on several common python packages. If using pip these should be
+installed for you automatically.  If installing manually it is up to you to install them.</p>
+<p>Once installed, the testsuite may be run using the <cite>pfire-integration-test</cite> command.</p>
+</div>
+<div class="section" id="running-integration-tests">
+<h3>Running Integration Tests<a class="headerlink" href="#running-integration-tests" title="Permalink to this headline">¶</a></h3>
+<p>The integration test suite can be run either on a single test file or on all tests in a directory
+tree. There are two types of test that the suite supports, comparison with a result file, or by
+running both pFIRE and its predecessor (ShIRT) against the same test data and comparing the
+results.</p>
+<p>To run against a single configuration file, pass that test file as a parameter to the testsuite</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> pfire-integration-test /path/to/testfile.testconf
+</pre></div>
+</div>
+<p>or to run against all test files in a directory tree, pass the root directory of that tree</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> pfire-integration-test /path/to/root/of/testtree/
+</pre></div>
+</div>
+<p>the testsuite will then be run against the supplied test(s), and an html report generated detailing
+the results.  Note that for a test configuration file to be detected in the test tree it’s name
+should end with <cite>.testconf</cite>.</p>
+</div>
+<div class="section" id="included-tests">
+<h3>Included Tests<a class="headerlink" href="#included-tests" title="Permalink to this headline">¶</a></h3>
+<p>A set of comparison and regression tests are included with the pFIRE source code, in the
+<cite>testdata/integration</cite> subdirectory.</p>
+</div>
+<div class="section" id="integration-test-configuration">
+<h3>Integration Test Configuration<a class="headerlink" href="#integration-test-configuration" title="Permalink to this headline">¶</a></h3>
+<p>Integration tests are described and configured using a short configuration file, with <cite>ini</cite> syntax.
+This configuration file should have the extension <cite>.testconf</cite> in order to be detected by the
+testsuite when part of a tree of tests.</p>
+<p>The complete syntax of the config file is:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="na">name</span> <span class="o">=</span> <span class="s"># string: Name of the Test</span>
+<span class="na">type</span> <span class="o">=</span> <span class="s"># string: one of &quot;comparison&quot; or &quot;regression&quot;</span>
+<span class="na">pfire_config</span> <span class="o">=</span> <span class="s"># string: the pfire config file to use</span>
+<span class="na">accepted_image</span> <span class="o">=</span> <span class="s"># string: the image to compare with (&quot;regression&quot; mode only)</span>
+<span class="na">accepted_map</span> <span class="o">=</span> <span class="s"># string: the map to compare with (&quot;regression&quot; mode only)</span>
+</pre></div>
+</div>
+<p>The test suite will run pFIRE using the supplied configuration file, and compare the output to
+either the provided file(s) (<cite>type=regression</cite>) or to the results of running ShIRT with the same
+configuration (<cite>type=comparison</cite>).  If the type is specified as <cite>comparison</cite> then the <cite>ShIRT</cite>
+binary must be located on the system <cite>$PATH</cite>.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="api.html" class="btn btn-neutral float-right" title="Source Documentation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="Developer Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; 2018, University of Sheffield. 
+	</p>
+	<p>
+	Development of pFIRE is supported by the European Union’s Horizon 2020
+	research and innovation programme under grant agreement No 675451.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.5.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="../_static/language_data.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

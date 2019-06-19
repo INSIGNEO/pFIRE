@@ -1,0 +1,428 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>The pFIRE Algorithm &mdash; pFIRE 0.5.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="pFIRE 0.5.0 documentation" href="../index.html"/>
+        <link rel="up" title="User Documentation" href="index.html"/>
+        <link rel="next" title="Developer Documentation" href="../developer_docs/index.html"/>
+        <link rel="prev" title="pFIRE Configuration" href="cli_ref.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../docs.html" class="icon icon-home"> pFIRE
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/index.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">User Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="cli_ref.html">pFIRE Configuration</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">The pFIRE Algorithm</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#algorithm-description">Algorithm Description</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#the-registration-equation">The Registration Equation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#implementation-details">Implementation Details</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#calculating-mathbf-t-t-mathbf-t">Calculating <span class="math notranslate nohighlight">\(\mathbf{{T}}^t\mathbf{{T}}\)</span></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_docs/index.html">Developer Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../docs.html">pFIRE</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../docs.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">User Documentation</a> &raquo;</li>
+        
+      <li>The pFIRE Algorithm</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/user_docs/algorithm.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="the-pfire-algorithm">
+<h1>The pFIRE Algorithm<a class="headerlink" href="#the-pfire-algorithm" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="algorithm-description">
+<h2>Algorithm Description<a class="headerlink" href="#algorithm-description" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="the-registration-equation">
+<h3>The Registration Equation<a class="headerlink" href="#the-registration-equation" title="Permalink to this headline">¶</a></h3>
+<p>The basic equation that pFIRE attempts to solve relates the fixed image <span class="math notranslate nohighlight">\(\vec{f}\)</span> to the
+moved image <span class="math notranslate nohighlight">\(\vec{m}\)</span> via the displacement map <span class="math notranslate nohighlight">\(\vec{a}\)</span>.  This can be written in one
+of two forms, depending on if we are “pushing” the moved image onto the fixed image or pulling the
+fixed onto the moved image.</p>
+<div class="math notranslate nohighlight">
+\[ \begin{align}\begin{aligned}\vec{f}(\vec{x}) = \vec{m}(\vec{x}+\vec{a}(\vec{x}))\\\vec{m}(\vec{x}) = \vec{f}(\vec{x}-\vec{a}(\vec{x}))\end{aligned}\end{align} \]</div>
+<p>Taylor expanding these expressions and truncating to first order allows us to separate the
+displacement vector from the source image by introducing a gradient term:</p>
+<div class="math notranslate nohighlight">
+\[ \begin{align}\begin{aligned}\vec{f}(\vec{x}) \simeq \vec{m}(\vec{x}) + \nabla\vec{m}(\vec{x}) \cdot \vec{a}(\vec{x})\\\vec{m}(\vec{x}) \simeq \vec{f}(\vec{x}) - \nabla\vec{f}(\vec{x}) \cdot \vec{a}(\vec{x})\end{aligned}\end{align} \]</div>
+<p>Note that these expressions are valid only in the case that the displacement
+<span class="math notranslate nohighlight">\(\vec{a}(\vec{x})\)</span> is small, however, the scheme will be applied iteratively to converge upon
+the correct result.</p>
+<p>Combining these two expressions yields a single registration equation to be solved for
+<span class="math notranslate nohighlight">\(\vec{a}(\vec{x})\)</span> which includes the information from both images:</p>
+<div class="math notranslate nohighlight">
+\[\vec{f} - \vec{m} = \frac{1}{2}\nabla[\vec{f}(\vec{x}) + \vec{m}(\vec{x})]\cdot\vec{a}(\vec{x}).\]</div>
+<p>The above registration equation has the images and map in the form on continuous functions,
+however, when solving numerically we have images composed of pixels and a map represented as a
+series of node points.  Information between these points can then be found by (linear)
+interpolation.  Typically there will also be far fewer map nodes than image pixels both for
+practical reasons of computation time and mathematical reasons of resistance to noise and simply
+having sufficient information to fully constrain the problem.</p>
+<p>The net result of this is that we require some kind of interpolation method to map contributions
+from image pixels to their corresponding map nodes.  pFIRE uses linear interpolation, with each
+pixel contributing to its nearest 4 (or 8 in 3D) map nodes, with linear interpolation coefficients
+given by</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\phi_{\mu\nu\omega}^{ijk} = \begin{cases}
+  \prod_{n=1,2,3} (1 - | x^n_{ijk} - x^n_{\mu\nu\omega}| ) &amp;\mathrm{if}\
+    \forall\ (x^n_{ijk} - x^n_{\mu\nu\omega}) &lt; 1\\
+  0 &amp;\mathrm{otherwise}
+\end{cases}\end{split}\]</div>
+<p>Here upper latin indices represent the image pixel indices and the greek indices represent the map
+node indices. The object <span class="math notranslate nohighlight">\(x^n_{ijk}\)</span> is the position in spatial dimension <span class="math notranslate nohighlight">\(n\)</span> of the
+pixel at position (i,j,k) in the image, and similarly <span class="math notranslate nohighlight">\(x^n_{\mu\nu\omega}\)</span> describes the
+position of a map node.</p>
+<p>This can then be used, along with a gradient information tensor <span class="math notranslate nohighlight">\(I\)</span> and a displacement (map)
+tensor <span class="math notranslate nohighlight">\(A\)</span>, to construct a discrete form of the registration equation (using Einstein
+summation convention):</p>
+<div class="math notranslate nohighlight">
+\[(f - m)_{xyz} = I^{xyz}_{\alpha ijk} \phi^{ijk}_{\mu\nu\omega} A^{\alpha \mu\nu\omega}\]</div>
+<p>where the index <span class="math notranslate nohighlight">\(\alpha\)</span> refers to the four degrees of freedom (<span class="math notranslate nohighlight">\(x, y, z, s\)</span>), the
+latin index triplets (<span class="math notranslate nohighlight">\(x y z\)</span> and <span class="math notranslate nohighlight">\(i j k\)</span>) refer to image pixel indices and the greek
+index triplet (<span class="math notranslate nohighlight">\(\mu \nu \omega\)</span>) refers to map node indices.</p>
+<p>The form of the gradient information tensor <span class="math notranslate nohighlight">\(I\)</span> is diagonal, with elements given by</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}I^{xyz}_{\alpha ijk} = \begin{cases}
+ \frac{1}{2}(f + m)_{xyz} &amp; \text{if}\ x=i, y=j, z=k, \alpha=0\\
+ \frac{1}{2}\nabla_\alpha (f + m)_{xyz} &amp; \text{if}\ x=i, y=j, z=k, \alpha={1,2,3}\\
+ 0 &amp; \text{otherwise}
+\end{cases}\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\nabla_\alpha\)</span> indicates differentiation with respect to <span class="math notranslate nohighlight">\(x, y\ \text{or}\ z\)</span>
+for <span class="math notranslate nohighlight">\(\alpha=1,2,3\)</span> respectively. Note that this is essentially a concatenation of four
+diagonal tensors, and in the subsequent steps will become a concatentation of four diagonal
+matrices.</p>
+<p>The complexity of implementation may be eased by electing to explicitly flatten the indices
+<span class="math notranslate nohighlight">\(x,y,z\)</span> and <span class="math notranslate nohighlight">\(\mu,\nu,\omega\)</span>. In the case of pFIRE indexing is performed such that the
+x index varies fastest - this is the same indexing scheme as used by PETSc:</p>
+<div class="math notranslate nohighlight">
+\[n(x, y, z) = (z * Y + y)*X + x\]</div>
+<p>where <span class="math notranslate nohighlight">\((X,Y,Z)\)</span> is the size of the mesh.</p>
+<p>This allows the problem to be expressed in the form of a matrix equation:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{align}
+  (\bar{F} - \bar{M}) &amp;= \mathbf{{T}}\bar{A} = \mathbf{{G}}\mathbf{{\Phi}}\bar{A} \\
+  &amp;= \begin{bmatrix} \mathbf{{G}}_s \\ \mathbf{{G}}_x \\ \mathbf{{G}}_y \\ \mathbf{{G}}_z \end{bmatrix}
+  \begin{bmatrix} \mathbf{{\phi}} \\ \mathbf{{\phi}} \\ \mathbf{{\phi}} \\ \mathbf{{\phi}} \end{bmatrix}
+  \begin{bmatrix} \bar{A}_s \\ \bar{A}_x \\ \bar{A}_y \\ \bar{A}_z \end{bmatrix}
+\end{align}\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\bar{F}\)</span> and <span class="math notranslate nohighlight">\(\bar{M}\)</span> are column vectors containing the fixed and moved image
+intensities, <span class="math notranslate nohighlight">\(\mathbf{{G}}_\alpha\)</span> are the square, diagonal submatrices for each dimension
+of the gradient information, <span class="math notranslate nohighlight">\(\mathbf{{\phi}}\)</span> is the same submatrix for each dimension, and
+<span class="math notranslate nohighlight">\(A_\alpha\)</span> are column matrices containing the nodal displacements for each dimension of the
+map.</p>
+<p>The matrix <span class="math notranslate nohighlight">\(T\)</span> is defined here as the product of the matrices <span class="math notranslate nohighlight">\(\mathbf{{G}}\)</span> and
+<span class="math notranslate nohighlight">\(\mathbf{{\Phi}}\)</span>, and it is, in general, non-square.  We therefore create a soluable matrix
+equation from this by multiplying both sides by the transpose <span class="math notranslate nohighlight">\(\mathbf{{T}}^t\)</span>,</p>
+<div class="math notranslate nohighlight">
+\[\mathbf{{T}}^t(\bar{F} - \bar{M}) = \mathbf{{T}}^t\mathbf{{T}}\bar{A}\]</div>
+<p>yielding an equation with square matrix <span class="math notranslate nohighlight">\(\mathbf{{T}}^t\mathbf{{T}}\)</span> which may be solved by
+standard numerical methods.</p>
+<p>Unfortunately <span class="math notranslate nohighlight">\(\mathbf{{T}}^t\mathbf{{T}}\)</span> is typically singular and so we must apply some
+kind of regularisation to make the problem soluable.  In this case we use the method of Tikhonov
+regularisation, which includes an additional smoothing term in the problem. In this case the
+Laplacian matrix is chosen, adding minimization of the second derivative of the map as the extra
+constraint (<span class="math notranslate nohighlight">\(\mathbf{{L}}\bar{A} = 0\)</span> and the problem becomes,</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{bmatrix}\mathbf{{T}}^t &amp; \lambda^\frac{1}{2}\mathbf{{L}}^t \end{bmatrix}
+\begin{bmatrix}(\bar{F} - \bar{M}) \\ \mathbf{{0}}\end{bmatrix}
+ = \begin{bmatrix}\mathbf{{T}}^t\mathbf{{T}} + \lambda\mathbf{{L}}^t\mathbf{{L}}\end{bmatrix}\bar{A}.\end{split}\]</div>
+<p>This simplifies to</p>
+<div class="math notranslate nohighlight">
+\[\mathbf{{T}}^t(\bar{F} - \bar{M})
+ = \begin{bmatrix}\mathbf{{T}}^t\mathbf{{T}} + \lambda\mathbf{{L}}^t\mathbf{{L}}\end{bmatrix}\bar{A}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\lambda\)</span> is a free parameter which is chosen to minimize the condition number of the
+regularised matrix. Adding this additional Laplacian constraint ensures that the smoothest solution
+to the problem is chosen.</p>
+<p>Finally, because the algorithm is iterative, we calculate a new mapping at each step and add it to
+the previously accumulated displacements to refine the overall solution.  In many cases, we may want to
+constrain the overall displacement to be maximally smooth, thus our additional constraint becomes</p>
+<div class="math notranslate nohighlight">
+\[\mathbf{{L}}(\bar{A} + \bar{A}_p) = 0\]</div>
+<p>or</p>
+<div class="math notranslate nohighlight">
+\[\mathbf{{L}}(\bar{A} = - \bar{A}_p)\]</div>
+<p>So the equation becomes</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{bmatrix}\mathbf{{T}}^t &amp; \lambda^\frac{1}{2}\mathbf{{L}}^t \end{bmatrix}
+\begin{bmatrix}(\bar{F} - \bar{M}) \\ -\lambda^\frac{1}{2}\mathbf{{L}}^t\bar{A}_p\end{bmatrix}
+ = \begin{bmatrix}\mathbf{{T}}^t\mathbf{{T}} + \lambda\mathbf{{L}}^t\mathbf{{L}}\end{bmatrix}\bar{A}.\end{split}\]</div>
+<p>This simplifies to</p>
+<div class="math notranslate nohighlight">
+\[\mathbf{{T}}^t(\bar{F} - \bar{M}) - \lambda\mathbf{{L}}^t\mathbf{{L}}\bar{A}_p
+ = \begin{bmatrix}\mathbf{{T}}^t\mathbf{{T}} + \lambda\mathbf{{L}}^t\mathbf{{L}}\end{bmatrix}\bar{A}\]</div>
+<p>This form of the equation “remembers” the value of the map from the previous iteration and attempts
+to enforce global smoothing on the final result and is referred to as the “memory term”.  This
+method of smoothing is useful for registering images where the displacement is expected to be
+continuous and smooth, for example in the case of registration of multimodal images of the same
+structure.  In constrast, this option should be disabled in the case that image features are
+expected to move relative to each other, for example in cell-tracking applications.</p>
+</div>
+</div>
+<div class="section" id="implementation-details">
+<h2>Implementation Details<a class="headerlink" href="#implementation-details" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="calculating-mathbf-t-t-mathbf-t">
+<h3>Calculating <span class="math notranslate nohighlight">\(\mathbf{{T}}^t\mathbf{{T}}\)</span><a class="headerlink" href="#calculating-mathbf-t-t-mathbf-t" title="Permalink to this headline">¶</a></h3>
+<p>Implementation of the algorithm can be made more efficient by understanding the structure of the
+<span class="math notranslate nohighlight">\(\mathbf{{G}}\)</span> and <span class="math notranslate nohighlight">\(\mathbf{{\Phi}}\)</span> matrices, as prior knowledge of the zero-patterns
+in these matrices can make calculation of the final matrix <span class="math notranslate nohighlight">\(\mathbf{{T}}^t\mathbf{{T}}\)</span> much
+more efficient.  Further, since the <span class="math notranslate nohighlight">\(\mathbf{{G}}\)</span> matrix is diagonal we know that the zero
+pattern of its product with any matrix will match that of the other matrix, therefore we need only
+consider the zero-pattern of the interpolation matrix <span class="math notranslate nohighlight">\(\mathbf{{\Phi}}\)</span>.</p>
+<p>Revisiting the definition of <span class="math notranslate nohighlight">\(\mathbf{\phi}\)</span> (for flattened indices) and a single dimension:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\phi_{\mu}^{i} = \begin{cases}
+  \prod_{n=1,2,3} (1 - | x^n_{i} - x^n_{\mu}| ) &amp;\mathrm{if}\
+    \forall\ (x^n_{i} - x^n_{\mu}) &lt; 1\\
+  0 &amp;\mathrm{otherwise}
+\end{cases}\end{split}\]</div>
+<p>with <span class="math notranslate nohighlight">\(\mu\)</span> the map indices and <span class="math notranslate nohighlight">\(i\)</span> the image indices. So when calculating</p>
+<div class="math notranslate nohighlight">
+\[\mathbf{{T}}^t\mathbf{{T}} = \mathbf{\phi}^\mu_i\mathbf{G}^i_j\mathbf{G}^j_k\mathbf{\phi}^k_\nu\]</div>
+<p>the <span class="math notranslate nohighlight">\(\mathbf{G}\)</span> matrices function as Kronecker deltas for the purposes of discerning the
+zero-pattern, and so we can determine a zero-pattern matrix <span class="math notranslate nohighlight">\(\mathbf{Z}\)</span> for the matrix product
+<span class="math notranslate nohighlight">\(\mathbf{\phi}^t\mathbf{\phi}\)</span></p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\mathbf{Z} = \sum_i
+\begin{cases}
+    1 &amp;\mathrm{if}\ \forall\ (x^n_{i} - x^n_{\mu}) &lt; 1\\
+    0 &amp;\mathrm{otherwise}
+  \end{cases}
+  \times
+  \begin{cases}
+   1 &amp;\mathrm{if}\ \forall\ (x^n_{i} - x^n_{\nu}) &lt; 1\\
+   0 &amp;\mathrm{otherwise}
+  \end{cases}.\end{split}\]</div>
+<p>From this we see that there will only be a non-zero entry in the map if the image pixel at point
+<span class="math notranslate nohighlight">\(i\)</span> is a contributor to the map node at both points <span class="math notranslate nohighlight">\(\mu\)</span> and <span class="math notranslate nohighlight">\(\nu\)</span>.  Because we
+are using nearest neighbor interpolation, this means there are two classes of non-zero entry in
+<span class="math notranslate nohighlight">\(\mathbf{\phi}\)</span>: diagonal entries, for which <span class="math notranslate nohighlight">\(\mu = \nu\)</span>; and off diagonal entries, for
+which <span class="math notranslate nohighlight">\(\mu = \nu \pm \{1,U,U*V\}\)</span> (where <span class="math notranslate nohighlight">\(U\)</span> and <span class="math notranslate nohighlight">\(U*V\)</span> are the two multiplicative
+factors used in flattening the indexing). This gives a total of 9 non-zero entries per row.  If the
+domain splitting is carefully chosen, this can lead to an optimal communication pattern where
+information need only be exchanged with nearest neighbour ranks, rather than requiring all-to-all
+communication. In practice this optimal scheme is not implemented by pFIRE since it requires fixing
+the problem size per processor. Instead dynamic communication patterns are used to communicate only
+the required data regardless of its location.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../developer_docs/index.html" class="btn btn-neutral float-right" title="Developer Documentation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="cli_ref.html" class="btn btn-neutral" title="pFIRE Configuration" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; 2018, University of Sheffield. 
+	</p>
+	<p>
+	Development of pFIRE is supported by the European Union’s Horizon 2020
+	research and innovation programme under grant agreement No 675451.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.5.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="../_static/language_data.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

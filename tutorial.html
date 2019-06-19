@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>pFIRE Tutorial &mdash; pFIRE 0.2 documentation</title>
+  <title>pFIRE Tutorial &mdash; pFIRE 0.5.0 documentation</title>
   
 
   
@@ -35,9 +35,9 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="pFIRE 0.2 documentation" href="index.html"/>
-        <link rel="next" title="The pFIRE Algorithm" href="algorithm.html"/>
-        <link rel="prev" title="pFIRE Configuration" href="cli_ref.html"/> 
+    <link rel="top" title="pFIRE 0.5.0 documentation" href="index.html"/>
+        <link rel="next" title="pFIRE Configuration" href="cli_ref.html"/>
+        <link rel="prev" title="Running pFIRE" href="cli_quickstart.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -90,7 +90,6 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installing pFIRE</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cli_quickstart.html">Running pFIRE</a></li>
-<li class="toctree-l1"><a class="reference internal" href="cli_ref.html">pFIRE Configuration</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">pFIRE Tutorial</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#the-pfire-configuration-file">The pFIRE Configuration File</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#minimum-requirements">Minimum Requirements</a></li>
@@ -99,7 +98,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#customizing-the-registration">Customizing the Registration</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#the-smoothing-parameter">The Smoothing Parameter <span class="math notranslate nohighlight">\(\lambda\)</span></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#the-smoothing-parameter-lambda">The Smoothing Parameter <span class="math notranslate nohighlight">\(\lambda\)</span></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#the-lambda-parameter">The <code class="docutils literal notranslate"><span class="pre">lambda</span></code> parameter</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#the-lambda-mult-parameter">The <code class="docutils literal notranslate"><span class="pre">lambda_mult</span></code> parameter</a></li>
 </ul>
@@ -144,8 +143,10 @@
 <li class="toctree-l2"><a class="reference internal" href="#further-reading">Further Reading</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="cli_ref.html">pFIRE Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="algorithm.html">The pFIRE Algorithm</a></li>
 <li class="toctree-l1"><a class="reference internal" href="testsuite.html">Using the Integration Test Suite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Source Documentation</a></li>
 </ul>
 
             
@@ -216,7 +217,7 @@ begin with an example that uses the default configuration of pFIRE.  After this 
 some of the more advanced options that allow us to control both how pFIRE performs its
 registration, and the output formats that can be written.</p>
 <p>All the tutorial files can be found on the <a class="reference external" href="https://github.com/INSIGNEO/pFIRE/tree/master/doc/tutorial_files">pFIRE Github</a>, or may be downloaded in a
-<a class="reference download internal" href="_downloads/pfire_tutorial_files.zip" download=""><code class="xref download docutils literal notranslate"><span class="pre">zip</span> <span class="pre">archive</span></code></a>.</p>
+<a class="reference download internal" download="" href="_downloads/96c9f4eee26e62820ae23adf696c62ae/pfire_tutorial_files.zip"><code class="xref download docutils literal notranslate"><span class="pre">zip</span> <span class="pre">archive</span></code></a>.</p>
 <p>In order to perform registration, pFIRE requires a pair of images: a reference image, and a second
 image that is deformed until it is the same as the reference image. These are referred to as the
 <strong>fixed</strong> and <strong>moved</strong> images respectively.  These are set in the configuration file using the
@@ -303,17 +304,17 @@ you will find the following:</p>
 <p>This instructs pFIRE to register the image in <code class="docutils literal notranslate"><span class="pre">sad.png</span></code> to the image in <code class="docutils literal notranslate"><span class="pre">happy.png</span></code> using a
 final nodespacing of 10.  The <code class="docutils literal notranslate"><span class="pre">registered</span></code> parameter instructs pFIRE to store the registered
 image in the file <code class="docutils literal notranslate"><span class="pre">sad2happy_default.png</span></code>.</p>
-<table border="1" class="docutils">
+<table class="docutils align-center">
 <colgroup>
-<col width="50%" />
-<col width="50%" />
+<col style="width: 50%" />
+<col style="width: 50%" />
 </colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><img alt="happy" src="_images/happy.png" /></td>
-<td><img alt="sad" src="_images/sad.png" /></td>
+<tbody>
+<tr class="row-odd"><td><p><img alt="happy" src="_images/happy.png" /></p></td>
+<td><p><img alt="sad" src="_images/sad.png" /></p></td>
 </tr>
-<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">happy.png</span></code></td>
-<td><code class="docutils literal notranslate"><span class="pre">sad.png</span></code></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">happy.png</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">sad.png</span></code></p></td>
 </tr>
 </tbody>
 </table>
@@ -328,17 +329,17 @@ image in the file <code class="docutils literal notranslate"><span class="pre">s
 <p>This will produce a pair of output files: <code class="docutils literal notranslate"><span class="pre">sad2happy_default.png</span></code> and <code class="docutils literal notranslate"><span class="pre">map.xdmf</span></code>.  We will look
 at the map output later in the tutorial. For now, viewing <code class="docutils literal notranslate"><span class="pre">sad2happy_default.png</span></code> shows the
 results of the registration, with <code class="docutils literal notranslate"><span class="pre">happy.png</span></code> for comparison:</p>
-<table border="1" class="docutils">
+<table class="docutils align-center">
 <colgroup>
-<col width="50%" />
-<col width="50%" />
+<col style="width: 50%" />
+<col style="width: 50%" />
 </colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><img alt="sad2happy" src="_images/sad2happy_default.png" /></td>
-<td><img alt="happy" src="_images/happy.png" /></td>
+<tbody>
+<tr class="row-odd"><td><p><img alt="sad2happy" src="_images/sad2happy_default.png" /></p></td>
+<td><p><img alt="happy" src="_images/happy.png" /></p></td>
 </tr>
-<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">sad2happy_default.png</span></code></td>
-<td><code class="docutils literal notranslate"><span class="pre">happy.png</span></code></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">sad2happy_default.png</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">happy.png</span></code></p></td>
 </tr>
 </tbody>
 </table>
@@ -356,8 +357,8 @@ offers several configuration parameters to help control the smoothing behaviour.
 <p>pFIRE has two key parameters that allow the user to optimize the registration, these are the value
 of the smoothing parameter <span class="math notranslate nohighlight">\(\lambda\)</span>, and whether or not the memory term is used in the
 registration.  Both of these parameters have an effect on how smooth the displacement field is.</p>
-<div class="section" id="the-smoothing-parameter">
-<h3>The Smoothing Parameter <span class="math notranslate nohighlight">\(\lambda\)</span><a class="headerlink" href="#the-smoothing-parameter" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="the-smoothing-parameter-lambda">
+<h3>The Smoothing Parameter <span class="math notranslate nohighlight">\(\lambda\)</span><a class="headerlink" href="#the-smoothing-parameter-lambda" title="Permalink to this headline">¶</a></h3>
 <p>The registration equation includes a smoothing constraint through the laplacian matrix,
 which imposes a requirement for smoothness on the solution to the equation, and therefore on the
 displacement field.  The value of the parameter <span class="math notranslate nohighlight">\(\lambda\)</span> determines the relative strength of
@@ -386,17 +387,17 @@ in the file <code class="docutils literal notranslate"><span class="pre">faces_1
 </pre></div>
 </div>
 <p>This will register the same images as above, but with a large fixed <code class="docutils literal notranslate"><span class="pre">lambda</span> <span class="pre">=</span> <span class="pre">10</span></code>.</p>
-<table border="1" class="docutils">
+<table class="docutils align-center">
 <colgroup>
-<col width="50%" />
-<col width="50%" />
+<col style="width: 50%" />
+<col style="width: 50%" />
 </colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><img alt="sad2happy_fixed_lambda" src="_images/sad2happy_fixed_lambda.png" /></td>
-<td><img alt="happy" src="_images/happy.png" /></td>
+<tbody>
+<tr class="row-odd"><td><p><img alt="sad2happy_fixed_lambda" src="_images/sad2happy_fixed_lambda.png" /></p></td>
+<td><p><img alt="happy" src="_images/happy.png" /></p></td>
 </tr>
-<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">sad2happy_fixed_lambda.png</span></code></td>
-<td><code class="docutils literal notranslate"><span class="pre">happy.png</span></code></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">sad2happy_fixed_lambda.png</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">happy.png</span></code></p></td>
 </tr>
 </tbody>
 </table>
@@ -426,17 +427,17 @@ parameter <code class="docutils literal notranslate"><span class="pre">lambda_mu
 </pre></div>
 </div>
 <p>This registers the same images once again, but reducing the smoothing by a factor of 0.5:</p>
-<table border="1" class="docutils">
+<table class="docutils align-center">
 <colgroup>
-<col width="50%" />
-<col width="50%" />
+<col style="width: 50%" />
+<col style="width: 50%" />
 </colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><img alt="sad2happy_relative_lambda" src="_images/sad2happy_relative_lambda.png" /></td>
-<td><img alt="happy" src="_images/happy.png" /></td>
+<tbody>
+<tr class="row-odd"><td><p><img alt="sad2happy_relative_lambda" src="_images/sad2happy_relative_lambda.png" /></p></td>
+<td><p><img alt="happy" src="_images/happy.png" /></p></td>
 </tr>
-<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">sad2happy_relative_lambda.png</span></code></td>
-<td><code class="docutils literal notranslate"><span class="pre">happy.png</span></code></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">sad2happy_relative_lambda.png</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">happy.png</span></code></p></td>
 </tr>
 </tbody>
 </table>
@@ -475,17 +476,17 @@ smoothing:</p>
 </pre></div>
 </div>
 <p>Running the registration with these parameters produces the following result:</p>
-<table border="1" class="docutils">
+<table class="docutils align-center">
 <colgroup>
-<col width="50%" />
-<col width="50%" />
+<col style="width: 50%" />
+<col style="width: 50%" />
 </colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><img alt="sad2happy_no_memory" src="_images/sad2happy_no_memory.png" /></td>
-<td><img alt="happy" src="_images/happy.png" /></td>
+<tbody>
+<tr class="row-odd"><td><p><img alt="sad2happy_no_memory" src="_images/sad2happy_no_memory.png" /></p></td>
+<td><p><img alt="happy" src="_images/happy.png" /></p></td>
 </tr>
-<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">sad2happy_no_memory.png</span></code></td>
-<td><code class="docutils literal notranslate"><span class="pre">happy.png</span></code></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">sad2happy_no_memory.png</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">happy.png</span></code></p></td>
 </tr>
 </tbody>
 </table>
@@ -505,34 +506,22 @@ to simply overlay the two images and visually determine how well the registratio
 <p>An example script called <code class="docutils literal notranslate"><span class="pre">overlay_images.py</span></code> is provided with pFIRE to demonstrate this for 2D
 images. It takes a pair of input images, and overlays them to show how closely they are aligned:</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> overlay_images.py --help
-<span class="go">usage: overlay_images.py [-h] [--flip] fixed moved output</span>
-
-<span class="go">Overlay images with transparency</span>
-
-<span class="go">positional arguments:</span>
-<span class="go">  fixed       Path to fixed image</span>
-<span class="go">  moved       Path to moved image</span>
-<span class="go">  output      Path to save output png.</span>
-
-<span class="go">optional arguments:</span>
-<span class="go">  -h, --help  show this help message and exit</span>
-<span class="go">  --flip      Flip image vertically (origin top-left)</span>
+<span class="go">bash: line 1: overlay_images.py: command not found</span>
 </pre></div>
 </div>
 <p>For example, overlaying the results of the first registration we performed above,</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> tutorial_files/faces_1
 <span class="gp">$</span> overlay_images.py happy.png sad2happy_default.png comparison.png --flip
-<span class="go">/usr/lib64/python3.6/site-packages/skimage/io/_io.py:49: UserWarning: `as_grey` has been deprecated in favor of `as_gray`</span>
-<span class="go">  warn(&#39;`as_grey` has been deprecated in favor of `as_gray`&#39;)</span>
+<span class="go">bash: line 2: overlay_images.py: command not found</span>
 </pre></div>
 </div>
 <p>produces the following result:</p>
-<table border="1" class="docutils">
+<table class="docutils align-center">
 <colgroup>
-<col width="100%" />
+<col style="width: 100%" />
 </colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><img alt="comparison" src="_images/comparison.png" /></td>
+<tbody>
+<tr class="row-odd"><td><p><img alt="comparison" src="_images/comparison.png" /></p></td>
 </tr>
 </tbody>
 </table>
@@ -549,17 +538,17 @@ deformed into the other.</p>
 sad face can be registered into the happy face by displacing the sides of the mouth upwards and a
 smooth displacement field can be used to do this.</p>
 <p>In comparison, consider the two images below:</p>
-<table border="1" class="docutils">
+<table class="docutils align-center">
 <colgroup>
-<col width="50%" />
-<col width="50%" />
+<col style="width: 50%" />
+<col style="width: 50%" />
 </colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><img alt="grin" src="_images/grin.png" /></td>
-<td><img alt="sad" src="_images/sad.png" /></td>
+<tbody>
+<tr class="row-odd"><td><p><img alt="grin" src="_images/grin.png" /></p></td>
+<td><p><img alt="sad" src="_images/sad.png" /></p></td>
 </tr>
-<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">grin.png</span></code></td>
-<td><code class="docutils literal notranslate"><span class="pre">sad.png</span></code></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">grin.png</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">sad.png</span></code></p></td>
 </tr>
 </tbody>
 </table>
@@ -570,17 +559,17 @@ Since the displacement field must be single valued this is not possible, and so 
 be registered.</p>
 <p>These images are located in the <code class="docutils literal notranslate"><span class="pre">faces_2</span></code> example folder. A sample registration configuration is
 provided in <code class="docutils literal notranslate"><span class="pre">sad2grin.conf</span></code>.  Performing the registration should result in:</p>
-<table border="1" class="docutils">
+<table class="docutils align-center">
 <colgroup>
-<col width="50%" />
-<col width="50%" />
+<col style="width: 50%" />
+<col style="width: 50%" />
 </colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><img alt="sad2grin" src="_images/sad2grin.png" /></td>
-<td><img alt="grin" src="_images/grin.png" /></td>
+<tbody>
+<tr class="row-odd"><td><p><img alt="sad2grin" src="_images/sad2grin.png" /></p></td>
+<td><p><img alt="grin" src="_images/grin.png" /></p></td>
 </tr>
-<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">sad2grin.png</span></code></td>
-<td><code class="docutils literal notranslate"><span class="pre">grin.png</span></code></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">sad2grin.png</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">grin.png</span></code></p></td>
 </tr>
 </tbody>
 </table>
@@ -635,17 +624,17 @@ field, <strong>but we must also remember to move the nodes</strong>. The locatio
 mapping are found by pushing the nodes from the forward mapping from the fixed image to the moved
 image.</p>
 <p>This relationship is demonstrated graphically below:</p>
-<table border="1" class="docutils">
+<table class="docutils align-center">
 <colgroup>
-<col width="50%" />
-<col width="50%" />
+<col style="width: 50%" />
+<col style="width: 50%" />
 </colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="_images/mapping_forward.svg"><img alt="forward_mapping" src="_images/mapping_forward.svg" /></a></td>
-<td><a class="reference internal" href="_images/mapping_reverse.svg"><img alt="reverse_mapping" src="_images/mapping_reverse.svg" width="100%" /></a></td>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="_images/mapping_forward.svg"><img alt="forward_mapping" src="_images/mapping_forward.svg" /></a></p></td>
+<td><p><a class="reference internal" href="_images/mapping_reverse.svg"><img alt="reverse_mapping" src="_images/mapping_reverse.svg" width="100%" /></a></p></td>
 </tr>
-<tr class="row-even"><td>Foward Mapping</td>
-<td>Reverse Mapping</td>
+<tr class="row-even"><td><p>Foward Mapping</p></td>
+<td><p>Reverse Mapping</p></td>
 </tr>
 </tbody>
 </table>
@@ -696,63 +685,48 @@ demonstration of both of these methods.</p>
 simple viewer tool for 2D problems and as a teaching aid to demonstrate working with the map data
 in Python. The script takes four arguments:</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> mapplot2d.py --help
-<span class="go">usage: mapplot2d.py [-h] [--group GROUP] [--flip] [--invert-map]</span>
-<span class="go">                    registered moved map output</span>
-
-<span class="go">Show registered images with map data overlaid.</span>
-
-<span class="go">positional arguments:</span>
-<span class="go">  registered     Path to registered image</span>
-<span class="go">  moved          Path to moved image</span>
-<span class="go">  map            Path to map file</span>
-<span class="go">  output         Path to save output png.</span>
-
-<span class="go">optional arguments:</span>
-<span class="go">  -h, --help     show this help message and exit</span>
-<span class="go">  --group GROUP  Group name of map.</span>
-<span class="go">  --flip         Flip image vertically (origin top-left)</span>
-<span class="go">  --invert-map   Invert mapping before plotting</span>
+<span class="go">bash: line 1: mapplot2d.py: command not found</span>
 </pre></div>
 </div>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">fixed:</th><td class="field-body">The path to the fixed image.</td>
-</tr>
-<tr class="field-even field"><th class="field-name">moved:</th><td class="field-body">The path to the moved image.</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">map:</th><td class="field-body">The path to the map hdf5 file.</td>
-</tr>
-<tr class="field-even field"><th class="field-name">output:</th><td class="field-body">Path to output the resulting image (png)</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">–group:</th><td class="field-body">Specify the group name of the map in HDF5 file (default “map”)</td>
-</tr>
-<tr class="field-even field"><th class="field-name">–flip:</th><td class="field-body">Flip image vertically (puts origin in the upper left)</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">–invert-map:</th><td class="field-body">Invert the mapping to show direction of motion from moved to fixed image.</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">fixed</dt>
+<dd class="field-odd"><p>The path to the fixed image.</p>
+</dd>
+<dt class="field-even">moved</dt>
+<dd class="field-even"><p>The path to the moved image.</p>
+</dd>
+<dt class="field-odd">map</dt>
+<dd class="field-odd"><p>The path to the map hdf5 file.</p>
+</dd>
+<dt class="field-even">output</dt>
+<dd class="field-even"><p>Path to output the resulting image (png)</p>
+</dd>
+<dt class="field-odd">–group</dt>
+<dd class="field-odd"><p>Specify the group name of the map in HDF5 file (default “map”)</p>
+</dd>
+<dt class="field-even">–flip</dt>
+<dd class="field-even"><p>Flip image vertically (puts origin in the upper left)</p>
+</dd>
+<dt class="field-odd">–invert-map</dt>
+<dd class="field-odd"><p>Invert the mapping to show direction of motion from moved to fixed image.</p>
+</dd>
+</dl>
 <p>For example, to render the results of the first sample problem in <code class="docutils literal notranslate"><span class="pre">faces_1/sad2happy_default.png</span></code>,
 navigate to that folder and run</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> tutorial_files/faces_1
 <span class="gp">$</span> mapplot2d.py --flip --invert-map sad2happy_default.png sad.png sad2happy_default.xdmf.h5 sad2happy_map_render.png
-<span class="go">/usr/lib64/python3.6/site-packages/skimage/io/_io.py:49: UserWarning: `as_grey` has been deprecated in favor of `as_gray`</span>
-<span class="go">  warn(&#39;`as_grey` has been deprecated in favor of `as_gray`&#39;)</span>
-<span class="go">/home/telemin/repos/pfire/reglab/mapplot2d.py:44: FutureWarning: arrays to stack must be passed as a &quot;sequence&quot; type such as list or tuple. Support for non-sequence iterables such as generators is deprecated as of NumPy 1.16 and will raise an error in the future.</span>
-<span class="go">  method=&quot;cubic&quot;) for rv in rev_vecs)</span>
+<span class="go">bash: line 2: mapplot2d.py: command not found</span>
 </pre></div>
 </div>
 <p>which results in:</p>
-<table border="1" class="docutils">
+<table class="docutils align-center">
 <colgroup>
-<col width="100%" />
+<col style="width: 100%" />
 </colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><img alt="sad2happy_map_render" src="_images/sad2happy_map_render.png" /></td>
+<tbody>
+<tr class="row-odd"><td><p><img alt="sad2happy_map_render" src="_images/sad2happy_map_render.png" /></p></td>
 </tr>
-<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">sad2happy_map_render.png</span></code></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">sad2happy_map_render.png</span></code></p></td>
 </tr>
 </tbody>
 </table>
@@ -801,34 +775,30 @@ same directory as the registered image.</p>
 <span class="pre">%name%-intermediate-%s%-%i%.%ext%</span></code>, where the tokens surrounded by <code class="docutils literal notranslate"><span class="pre">%</span></code> characters will be
 replaced before output.  This allows customization of the output file name using elements of the
 registered filename as well as the step and iteration number:</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name"><code class="docutils literal notranslate"><span class="pre">%name%</span></code>:</th><td class="field-body"><p class="first">This will be replaced with the name of the registered image without the extension. For
+<dl class="field-list">
+<dt class="field-odd"><code class="docutils literal notranslate"><span class="pre">%name%</span></code></dt>
+<dd class="field-odd"><p>This will be replaced with the name of the registered image without the extension. For
 example, if the configuration file contains <code class="docutils literal notranslate"><span class="pre">registered</span> <span class="pre">=</span> <span class="pre">reg.png</span></code>, then the string
 <em>%name%</em> will be replaced with <em>reg</em> in the final filename.</p>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name"><code class="docutils literal notranslate"><span class="pre">%ext%</span></code>:</th><td class="field-body"><p class="first">This will be replaced with the file extension of the registered image. For example, if
+</dd>
+<dt class="field-even"><code class="docutils literal notranslate"><span class="pre">%ext%</span></code></dt>
+<dd class="field-even"><p>This will be replaced with the file extension of the registered image. For example, if
 the configuration file contains <code class="docutils literal notranslate"><span class="pre">registered</span> <span class="pre">=</span> <span class="pre">reg.png</span></code>, then the string <em>%ext%</em>
 will be replaced with <em>png</em> in the final filename.</p>
 <p>Using this allows the format of the intermediate frames to be automatically matched to
 the registered image.  Alternatively it can be set as a different format by using the
 extension string directly instead of the <code class="docutils literal notranslate"><span class="pre">%ext%</span></code> placeholder, e.g
 <em>%name%-mydebug-%s%-%i%.png</em>.</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name"><code class="docutils literal notranslate"><span class="pre">%s%</span></code>:</th><td class="field-body"><p class="first">This will be replaced with the algorithm step number. Step number 0 corresponds to the
+</dd>
+<dt class="field-odd"><code class="docutils literal notranslate"><span class="pre">%s%</span></code></dt>
+<dd class="field-odd"><p>This will be replaced with the algorithm step number. Step number 0 corresponds to the
 coarsest nodespacing and increments by one each time the nodespacing is refined.</p>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name"><code class="docutils literal notranslate"><span class="pre">%i%</span></code>:</th><td class="field-body"><p class="first last">This will be replaced by the iteration number. This is reset to zero every time the
+</dd>
+<dt class="field-even"><code class="docutils literal notranslate"><span class="pre">%i%</span></code></dt>
+<dd class="field-even"><p>This will be replaced by the iteration number. This is reset to zero every time the
 nodespacing is refined.</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </div>
 </div>
 <div class="section" id="intermediate-frames-example">
@@ -851,12 +821,12 @@ named <code class="docutils literal notranslate"><span class="pre">intermediates
 to output the intermediate frames as jpeg images even though the registered image is output in png
 format.</p>
 <p>This results in an image series like the following (animated gif):</p>
-<table border="1" class="docutils">
+<table class="docutils align-center">
 <colgroup>
-<col width="100%" />
+<col style="width: 100%" />
 </colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="_images/loop.gif"><img alt="intermediates_anim" src="_images/loop.gif" style="width: 200.0px; height: 200.0px;" /></a></td>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="_images/loop.gif"><img alt="intermediates_anim" src="_images/loop.gif" style="width: 200.0px; height: 200.0px;" /></a></p></td>
 </tr>
 </tbody>
 </table>
@@ -890,33 +860,16 @@ modified to optimise the registration of the various images.</p>
 <p>An additional demonstration analysis script <code class="docutils literal notranslate"><span class="pre">plot_annotations.py</span></code> is provided to demonstrate how
 the manually identified landmarks can be used to determine the goodness of the registration.</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span>  plot_annotations.py --help
-<span class="go">usage: plot_annotations.py [-h] [--map_group MAP_GROUP]</span>
-<span class="go">                           fixed_img fixed_annot moved_img moved_annot map</span>
-<span class="go">                           output</span>
-
-<span class="go">Plot annotated histology slides with map displacements</span>
-
-<span class="go">positional arguments:</span>
-<span class="go">  fixed_img             Fixed image</span>
-<span class="go">  fixed_annot           Fixed image annotation csv</span>
-<span class="go">  moved_img             Moved image</span>
-<span class="go">  moved_annot           Moved image annotation csv</span>
-<span class="go">  map                   pFIRE Map Output</span>
-<span class="go">  output                Output image</span>
-
-<span class="go">optional arguments:</span>
-<span class="go">  -h, --help            show this help message and exit</span>
-<span class="go">  --map_group MAP_GROUP</span>
-<span class="go">                        Map hdf5 group</span>
+<span class="go">bash: line 1: plot_annotations.py: command not found</span>
 </pre></div>
 </div>
 <p>Running this results in an image like the following:</p>
-<table border="1" class="docutils">
+<table class="docutils align-center">
 <colgroup>
-<col width="100%" />
+<col style="width: 100%" />
 </colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="_images/mapped_annotations.png"><img alt="mapped_annotations" src="_images/mapped_annotations.png" style="width: 400.0px; height: 800.0px;" /></a></td>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="_images/mapped_annotations.png"><img alt="mapped_annotations" src="_images/mapped_annotations.png" style="width: 400.0px; height: 800.0px;" /></a></p></td>
 </tr>
 </tbody>
 </table>
@@ -928,58 +881,45 @@ correctly map all the nodes. Optimisation of registration parameters will likely
 quality, but this is an exercise left to the dedicated reader.</p>
 <div class="section" id="dataset-information">
 <span id="id2"></span><h4>Dataset Information<a class="headerlink" href="#dataset-information" title="Permalink to this headline">¶</a></h4>
-<p>This dataset <a class="footnote-reference" href="#id8" id="id3">[1]</a> was curated by <a class="reference external" href="http://cmp.felk.cvut.cz/~borovji3/?page=dataset">Jiří Borovec</a>, Center for Machine Perception, Department of
+<p>This dataset <a class="footnote-reference brackets" href="#id8" id="id3">1</a> was curated by <a class="reference external" href="http://cmp.felk.cvut.cz/~borovji3/?page=dataset">Jiří Borovec</a>, Center for Machine Perception, Department of
 Cybernetics, Faculty of Electrical Engineering, Czech Technical University in Prague, from images
 provided by Prof. Arrate Munoz-Barrutia, Center for Applied Medical Research (CIMA), University of
-Navarra, Pamplona Spain <a class="footnote-reference" href="#id9" id="id4">[2]</a>; and Prof. Ortiz de Solórzano, Center for Applied Medical Research
-(CIMA), University of Navarra, Pamplona Spain <a class="footnote-reference" href="#id10" id="id5">[3]</a>.</p>
+Navarra, Pamplona Spain <a class="footnote-reference brackets" href="#id9" id="id4">2</a>; and Prof. Ortiz de Solórzano, Center for Applied Medical Research
+(CIMA), University of Navarra, Pamplona Spain <a class="footnote-reference brackets" href="#id10" id="id5">3</a>.</p>
 </div>
 </div>
 </div>
 <div class="section" id="further-reading">
 <h2>Further Reading<a class="headerlink" href="#further-reading" title="Permalink to this headline">¶</a></h2>
 <p>For further information on the algorithm implemented by pFIRE, the original papers describing the
-algorithm are Barber and Hose 2005 <a class="footnote-reference" href="#id11" id="id6">[4]</a> and Barber et al. 2007 <a class="footnote-reference" href="#id13" id="id7">[5]</a>.</p>
-<table class="docutils footnote" frame="void" id="id8" rules="none">
-<colgroup><col class="label" /><col /></colgroup>
-<tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id3">[1]</a></td><td>J. Borovec, A. Munoz-Barrutia, and J. Kybic, “Benchmarking of Image Registration Methods for
+algorithm are Barber and Hose 2005 <a class="footnote-reference brackets" href="#id11" id="id6">4</a> and Barber et al. 2007 <a class="footnote-reference brackets" href="#id13" id="id7">5</a>.</p>
+<dl class="footnote brackets">
+<dt class="label" id="id8"><span class="brackets"><a class="fn-backref" href="#id3">1</a></span></dt>
+<dd><p>J. Borovec, A. Munoz-Barrutia, and J. Kybic, “Benchmarking of Image Registration Methods for
 Differently Stained Histological Slides,” <em>IEEE International Conference on Image Processing
-(ICIP)</em>, 2018, pp. 3368–3372, DOI: <a class="reference external" href="https://doi.org/10.1109/icip.2018.8451040">10.1109/icip.2018.8451040</a>.</td></tr>
-</tbody>
-</table>
-<table class="docutils footnote" frame="void" id="id9" rules="none">
-<colgroup><col class="label" /><col /></colgroup>
-<tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id4">[2]</a></td><td>J. Borovec, J. Kybic, M. Bušta, C. Ortiz-de-Solorzano, and A. Munoz-Barrutia, “Registration of
+(ICIP)</em>, 2018, pp. 3368–3372, DOI: <a class="reference external" href="https://doi.org/10.1109/icip.2018.8451040">10.1109/icip.2018.8451040</a>.</p>
+</dd>
+<dt class="label" id="id9"><span class="brackets"><a class="fn-backref" href="#id4">2</a></span></dt>
+<dd><p>J. Borovec, J. Kybic, M. Bušta, C. Ortiz-de-Solorzano, and A. Munoz-Barrutia, “Registration of
 multiple stained histological sections,” in IEEE International Symposium on Biomedical
-Imaging (ISBI), 2013, pp. 1034–1037, DOI: <a class="reference external" href="https://doi.org/10.1109/ISBI.2013.6556654">10.1109/ISBI.2013.6556654</a>.</td></tr>
-</tbody>
-</table>
-<table class="docutils footnote" frame="void" id="id10" rules="none">
-<colgroup><col class="label" /><col /></colgroup>
-<tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id5">[3]</a></td><td>R. Fernandez-Gonzalez et al., “System for combined three-dimensional morphological and
+Imaging (ISBI), 2013, pp. 1034–1037, DOI: <a class="reference external" href="https://doi.org/10.1109/ISBI.2013.6556654">10.1109/ISBI.2013.6556654</a>.</p>
+</dd>
+<dt class="label" id="id10"><span class="brackets"><a class="fn-backref" href="#id5">3</a></span></dt>
+<dd><p>R. Fernandez-Gonzalez et al., “System for combined three-dimensional morphological and
 molecular analysis of thick tissue specimens,” Microsc. Res. Tech., vol. 59, no. 6, pp. 522–530,
-2002, DOI: <a class="reference external" href="https://doi.org/10.1002/jemt.10233">10.1002/jemt.10233</a>.</td></tr>
-</tbody>
-</table>
-<table class="docutils footnote" frame="void" id="id11" rules="none">
-<colgroup><col class="label" /><col /></colgroup>
-<tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id6">[4]</a></td><td>Barber D, Hose D., “Automatic segmentation of medical images using image registration:
+2002, DOI: <a class="reference external" href="https://doi.org/10.1002/jemt.10233">10.1002/jemt.10233</a>.</p>
+</dd>
+<dt class="label" id="id11"><span class="brackets"><a class="fn-backref" href="#id6">4</a></span></dt>
+<dd><p>Barber D, Hose D., “Automatic segmentation of medical images using image registration:
 diagnostic and simulation applications,” <em>Journal of medical engineering &amp; technology</em>,
-<strong>29(2)</strong>, 2005, pp. 53-63, DOI:<a class="reference external" href="https://doi.org/10.1080/03091900412331289889">10.1080/03091900412331289889</a>.</td></tr>
-</tbody>
-</table>
-<table class="docutils footnote" frame="void" id="id13" rules="none">
-<colgroup><col class="label" /><col /></colgroup>
-<tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id7">[5]</a></td><td>Barber DC, Oubel E, Frangi AF, Hose D., “Efficient computational fluid dynamics mesh
+<strong>29(2)</strong>, 2005, pp. 53-63, DOI:<a class="reference external" href="https://doi.org/10.1080/03091900412331289889">10.1080/03091900412331289889</a>.</p>
+</dd>
+<dt class="label" id="id13"><span class="brackets"><a class="fn-backref" href="#id7">5</a></span></dt>
+<dd><p>Barber DC, Oubel E, Frangi AF, Hose D., “Efficient computational fluid dynamics mesh
 generation by image registration,” <em>Medical image analysis</em>, <strong>11(6)</strong>, 2007, pp. 648–662,
-DOI:<a class="reference external" href="https://doi.org/10.1016/j.media.2007.06.011">10.1016/j.media.2007.06.011</a>.</td></tr>
-</tbody>
-</table>
+DOI:<a class="reference external" href="https://doi.org/10.1016/j.media.2007.06.011">10.1016/j.media.2007.06.011</a>.</p>
+</dd>
+</dl>
 </div>
 </div>
 
@@ -993,10 +933,10 @@ DOI:<a class="reference external" href="https://doi.org/10.1016/j.media.2007.06.
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="algorithm.html" class="btn btn-neutral float-right" title="The pFIRE Algorithm" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="cli_ref.html" class="btn btn-neutral float-right" title="pFIRE Configuration" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="cli_ref.html" class="btn btn-neutral" title="pFIRE Configuration" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="cli_quickstart.html" class="btn btn-neutral" title="Running pFIRE" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -1030,7 +970,7 @@ DOI:<a class="reference external" href="https://doi.org/10.1016/j.media.2007.06.
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.2',
+            VERSION:'0.5.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
@@ -1040,7 +980,8 @@ DOI:<a class="reference external" href="https://doi.org/10.1016/j.media.2007.06.
       <script type="text/javascript" src="_static/jquery.js"></script>
       <script type="text/javascript" src="_static/underscore.js"></script>
       <script type="text/javascript" src="_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="_static/language_data.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 

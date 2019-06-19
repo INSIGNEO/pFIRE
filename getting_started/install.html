@@ -1,0 +1,292 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Installing pFIRE &mdash; pFIRE 0.5.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="pFIRE 0.5.0 documentation" href="../index.html"/>
+        <link rel="up" title="Getting Started" href="index.html"/>
+        <link rel="next" title="Running pFIRE" href="cli_quickstart.html"/>
+        <link rel="prev" title="Getting Started" href="index.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../docs.html" class="icon icon-home"> pFIRE
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Getting Started</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Installing pFIRE</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dependencies">Dependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#manually-building-pfire">Manually Building pFIRE</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="cli_quickstart.html">Running pFIRE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html">pFIRE Tutorial</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../user_docs/index.html">User Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_docs/index.html">Developer Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../docs.html">pFIRE</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../docs.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Getting Started</a> &raquo;</li>
+        
+      <li>Installing pFIRE</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/getting_started/install.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="installing-pfire">
+<h1>Installing pFIRE<a class="headerlink" href="#installing-pfire" title="Permalink to this headline">¶</a></h1>
+<p>Currently pFIRE must be compiled from source.  This is available from the github repository at
+<a class="reference external" href="https://github.com/INSIGNEO/pfire_petsc.git">https://github.com/INSIGNEO/pfire_petsc.git</a></p>
+<div class="section" id="dependencies">
+<h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
+<p>pFIRE is an MPI application built on top the the <a class="reference external" href="https://www.mcs.anl.gov/petsc/">PETSc</a> distributed scientific toolkit. It is
+additionally dependent on the <a class="reference external" href="https://www.boost.org/">Boost</a> libraries for general utility routines and <a class="reference external" href="https://www.hdfgroup.org/solutions/hdf5/">HDF5</a> input and
+output support.  There are also optional dependencies which allow support for various additional
+input image file formats.  At least one of these should be used depending on your intended use
+case.</p>
+<p>For all dependencies we recommend using the latest stable version.  Additionally we recommend that
+PETSc be configured to using single precision floating point numbers.  This halves memory usage as
+double precision math provides no real benefit for image registration.</p>
+<p><strong>Required Dependencies</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><p><a class="reference external" href="https://www.mcs.anl.gov/petsc/">PETSC</a> &gt;= 3.10.0 (Recommend –with-precision=single)</p></li>
+<li><p><a class="reference external" href="https://www.boost.org/">Boost</a> &gt;= 1.58</p></li>
+<li><p><a class="reference external" href="https://www.hdfgroup.org/solutions/hdf5/">HDF5</a> &gt;= 1.10.0</p></li>
+</ul>
+</div></blockquote>
+<p><em>Optional Dependencies</em></p>
+<blockquote>
+<div><ul class="simple">
+<li><p><a class="reference external" href="https://dicom.offis.de/dcmtk.php.en">DCMTK</a> &gt;= 3.6.3 (Support for DICOM image input)</p></li>
+<li><p><a class="reference external" href="http://www.openimageio.org/">OpenImageIO</a> &gt;= 1.8.13 (General purpose image format support e.g .png .tiff and image stack support)</p></li>
+</ul>
+</div></blockquote>
+<p>We recommend installing dependencies using your system package manager (e.g synaptic, apt, yum), or
+on HPC the use of <a class="reference external" href="https://spack.io">SPACK</a> may be appropriate.</p>
+</div>
+<div class="section" id="manually-building-pfire">
+<h2>Manually Building pFIRE<a class="headerlink" href="#manually-building-pfire" title="Permalink to this headline">¶</a></h2>
+<p>pFIRE is installed using cmake, so after checking out the code and ensuring all dependencies are
+installed first call <cite>cmake</cite> followed by <cite>make</cite></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/INSIGNEO/pfire.git
+<span class="nb">cd</span> pfire
+mkdir build
+<span class="nb">cd</span> build
+cmake ..
+make
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="cli_quickstart.html" class="btn btn-neutral float-right" title="Running pFIRE" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="Getting Started" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; 2018, University of Sheffield. 
+	</p>
+	<p>
+	Development of pFIRE is supported by the European Union’s Horizon 2020
+	research and innovation programme under grant agreement No 675451.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.5.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="../_static/language_data.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
