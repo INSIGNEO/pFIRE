@@ -48,8 +48,8 @@ private:
   static constexpr integer mask_header_length = 3;
   static constexpr integer mask_header_bytes = mask_header_length * sizeof(shirt_header_dtype);
 
-  intvector read_and_validate_image_header(const MPI_File &fh);
-  intvector read_and_validate_mask_header(const MPI_File &fh);
+  intcoord read_and_validate_image_header(const MPI_File &fh);
+  intcoord read_and_validate_mask_header(const MPI_File &fh);
 
   void copy_chunk_image(
       floating ***data, const std::vector<int> &subsize, const std::vector<int> &starts) const;

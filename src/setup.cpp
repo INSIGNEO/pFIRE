@@ -29,32 +29,36 @@
 
 #include "exceptions.hpp"
 
+
 #ifdef USE_OIIO
 #include "oiioloader.hpp"
 #include "oiiowriter.hpp"
 #endif // USE_OIIO
 
+/*
 #ifdef USE_DCMTK
 #include "dcmloader.hpp"
 #endif // USE_DCMTK
+*/
 
 #include "basewriter.hpp"
 #include "hdfwriter.hpp"
 #include "xdmfwriter.hpp"
 
+
 namespace bf = boost::filesystem;
 
 void register_plugins()
 {
+/*
 #ifdef USE_DCMTK
   BaseLoader::register_loader(DCMLoader::loader_name, DCMLoader::Create_Loader);
 #endif // USE_DCMTK
-
+*/
 #ifdef USE_OIIO
   BaseLoader::register_loader(OIIOLoader::loader_name, OIIOLoader::Create_Loader);
   BaseWriter::register_writer<OIIOWriter>();
 #endif // USE_OIIO
-
   BaseLoader::register_loader(ShIRTLoader::loader_name, ShIRTLoader::Create_Loader);
 
   BaseWriter::register_writer<HDFWriter>();
@@ -80,7 +84,7 @@ void pfire_setup(const std::vector<std::string>& petsc_args, bool silent)
   CHKERRXX(perr);
 
   int rank;
-  MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   if(rank == 0 && !silent)
   {
@@ -96,8 +100,8 @@ void check_comm_size_and_warn_odd()
 {
   // Check for even number of processors, warn on oddness
   int comm_size, rank;
-  MPI_Comm_size(PETSC_COMM_WORLD, &comm_size);
-  MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   if(rank == 0)
   {
@@ -135,4 +139,19 @@ void print_welcome_message()
   std::cout << welcomess.str();
 }
 
+void vmem_report()
+{
+  int rank, commsize;
+  MPI_Comm_size(MPI_COMM_WORLD, &commsize);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+  for(int irank=0; irank < commsize; irank++)
+  {
+    if(irank == rank)
+    {
+      std::cout << "Rank " << rank << ": ";
+      std::system("grep VmPeak /proc/$PPID/status");
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+  }
+}

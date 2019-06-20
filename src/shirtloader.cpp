@@ -34,7 +34,8 @@ ShIRTLoader::ShIRTLoader(const std::string &path, MPI_Comm comm)
   // Read header and then check total file size, if consistent then continue otherwise bail
   int rank;
   MPI_Comm_rank(comm, &rank);
-
+  intcoord headershape;
+  
   if (rank == 0)
   {
     MPI_File fh;
@@ -42,42 +43,44 @@ ShIRTLoader::ShIRTLoader(const std::string &path, MPI_Comm comm)
     mpi_err = MPI_File_open(MPI_COMM_SELF, path.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
     if (mpi_err != MPI_SUCCESS)
     {
-      _shape[0] = -1;
+      headershape[0] = -1;
     }
     else
     {
       try
       {
-        _shape = read_and_validate_image_header(fh);
+        headershape = read_and_validate_image_header(fh);
       }
       catch (const InvalidLoaderError &)
       {
         try
         {
-          _shape = read_and_validate_mask_header(fh);
+          headershape = read_and_validate_mask_header(fh);
         }
         catch (const InvalidLoaderError &)
         {
-          _shape[0] = -1;
+          headershape[0] = -1;
         }
       }
     }
     MPI_File_close(&fh);
   }
 
-  MPI_Bcast(_shape.data(), _shape.size(), MPI_LONG, 0, comm);
+  MPI_Bcast(headershape.data(), headershape.size(), MPI_LONG, 0, comm);
   MPI_Bcast(&_file_type, 1, MPI_LONG, 0, comm);
 
-  if (_shape[0] <= 0)
+  if (headershape[0] <= 0)
   {
     throw_if_nonexistent(path);
     throw InvalidLoaderError(path);
   }
+
+  this->set_shape(headershape);
 }
 
-intvector ShIRTLoader::read_and_validate_image_header(const MPI_File &fh)
+intcoord ShIRTLoader::read_and_validate_image_header(const MPI_File &fh)
 {
-  intvector shape(3, 0);
+  intcoord shape;
 
   MPI_Offset fsize;
   int mpi_err = MPI_File_get_size(fh, &fsize);
@@ -115,9 +118,9 @@ intvector ShIRTLoader::read_and_validate_image_header(const MPI_File &fh)
   return shape;
 }
 
-intvector ShIRTLoader::read_and_validate_mask_header(const MPI_File &fh)
+intcoord ShIRTLoader::read_and_validate_mask_header(const MPI_File &fh)
 {
-  intvector shape(3, 0);
+  intcoord shape;
 
   MPI_Offset fsize;
   int mpi_err = MPI_File_get_size(fh, &fsize);
@@ -171,10 +174,10 @@ void ShIRTLoader::copy_chunk_image(
     floating ***data, const std::vector<int> &subsize, const std::vector<int> &starts) const
 {
   int dcount = std::accumulate(subsize.cbegin(), subsize.cend(), 1, std::multiplies<>());
-  std::vector<int> size(_shape.cbegin(), _shape.cend());
+  std::vector<int> size(this->shape().cbegin(), this->shape().cend());
 
   int irank;
-  MPI_Comm_rank(_comm, &irank);
+  MPI_Comm_rank(this->comm(), &irank);
 
   std::vector<image_data_dtype> databuf(dcount, 0);
 
@@ -184,13 +187,14 @@ void ShIRTLoader::copy_chunk_image(
       image_data_mpi_type, &file_layout);
   MPI_Type_commit(&file_layout);
 
+
   MPI_File fh;
   int mpi_err;
-  mpi_err = MPI_File_open(_comm, _path.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
+  mpi_err = MPI_File_open(this->comm(), this->path().c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
   if (mpi_err != MPI_SUCCESS)
   {
-    throw_if_nonexistent(_path);
-    throw InvalidLoaderError(_path); 
+    throw_if_nonexistent(this->path());
+    throw InvalidLoaderError(this->path()); 
   }
 
   mpi_err = MPI_File_set_view(
@@ -198,7 +202,7 @@ void ShIRTLoader::copy_chunk_image(
   if (mpi_err != MPI_SUCCESS)
   {
     int rank;
-    MPI_Comm_rank(_comm, &rank);
+    MPI_Comm_rank(this->comm(), &rank);
     std::ostringstream errss;
     std::string mpi_err_str;
     int str_size;
@@ -233,7 +237,7 @@ void ShIRTLoader::copy_chunk_mask(
     floating ***data, const std::vector<int> &subsize, const std::vector<int> &starts) const
 {
   int dcount = std::accumulate(subsize.cbegin(), subsize.cend(), 1, std::multiplies<>());
-  std::vector<int> size(_shape.cbegin(), _shape.cend());
+  std::vector<int> size(this->shape().cbegin(), this->shape().cend());
 
   std::vector<mask_data_dtype> databuf(dcount, 0);
 
@@ -245,11 +249,11 @@ void ShIRTLoader::copy_chunk_mask(
 
   MPI_File fh;
   int mpi_err;
-  mpi_err = MPI_File_open(_comm, _path.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
+  mpi_err = MPI_File_open(this->comm(), this->path().c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
   if (mpi_err != MPI_SUCCESS)
   {
-    throw_if_nonexistent(_path);
-    throw InvalidLoaderError(_path); 
+    throw_if_nonexistent(this->path());
+    throw InvalidLoaderError(this->path()); 
   }
 
   mpi_err = MPI_File_set_view(
@@ -257,7 +261,7 @@ void ShIRTLoader::copy_chunk_mask(
   if (mpi_err != MPI_SUCCESS)
   {
     int rank;
-    MPI_Comm_rank(_comm, &rank);
+    MPI_Comm_rank(this->comm(), &rank);
     std::ostringstream errss;
     std::string mpi_err_str;
     int str_size;

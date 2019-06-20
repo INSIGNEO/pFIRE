@@ -1,104 +1,163 @@
-//
-//   Copyright 2019 University of Sheffield
-//
-//   Licensed under the Apache License, Version 2.0 (the "License");
-//   you may not use this file except in compliance with the License.
-//   You may obtain a copy of the License at
-//
-//       http://www.apache.org/licenses/LICENSE-2.0
-//
-//   Unless required by applicable law or agreed to in writing, software
-//   distributed under the License is distributed on an "AS IS" BASIS,
-//   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//   See the License for the specific language governing permissions and
-//   limitations under the License.
-
 #include "image.hpp"
-
-#include <algorithm>
-#include <memory>
-#include <string>
-#include <vector>
-
-#include <petscdmda.h>
-#include <petscvec.h>
 
 #include "fd_routines.hpp"
 #include "indexing.hpp"
-#include "iterator_routines.hpp"
-#include "map.hpp"
-#include "indexing.hpp"
-#include "math_utils.hpp"
+#include "infix_iterator.hpp"
+#include "mapbase.hpp"
+#include "mpi_routines.hpp"
 
-#include "baseloader.hpp"
-
-// Public Methods
-
-Image::Image(const intvector& shape, MPI_Comm comm)
-  : ImageBase(shape, comm)
+/*! Calculate gradient vectors for T matrix
+ *
+ */
+std::vector<Vec_unique> calculate_tmatrix_gradients(const Image& fixed, const Image& moved, integer ndof)
 {
-}
+  std::vector<Vec_unique> gradients(ndof + 1);
 
-std::unique_ptr<Image> Image::duplicate(const ImageBase& img)
-{
-  return std::unique_ptr<Image>(new Image(img));
-}
-
-std::unique_ptr<Image> Image::copy(const ImageBase& img)
-{
-  // private copy c'tor prohibits use of std::make_unique, would otherwise do:
-  // std::unique_ptr<Image> new_img = std::make_unique<Image>(*this);
-  std::unique_ptr<Image> new_img(new Image(img));
-
-  new_img->copy_data(img);
-  return new_img;
-}
-
-std::unique_ptr<Image>
-Image::load_file(const std::string& path, const ImageBase* existing, MPI_Comm comm)
-{
-  BaseLoader_unique loader = BaseLoader::find_loader(path, comm);
-
-  // if image passed assert sizes match and duplicate, otherwise create new image given size
-  std::unique_ptr<Image> new_image;
-  if (existing != nullptr)
+  for (auto& gradvec : gradients)
   {
-    comm = existing->comm();
-    if (!all_true(loader->shape().begin(), loader->shape().end(), existing->shape().begin(),
-            existing->shape().end(), std::equal_to<>()))
+    gradvec = create_unique_vec();
+    PetscErrorCode perr = VecDuplicate(fixed.local_vector(), gradvec.get());
+    CHKERRXX(perr);
+  }
+
+  // Calculate intensity term
+  PetscErrorCode perr = VecSet(*gradients[0], 1.);
+  CHKERRXX(perr);
+  // Calculate 1-0.5(f+m)
+  const floating multiplier = -0.5; // Average contributions from both images
+  perr = VecAXPBYPCZ(*gradients[0], multiplier, multiplier, 1, fixed.local_vector(), moved.local_vector());
+  CHKERRXX(perr);
+
+  for (integer idx = 0; idx < fixed.ndim(); idx++)
+  {
+    gradient_existing(fixed.dmda(), *gradients[0], *gradients[idx + 1], idx);
+    floating gradsum, gradmin, gradmax;
+    VecSum(*gradients[idx + 1], &gradsum);
+    VecMin(*gradients[idx + 1], nullptr, &gradmin);
+    VecMax(*gradients[idx + 1], nullptr, &gradmax);
+  }
+
+  return gradients;
+}
+
+std::shared_ptr<Image> Image::warp(const MapBase& map) const
+{
+  std::shared_ptr<Image> new_image = GridVariable::duplicate(*this);
+
+  // No guarantee of where any given source pixel is located, so need to locate rank of each each source and
+  // add that plus target pointer to suitable lists
+  floatptrvector2d target_ptrs(this->commsize());
+  floatcoordvector2d global_source_locs(this->commsize());
+  intcoordvector local_target_locs;
+  floatcoordvector local_source_locs;
+
+  auto owned_range = this->owned_range();
+  auto& owned_lo = owned_range.first;
+  auto& owned_hi = owned_range.second;
+
+  intcoord curr_loc;
+  auto& xx = curr_loc[0];
+  auto& yy = curr_loc[1];
+  auto& zz = curr_loc[2];
+
+  floating*** target_data;
+  PetscErrorCode perr = DMDAVecGetArray(new_image->dmda(), new_image->global_vector(), &target_data);
+  CHKERRXX(perr);
+  // Iterate over all owned pixels and fill request structures
+  for (zz = owned_lo[2]; zz < owned_hi[2]; zz++)
+  {
+    for (yy = owned_lo[1]; yy < owned_hi[1]; yy++)
     {
-      throw InternalError("New image must have same shape as existing", __FILE__, __LINE__);
+      for (xx = owned_lo[0]; xx < owned_hi[0]; xx++)
+      {
+        local_target_locs.push_back(curr_loc);
+      }
     }
-    new_image = Image::duplicate(*existing);
   }
-  else
+
+  local_source_locs = map.map_local_coordinates(local_target_locs);
+
+  for (size_t iidx = 0; iidx < local_source_locs.size(); iidx++)
   {
-    new_image = std::make_unique<Image>(loader->shape(), comm);
+    auto& source_loc = local_source_locs[iidx];
+    auto& target_loc = local_target_locs[iidx];
+    integer loc_rank = this->get_rank_of_loc(source_loc);
+    global_source_locs[loc_rank].push_back(source_loc);
+    target_ptrs[loc_rank].push_back(&target_data[target_loc[2]][target_loc[1]][target_loc[0]]);
   }
 
-  intvector shape(3, 0), offset(3, 0);
-  PetscErrorCode perr = DMDAGetCorners(
-      *new_image->dmda(), &offset[0], &offset[1], &offset[2], &shape[0], &shape[1], &shape[2]);
-  CHKERRXX(perr);
-  // std::transform(shape.cbegin(), shape.cend(), offset.cbegin(), shape.begin(), std::minus<>());
+  // scatter as needed
+  if (this->commsize() > 1)
+  {
+    global_source_locs = p2p_vecscatter(global_source_locs, this->comm());
+  }
 
-  floating ***vecptr(nullptr);
-  perr = DMDAVecGetArray(*new_image->dmda(), *new_image->global_vec(), &vecptr);
-  CHKERRXX(perr);
-  loader->copy_scaled_chunk(vecptr, shape, offset);
-  perr = DMDAVecRestoreArray(*new_image->dmda(), *new_image->global_vec(), &vecptr);
-  CHKERRXX(perr);
+  floatvector2d interpolated_data;
+  for (const auto& rank_sources : global_source_locs)
+  {
+    interpolated_data.push_back(this->interpolate_pixel_data(rank_sources));
+  }
 
-  new_image->normalize();
+  // scatter back as needed
+  if (this->commsize() > 1)
+  {
+    interpolated_data = p2p_vecscatter(interpolated_data, this->comm());
+  }
+
+  for (integer irank = 0; irank < this->commsize(); irank++)
+  {
+    auto& rank_pixel_data = interpolated_data[irank];
+    auto& rank_target_ptrs = target_ptrs[irank];
+    for (size_t iidx = 0; iidx < rank_pixel_data.size(); iidx++)
+    {
+      *rank_target_ptrs[iidx] = rank_pixel_data[iidx];
+    }
+  }
+
+  DMDAVecRestoreArray(new_image->dmda(), new_image->global_vector(), &target_data);
+  CHKERRXX(perr);
 
   return new_image;
 }
 
-// Protected Methods
-
-Image::Image(const ImageBase& image)
-  : ImageBase(image)
+floatvector Image::interpolate_pixel_data(const floatcoordvector& source_locations) const
 {
+  // Create and reserve output vector
+  floatvector pixel_data;
+  pixel_data.reserve(source_locations.size());
+
+  const intcoordvector* offsets;
+  if (this->ndim() == 2)
+  {
+    offsets = &MapBase::node_offset_list_2d;
+  }
+  else
+  {
+    offsets = &MapBase::node_offset_list_3d;
+  }
+
+  floating*** image_data;
+  PetscErrorCode perr = DMDAVecGetArrayRead(this->dmda(), this->local_vector(), &image_data);
+  CHKERRXX(perr);
+  // Iterate over all coords to interpolate
+  for (const auto& loc : source_locations)
+  {
+    floating pixel_value = 0;
+    intcoord floor_loc = floor(loc);
+    for (const auto& offset : *offsets)
+    {
+      intcoord offset_loc = floor_loc + offset;
+      floating coeff = calculate_unscaled_basis_coefficient(offset_loc.cbegin(), offset_loc.cend(),
+                                                            loc.cbegin());
+      if (coeff > 0)
+      {
+        pixel_value += coeff * image_data[offset_loc[2]][offset_loc[1]][offset_loc[0]];
+      }
+    }
+    pixel_data.push_back(pixel_value);
+  }
+  perr = DMDAVecRestoreArrayRead(this->dmda(), this->local_vector(), &image_data);
+  CHKERRXX(perr);
+
+  return pixel_data;
 }
-
-

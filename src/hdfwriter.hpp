@@ -21,8 +21,8 @@
 #include <hdf5.h>
 #include <mpi.h>
 
-#include "types.hpp"
 #include "basewriter.hpp"
+#include "types.hpp"
 
 class HDFWriter: public BaseWriter {
 public:
@@ -30,7 +30,7 @@ public:
   ~HDFWriter();
 
   std::string write_image(const Image& image);
-  std::string write_map(const Map& map);
+  std::string write_map(const MapBase& map);
 
   static const std::string writer_name;
   static const std::vector<std::string> extensions;
@@ -43,13 +43,15 @@ private:
   hid_t _file_h;
 
   void open_or_create_h5();
-  
-  void write_1d_dataset_rank0(hsize_t nval, const std::string& groupname, const floating *databuf);
 
-  void write_3d_dataset_parallel(uinteger ndim, const std::vector<hsize_t>& fullshape,
-    const std::vector<hsize_t>& chunkshape, const std::vector<hsize_t> &offset,
-    const std::string& groupname, Vec& datavec);
+  void write_1d_dataset_rank0(hsize_t nval, const std::string& groupname, const floating* databuf);
 
+  void write_3d_dataset_parallel(integer ndim, coord<hsize_t> fullshape, coord<hsize_t> chunkshape,
+                                 coord<hsize_t> offset, const std::string& groupname, const Vec& datavec,
+                                 hsize_t ndof, hsize_t idof);
+
+  std::string write_map_parallel(const MapBase& map);
+  std::string write_map_serial(const MapBase& map);
 };
 
 #endif // HDFWRITER_HPP

@@ -23,8 +23,8 @@
 const std::string OIIOWriter::writer_name = "OpenImageIO";
 const std::vector<std::string> OIIOWriter::extensions = {".png",".jpg",".jpeg",".tiff"};
 
-OIIOWriter::OIIOWriter(std::string filename, const MPI_Comm& comm)
-  : BaseWriter(std::move(filename), comm)
+OIIOWriter::OIIOWriter(const std::string& filename, const MPI_Comm& comm)
+  : BaseWriter(filename, comm)
 {
 }
 
@@ -33,24 +33,24 @@ std::string OIIOWriter::write_image(const Image& image)
   Vec_unique imgvec = image.scatter_to_zero();
 
   int rank;
-  MPI_Comm_rank(_comm, &rank);
+  MPI_Comm_rank(comm(), &rank);
   if (rank == 0)
   {
     // This will be either a smart_ptr or a ImageOutput* depending on oiio version
-    auto img = OIIO::ImageOutput::create(filename);
+    auto img = OIIO::ImageOutput::create(filename());
     if (img == nullptr)
     {
       throw WriterError("Failed to open image output file");
     }
     OIIO::ImageSpec spec(image.shape()[0], image.shape()[1], 1, OIIO::TypeDesc::UINT16);
-    img->open(filename, spec);
+    img->open(filename(), spec);
 
-    floating* pixdata;
-    PetscErrorCode perr = VecGetArray(*imgvec, &pixdata);
+    const floating* pixdata;
+    PetscErrorCode perr = VecGetArrayRead(*imgvec, &pixdata);
     CHKERRXX(perr);
     img->write_image(OIIO::TypeDesc::DOUBLE, pixdata);
     img->close();
-    perr = VecRestoreArray(*imgvec, &pixdata);
+    perr = VecRestoreArrayRead(*imgvec, &pixdata);
     CHKERRXX(perr);
 
     //Manual ptr management if needed
@@ -58,11 +58,11 @@ std::string OIIOWriter::write_image(const Image& image)
     OIIO::ImageOutput::destroy(img);
 #endif //OIIO_VERSION < 10903
   }
-  MPI_Barrier(_comm);
-  return filename;
+  MPI_Barrier(comm());
+  return filename();
 }
 
-std::string OIIOWriter::write_map(const Map& map __attribute__((unused)))
+std::string OIIOWriter::write_map(const MapBase& map __attribute__((unused)))
 {
   throw InvalidWriterError("Cannot save map using OIIO.");
 }

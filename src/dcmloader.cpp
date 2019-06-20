@@ -55,24 +55,27 @@ DCMLoader::DCMLoader(const std::string &path, MPI_Comm comm)
   DcmDataset *dataset = _datafile.getDataset();
 
   long tmp;
+  intcoord datashape;
   status = dataset->findAndGetLongInt(DcmTagKey(TG_IMG, TE_ROWS), tmp);
   if (status.bad())
   {
     throw InvalidLoaderError("Failed to read image shape data");
   }
-  this->_shape[0] = tmp;
+  datashape[0] = tmp;
   status = dataset->findAndGetLongInt(DcmTagKey(TG_IMG, TE_COLS), tmp);
   if (status.bad())
   {
     throw InvalidLoaderError("Failed to read image shape data");
   }
-  this->_shape[1] = tmp;
+  datashape[1] = tmp;
   status = dataset->findAndGetLongInt(DcmTagKey(TG_IMG, TE_FRAMES), tmp);
   if (status.bad())
   {
     throw InvalidLoaderError("Failed to read image shape data");
   }
-  this->_shape[2] = tmp;
+  datashape[2] = tmp;
+
+  this->set_shape(datashape);
 }
 
 void DCMLoader::copy_scaled_chunk(
@@ -95,26 +98,26 @@ void DCMLoader::copy_scaled_chunk(
       integer flat_idx = (col_idx + offset[1]) * size[0] + offset[0];
       integer frame_idx = slice_idx - offset[2];
       floating* array_slice_ptr = data[slice_idx][col_idx];
-      if(!array_slice_ptr)
+      if(array_slice_ptr == nullptr)
       {
         throw InternalError("Out of bounds array access", __FILE__, __LINE__);
       }
       switch (bitdepth)
       {
-        case 8:
+        case sizeof(uint8_t):
         {
-          uint8_t *rawdata = (uint8_t *)img.getOutputData(8, frame_idx, 0);
-          if (!rawdata)
+          auto* rawdata = (uint8_t*)img.getOutputData(sizeof(uint8_t), frame_idx, 0);
+          if (rawdata == nullptr)
           {
             throw InternalError("MPI dicom read failed", __FILE__, __LINE__);
           }
           norm_convert(array_slice_ptr, rawdata + flat_idx, size[0], dmin, dmax);
           break;
         }
-        case 16:
+        case sizeof(uint16_t):
         {
-          uint16_t *rawdata = (uint16_t *)img.getOutputData(16, frame_idx, 0);
-          if (!rawdata)
+          auto* rawdata = (uint16_t*)img.getOutputData(sizeof(uint16_t), frame_idx, 0);
+          if (rawdata == nullptr)
           {
             throw InternalError("MPI dicom read failed", __FILE__, __LINE__);
           }

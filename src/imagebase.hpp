@@ -16,108 +16,77 @@
 #ifndef IMAGEBASE_HPP
 #define IMAGEBASE_HPP
 
-#include <petscdmda.h>
-
 #include "types.hpp"
 
-class ImageBase {
+#include "exceptions.hpp"
+#include "gridvariable.hpp"
+#include "baseloader.hpp"
+#include "iterator_routines.hpp"
+
+class ImageBase: public GridVariable {
 public:
-  explicit ImageBase(const intvector& shape, MPI_Comm comm = PETSC_COMM_WORLD);
+  ImageBase(const intcoord& shape, const MPI_Comm& comm);
 
-  static std::unique_ptr<Image> duplicate(const ImageBase& img);
-  static std::unique_ptr<Image> copy(const ImageBase& img);
+  template <typename ImageClass>
+  static std::shared_ptr<
+      typename std::enable_if<std::is_base_of<ImageBase, ImageClass>::value, ImageClass>::type>
+  load_image(std::string image_path, const ImageClass *existing = nullptr,
+             MPI_Comm comm = MPI_COMM_WORLD);
 
-  // Allow RO access to member variables
-  // Note that datavec and dmda remain mutable in this way
-  MPI_Comm comm() const { return m_comm; }
-  uinteger ndim() const { return m_ndim; }
-  const intvector& shape() const { return m_shape; }
-  integer size() const { return m_shape[0] * m_shape[1] * m_shape[2]; }
-  std::shared_ptr<const Vec> global_vec() const { return m_globalvec; }
-  std::shared_ptr<const Vec> local_vec() const { return m_localvec; }
-  std::shared_ptr<DM> dmda() const { return m_dmda; }
-
-  const floating* get_raw_data_ro() const;
-  void release_raw_data_ro(const floating*& ptr) const;
-  void copy_data(const ImageBase& img);
-  Vec_unique get_raw_data_row_major() const;
-  Vec_unique get_raw_data_natural() const;
-
-  Vec_unique gradient(integer dim);
   floating normalize();
-  floating masked_normalize(const Mask& mask);
-  void binarize();
 
-  template <typename inttype>
-  std::vector<inttype> mpi_get_offset() const;
-  template <typename inttype>
-  std::vector<inttype> mpi_get_chunksize() const;
+  Vec_unique difference_global(const ImageBase& other) const;
 
-  Vec_unique scatter_to_zero() const;
+  const Vec& data_vector() const { return this->global_vector();}
 
-/*!
-   * Calculate mutual information between this and a second image.
-   *
-   * The two images must share a DMDA.
-   *
-   * @param other the second image for mutual information calculation
-   * @return The mutual information between images
-   */
   floating mutual_information(const ImageBase &other);
 
 protected:
-  void update_local_from_global();
-
-  explicit ImageBase(const ImageBase& image);
-  ImageBase& operator=(const ImageBase& image);
-
-  MPI_Comm m_comm;
-  uinteger m_ndim;
-  intvector m_shape;
-  Vec_shared m_localvec, m_globalvec;
-  DM_shared m_dmda;
-  //  std::shared_ptr<Mask> mask;
-
-  void initialize_dmda();
-  void initialize_vectors();
-
-  integer instance_id;
-  static integer instance_id_counter;
-
-private:
-  const size_t mi_resolution = 100;
 };
 
-template <typename inttype>
-std::vector<inttype> ImageBase::mpi_get_chunksize() const
+template <typename ImageClass>
+std::shared_ptr<typename std::enable_if<std::is_base_of<ImageBase, ImageClass>::value, ImageClass>::type>
+ImageBase::load_image(std::string image_path, const ImageClass *existing, MPI_Comm comm)
 {
-  // This routine only makes sense to use for integer types
-  static_assert(std::is_integral<inttype>::value, "Integral element type required");
+  BaseLoader_unique loader = BaseLoader::find_loader(image_path, comm);
 
-  intvector sizes(3, 0);
-  PetscErrorCode perr =
-      DMDAGetCorners(*m_dmda, nullptr, nullptr, nullptr, &sizes[0], &sizes[1], &sizes[2]);
+  // if image passed assert sizes match and duplicate, otherwise create new image given size
+  std::shared_ptr<ImageClass> new_image;
+  if (existing != nullptr)
+  {
+    comm = existing->comm();
+    if (!all_true(loader->shape().begin(), loader->shape().end(), existing->shape().begin(),
+                  existing->shape().end(), std::equal_to<>()))
+    {
+      throw InternalError("New image must have same shape as existing", __FILE__, __LINE__);
+    }
+    new_image = GridVariable::duplicate(*existing);
+  }
+  else
+  {
+    new_image = std::make_shared<ImageClass>(loader->shape(), comm);
+  }
+
+  intvector shape(3, 0), offset(3, 0);
+  PetscErrorCode perr = DMDAGetCorners(new_image->dmda(), &offset[0], &offset[1], &offset[2],
+                                       &shape[0], &shape[1], &shape[2]);
+  CHKERRXX(perr);
+  // std::transform(shape.cbegin(), shape.cend(), offset.cbegin(), shape.begin(), std::minus<>());
+
+  floating ***vecptr(nullptr);
+  perr = DMDAVecGetArray(new_image->dmda(), new_image->global_vector(), &vecptr);
+  CHKERRXX(perr);
+  loader->copy_scaled_chunk(vecptr, shape, offset);
+  perr = DMDAVecRestoreArray(new_image->dmda(), new_image->global_vector(), &vecptr);
   CHKERRXX(perr);
 
-  std::vector<inttype> out(sizes.begin(), sizes.end());
+  auto extents = new_image->minmax();
+  PetscPrintf(comm, "Loader minmax: %f, %f\n", extents.first, extents.second);
 
-  return out;
-}
+  new_image->normalize();
+  new_image->update_local_vector();
 
-template <typename inttype>
-std::vector<inttype> ImageBase::mpi_get_offset() const
-{
-  // This routine only makes sense to use for integer types
-  static_assert(std::is_integral<inttype>::value, "Integral element type required");
-
-  intvector offsets(3, 0);
-  PetscErrorCode perr =
-      DMDAGetCorners(*m_dmda, &offsets[0], &offsets[1], &offsets[2], nullptr, nullptr, nullptr);
-  CHKERRXX(perr);
-
-  std::vector<inttype> out(offsets.begin(), offsets.end());
-
-  return out;
+  return new_image;
 }
 
 #endif // IMAGEBASE_HPP

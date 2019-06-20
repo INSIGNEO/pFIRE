@@ -28,30 +28,53 @@
 #include <petscsys.h>
 #include <petscvec.h>
 
-#include "petsc_debug.hpp"
+#include "coord.hpp"
 
-// Forward Defs
+// Forward Decls
 //
 class ImageBase;
 class Image;
 class Mask;
 class WorkSpace;
-class Map;
+class MapManager;
+class MapBase;
+class SerialMap;
+class ParallelMap;
 class Elastic;
 class BaseLoader;
 class BaseWriter;
+class ConfigurationBase;
+
+constexpr MPI_Comm COMM = MPI_COMM_WORLD;
 
 // Useful typedefs
 using integer = PetscInt;
+using uinteger = unsigned integer;
+using floating = PetscScalar;
+
+using intcoord = coord<integer>;
+using intcoordvector = std::vector<intcoord>;
+using intcoordvector2d = std::vector<intcoordvector>;
+
+using floatcoord = coord<floating>;
+using floatcoordvector = std::vector<floatcoord>;
+using floatcoordvector2d = std::vector<floatcoordvector>;
+
+
 using intvector = std::vector<integer>;
 using intvector2d = std::vector<intvector>;
 
-using uinteger = unsigned integer;
 using uintvector = std::vector<uinteger>;
 
-using floating = PetscScalar;
 using floatvector = std::vector<floating>;
 using floatvector2d = std::vector<floatvector>;
+
+using floatptrvector = std::vector<floating*>;
+using floatptrvector2d = std::vector<floatptrvector>;
+
+using floatpair = std::pair<floating, floating>;
+using floatpairvector = std::vector<floatpair>;
+using floatpairvector2d = std::vector<floatpairvector>;
 
 using stringset = std::set<std::string>;
 
@@ -66,7 +89,6 @@ using BaseWriter_unique = std::unique_ptr<BaseWriter>;
 struct VecDeleter {
   void operator()(Vec* v) const
   {
-    debug_deletion(*v);
     VecDestroy(v);
     delete v;
   }
@@ -94,7 +116,6 @@ inline Vec_shared create_shared_vec()
 struct MatDeleter {
   void operator()(Mat* v) const
   {
-    debug_deletion(*v);
     MatDestroy(v);
     delete v;
   }

@@ -101,8 +101,11 @@ endif(OPENIMAGEIO_FOUND)
 
 add_subdirectory(${pFIRE_SOURCE_DIR}/src)
 
-enable_testing()
-add_subdirectory(test)
+option(BUILD_TESTS "Built pFIRE unit tests" ON)
+if(BUILD_TESTS)
+  enable_testing()
+  add_subdirectory(unit_test)
+endif(BUILD_TESTS)
 
 include(FeatureSummary)
 feature_summary(WHAT ALL)

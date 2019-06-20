@@ -13,15 +13,17 @@
 //   See the License for the specific language governing permissions and
 //   limitations under the License.
 
-#ifndef DEBUG_HPP
-#define DEBUG_HPP
+#ifndef TEST_HELPERS_HPP
+#define TEST_HELPERS_HPP
 
-#include <string>
+#include <type_traits>
+#include <cmath>
 
-#include <petscmat.h>
+template <typename ftype>
+typename std::enable_if<std::is_floating_point<ftype>::value, bool>::type
+fcmp(ftype a, ftype b, ftype rtol, ftype atol)
+{
+  return std::fabs(a-b) <= atol + rtol*std::fabs(b);
+}
 
-#include "types.hpp"
-
-void matrix_dbg_print(const MPI_Comm &comm, const Mat &mat, const std::string &name);
-
-#endif // DEBUG_HPP
+#endif //TEST_HELPERS_HPP

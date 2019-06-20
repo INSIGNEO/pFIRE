@@ -1,42 +1,23 @@
-//
-//   Copyright 2019 University of Sheffield
-//
-//   Licensed under the Apache License, Version 2.0 (the "License");
-//   you may not use this file except in compliance with the License.
-//   You may obtain a copy of the License at
-//
-//       http://www.apache.org/licenses/LICENSE-2.0
-//
-//   Unless required by applicable law or agreed to in writing, software
-//   distributed under the License is distributed on an "AS IS" BASIS,
-//   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//   See the License for the specific language governing permissions and
-//   limitations under the License.
-
 #ifndef IMAGE_HPP
 #define IMAGE_HPP
 
-#include <type_traits>
-
-#include <mpi.h>
+#include "types.hpp"
 
 #include "imagebase.hpp"
-#include "types.hpp"
+
+//! Calculate gradient vectors for T matrix
+std::vector<Vec_unique> calculate_tmatrix_gradients(const Image& fixed, const Image& moved, integer ndof);
 
 class Image: public ImageBase {
 public:
-  explicit Image(const intvector &shape, MPI_Comm comm = PETSC_COMM_WORLD);
+  Image(const intcoord& shape, const MPI_Comm& comm) : ImageBase(shape, comm) {}
 
-  static std::unique_ptr<Image> load_file(const std::string& filename,
-      const ImageBase* existing = nullptr, MPI_Comm comm = PETSC_COMM_WORLD);
+  std::shared_ptr<Image> warp(const MapBase& map) const;
 
-  static std::unique_ptr<Image> duplicate(const ImageBase& img);
-  static std::unique_ptr<Image> copy(const ImageBase& img);
+  floatvector interpolate_pixel_data(const floatcoordvector& source_locations) const;
 
-  protected:
-  explicit Image(const ImageBase& image);
-  Image &operator=(const ImageBase &image);
-
+  friend std::vector<Vec_unique> calculate_tmatrix_gradients(const Image& fixed, const Image& moved,
+                                                             integer ndof);
 };
 
-#endif
+#endif // IMAGE_HPP

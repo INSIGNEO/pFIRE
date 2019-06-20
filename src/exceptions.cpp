@@ -77,7 +77,8 @@ void abort_with_unhandled_error(){
 
   // Try to separate threads that arrive here together
   // to avoid garbling stdout too much
-  std::this_thread::sleep_for(std::chrono::milliseconds(200*rank));
+  const int waittime(200);
+  std::this_thread::sleep_for(std::chrono::milliseconds(waittime*rank));
 
   try
   {
@@ -87,6 +88,7 @@ void abort_with_unhandled_error(){
   }
   catch(const std::exception& e)
   {
+    // Use std::cout here because sensible MPI behaviour has gone out the window
     std::cout << "Rank " << rank << " encountered an unhandled exception: \n\"\"\"\n" 
               << e.what() << "\n\"\"\"\n";
   }
@@ -102,24 +104,27 @@ void sigterm_handler(int signal){
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+  // Use std::cout here because sensible MPI behaviour has gone out the window
   std::cout << "Rank " << rank << " received signal " << signal;
 
-  std::this_thread::sleep_for(std::chrono::milliseconds(50*rank));
+  const int waittime(200);
+  std::this_thread::sleep_for(std::chrono::milliseconds(waittime*rank));
   print_abort_message();
 }
 
 void print_abort_message(){
 
-    std::cout << abort_info_pre
-              << git_version_string()
-              << abort_info_libheader
-              << abort_info_petsc << get_version_string_petsc() << "\n"
-              << abort_info_boost << get_version_string_boost() << "\n"
+  // Use std::cout here because sensible MPI behaviour has gone out the window
+  std::cout << abort_info_pre
+            << git_version_string()
+            << abort_info_libheader
+            << abort_info_petsc << get_version_string_petsc() << "\n"
+            << abort_info_boost << get_version_string_boost() << "\n"
 #ifdef USE_OIIO
-              << abort_info_oiio << get_version_string_oiio() << "\n"
+            << abort_info_oiio << get_version_string_oiio() << "\n"
 #endif //USE_OIIO
 #ifdef USE_DCMTK
-              << abort_info_dcmtk << get_version_string_dcmtk() << "\n"
+            << abort_info_dcmtk << get_version_string_dcmtk() << "\n"
 #endif //USE_DCMTK
-              << abort_info_post;
+            << abort_info_post;
 }
