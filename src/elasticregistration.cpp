@@ -58,8 +58,11 @@ void ElasticRegistration::autoregister(integer max_iterations)
 void ElasticRegistration::registration_inner_loop(integer max_iterations)
 {
   integer iteration = 0;
-  save_debug_frame(iteration++);
-  for (; iteration < max_iterations; iteration++)
+  if (_configuration.grab<bool>("save_intermediate_frames"))
+  {
+    save_debug_frame(iteration++);
+  }
+  for (; iteration <= max_iterations; iteration++)
   {
     this->_previous_mis.push_back(this->_fixed->mutual_information(*this->_moved));
     Vec_unique map_delta = solver_step(iteration);
