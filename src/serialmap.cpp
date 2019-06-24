@@ -34,7 +34,6 @@ void SerialMap::interpolate_from(const MapBase& previous_map)
 
 void SerialMap::interpolate_serial_to_serial(const SerialMap& previous_map)
 {
-  PetscPrintf(this->comm(), "Interpolating map, serial->serial\n");
   // All data is local, so no MPI complications here.
 
   // Zero vector data first...

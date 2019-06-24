@@ -18,30 +18,26 @@
 
 #include "mapbase.hpp"
 
-class ParallelMap: public MapBase
-{
+class ParallelMap: public MapBase {
 public:
   ParallelMap(const intcoord& shape, const integer& ndof, const intcoord& node_spacing, const Mask& mask)
     : MapBase(shape, ndof, node_spacing, mask, mask.comm())
   {
-    std::cout << "Parallel map object\n";
   }
 
-  bool parallel_layout() const override {return true;}
+  bool parallel_layout() const override { return true; }
 
-  const Vec& displacement_vector() const { return this->global_vector();}
+  const Vec& displacement_vector() const { return this->global_vector(); }
 
-  void interpolate_from(const MapBase& previous_map) override; 
+  void interpolate_from(const MapBase& previous_map) override;
 
   void update(const Vec& delta) override;
 
 private:
-
   void interpolate_serial_to_parallel(const SerialMap& previous_map);
   void interpolate_parallel_to_parallel(const ParallelMap& previous_map);
 
   friend class SerialMap;
-
 };
 
-#endif //PARALLELMAP_HPP
+#endif // PARALLELMAP_HPP

@@ -33,7 +33,6 @@ void ParallelMap::interpolate_from(const MapBase& previous_map)
 
 void ParallelMap::interpolate_serial_to_parallel(const SerialMap& previous_map)
 {
-  PetscPrintf(this->comm(), "Interpolating map, serial->parallel\n");
   // All source data is local, so no MPI comm needed, just act on locally owned target data
   auto local_range = this->owned_range();
   intcoord& local_lo = local_range.first;
@@ -104,7 +103,6 @@ void ParallelMap::interpolate_serial_to_parallel(const SerialMap& previous_map)
 
 void ParallelMap::interpolate_parallel_to_parallel(const ParallelMap& previous_map)
 {
-  PetscPrintf(this->comm(), "Interpolating map, parallel->parallel\n");
   // In general this needs a horrible all-to-all to guarantee we get all the data, but in practice 
   // provided we are refining resolution, then we will at most need the first neighbour from other ranks
   // which is taken care of for us by the DMDA, so we just make sure the local data is up to date on the
