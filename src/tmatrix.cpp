@@ -291,7 +291,7 @@ std::pair<floating, floating> calculate_entries(integer row, integer col, intege
         auto& rank_cc = row_coeffs[jrank];
         for (size_t iidx = 0; iidx < rank_reqs.size(); iidx++)
         {
-          std::cout << rank_reqs[iidx] << " [" << idof << "]"
+          std::cout << "post " << rank_reqs[iidx] << " [" << idof << "]"
                     << ", rc = " << rank_rc[iidx] << ", cc = " << rank_cc[iidx]
                     << ", gd = " << rank_vals[iidx].first << ", dd = " << rank_vals[iidx].second
                     << std::endl;
@@ -299,7 +299,7 @@ std::pair<floating, floating> calculate_entries(integer row, integer col, intege
         }
       }
       std::cout << std::flush;
-      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }
     MPI_Barrier(comm);
   }

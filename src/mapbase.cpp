@@ -19,7 +19,7 @@ MapBase::MapBase(const intcoord& shape, const integer& ndim, const intcoord& nod
   calculate_node_locations();
 }
 
-floatcoord MapBase::coord_from_index(intcoord index) const
+floatcoord MapBase::coord_from_index(const intcoord& index) const
 {
   return {_node_locations[0][index[0]], _node_locations[1][index[1]], _node_locations[2][index[2]]};
 }
@@ -137,9 +137,9 @@ std::pair<intcoord, intcoord> MapBase::get_pixel_neighbourhood(const intcoord& m
   intcoord cimhi = {0, 0, 1};
   for (integer idim = 0; idim < this->ndim(); idim++)
   {
-    integer ctr = this->node_locs()[idim][map_node[idim]];
-    cimlo[idim] = ctr - this->spacing()[idim];
-    cimhi[idim] = ctr + this->spacing()[idim];
+    floating ctr = this->node_locs()[idim][map_node[idim]];
+    cimlo[idim] = std::ceil(ctr - this->spacing()[idim]);
+    cimhi[idim] = std::floor(ctr + this->spacing()[idim]);
   }
   clamp_location_lo(cimlo, this->mask().index_min());
   clamp_location_hi(cimhi, this->mask().shape());

@@ -47,7 +47,7 @@ public:
 
   std::pair<intcoord, intcoord> get_pixel_neighbourhood(const intcoord& map_node) const;
 
-  floatcoord coord_from_index(intcoord index) const;
+  floatcoord coord_from_index(const intcoord& index) const;
 
   //! Return the node at the lower corner of the cell containing loc
   template<typename mathtype>

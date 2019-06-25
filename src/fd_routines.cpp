@@ -84,21 +84,43 @@ void gradient_existing(const DM& dmda, const Vec& srcvec, Vec& tgtvec, integer d
   j_hi += j_lo;
   k_hi += k_lo;
 
-  intvector ofs = {0, 0, 0};
-  ofs[dim] = 1;
-  for (integer i = i_lo; i < i_hi; i++)
+#ifdef GRADIENT_DEBUG
+  MPI_Comm comm;
+  int rank, commsize;
+  PetscObjectGetComm(reinterpret_cast<PetscObject>(dmda), &comm);
+  MPI_Comm_size(comm, &commsize);
+  MPI_Comm_rank(comm, &rank);
+  for (int irank = 0; irank < commsize; irank++)
   {
-    for (integer j = j_lo; j < j_hi; j++)
+    if (irank == rank)
     {
-      for (integer k = k_lo; k < k_hi; k++)
+#endif // GRADIENT_DEBUG
+      intcoord ofs = {0, 0, 0};
+      ofs[dim] = 1;
+      for (integer i = i_lo; i < i_hi; i++)
       {
-        // Remember c-indexing is backwards because PETSc is odd
-        grad_array[k][j][i] = 0.5
-                              * (img_array[k + ofs[2]][j + ofs[1]][i + ofs[0]]
-                                 - img_array[k - ofs[2]][j - ofs[1]][i - ofs[0]]);
+        for (integer j = j_lo; j < j_hi; j++)
+        {
+          for (integer k = k_lo; k < k_hi; k++)
+          {
+#ifdef GRADIENT_DEBUG
+            // Remember c-indexing is backwards because PETSc is odd
+            std::cout << "(" << i << ", " << j << ", " << k << ") +/- " << ofs << ": "
+                      << img_array[k + ofs[2]][j + ofs[1]][i + ofs[0]] << " - "
+                      << img_array[k - ofs[2]][j - ofs[1]][i - ofs[0]] << std::endl;
+#endif // GRADIENT_DEBUG
+            grad_array[k][j][i] = 0.5
+                                  * (img_array[k + ofs[2]][j + ofs[1]][i + ofs[0]]
+                                     - img_array[k - ofs[2]][j - ofs[1]][i - ofs[0]]);
+          }
+        }
       }
+#ifdef GRADIENT_DEBUG
     }
+    MPI_Barrier(comm);
   }
+#endif // GRADIENT_DEBUG
+
   // Release pointers and allow petsc to cleanup
   perr = DMDAVecRestoreArray(dmda, srcvec, &img_array);
   CHKERRXX(perr);
