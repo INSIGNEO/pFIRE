@@ -35,6 +35,9 @@ public:
   static const std::string writer_name;
   static const std::vector<std::string> extensions;
 
+// Make sure we always choose the correct datatype to read back to
+  static hid_t get_hdf5_petsc_scalar();
+
 protected:
   std::string h5_filename;
   std::string h5_groupname;

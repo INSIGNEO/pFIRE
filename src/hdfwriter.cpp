@@ -26,6 +26,11 @@
 const std::string HDFWriter::writer_name = "hdf5";
 const std::vector<std::string> HDFWriter::extensions = {".h5"};
 
+hid_t HDFWriter::get_hdf5_petsc_scalar()
+{
+  return (MPIU_REAL == MPI_FLOAT) ? H5T_NATIVE_FLOAT : H5T_NATIVE_DOUBLE;
+}
+
 HDFWriter::HDFWriter(const std::string& filespec, const MPI_Comm& comm)
   : BaseWriter(filespec, comm), h5_filename(this->filename()), h5_groupname(this->extra_path()), _file_h(-1)
 {
@@ -58,14 +63,14 @@ void HDFWriter::write_3d_dataset_parallel(integer ndim, coord<hsize_t> fullshape
   coord<hsize_t> dof_offset = {0, 0, idof};
   coord<hsize_t> dof_stride = {1, 1, ndof};
 
-  hid_t dspace_h = H5Screate_simple(ndim, chunkshape.data(), nullptr);
+  hid_t dspace_h = H5Screate_simple(ndim, dof_chunkshape.data(), nullptr);
   H5Sselect_hyperslab(dspace_h, H5S_SELECT_SET, dof_offset.data(), dof_stride.data(), chunkshape.data(),
                       nullptr);
 
   const floating* imgdata;
   PetscErrorCode perr = VecGetArrayRead(datavec, &imgdata);
   CHKERRXX(perr);
-  H5Dwrite(dset_h, H5T_NATIVE_DOUBLE, dspace_h, fspace_h, plist_h, imgdata);
+  H5Dwrite(dset_h, HDFWriter::get_hdf5_petsc_scalar(), dspace_h, fspace_h, plist_h, imgdata);
   perr = VecRestoreArrayRead(datavec, &imgdata);
   CHKERRXX(perr);
 
@@ -186,7 +191,7 @@ std::string HDFWriter::write_map_serial(const MapBase& map)
     std::string dsetname = dsetss.str();
 
     write_3d_dataset_parallel(map.ndim(), map.shape(), chunksize, offset, dsetname,
-                              map.displacement_vector(), map.ndim(), idx + 1);
+                              map.global_vector(), map.ndof(), idx + 1);
 
     dsetss.clear();
     dsetss.str(std::string());
@@ -244,7 +249,7 @@ std::string HDFWriter::write_map_parallel(const MapBase& map)
     std::string dsetname = dsetss.str();
 
     write_3d_dataset_parallel(map.ndim(), map.shape(), chunksize, offset, dsetname,
-                              map.displacement_vector(), map.ndim(), idx + 1);
+                              map.global_vector(), map.ndof(), idx + 1);
 
     dsetss.clear();
     dsetss.str(std::string());

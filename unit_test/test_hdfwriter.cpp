@@ -1,92 +1,108 @@
+//
+//   Copyright 2019 University of Sheffield
+//
+//   Licensed under the Apache License, Version 2.0 (the "License");
+//   you may not use this file except in compliance with the License.
+//   You may obtain a copy of the License at
+//
+//       http://www.apache.org/licenses/LICENSE-2.0
+//
+//   Unless required by applicable law or agreed to in writing, software
+//   distributed under the License is distributed on an "AS IS" BASIS,
+//   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//   See the License for the specific language governing permissions and
+//
+
 #define BOOST_TEST_MODULE hdfwriter
 #include "test_common.hpp"
-
-#include <numeric>
+#include "test_helpers.hpp"
 
 #include <petscdmda.h>
-#include <petscerror.h>
 
-#include <hdf5.h>
-
-#include "fd_routines.hpp"
-#include "hdfwriter.hpp"
 #include "image.hpp"
-#include "indexing.hpp"
+#include "mapbase.hpp"
+#include "mask.hpp"
 #include "types.hpp"
+#include "hdfwriter.hpp"
 
-struct im {
-  im() : image(imgshape, PETSC_COMM_WORLD) { BOOST_TEST_MESSAGE("setup image"); }
+class envobjs {
+public:
+  envobjs()
+    : image(std::make_unique<Image>(imgshape, MPI_COMM_WORLD)), mask(Mask::create_filled_mask(*image)),
+      map(MapBase::make_map_for_mask(*mask, nodespacing))
+  {
+  }
 
-  intvector imgshape = {17, 11, 14};
-  Image image;
-  std::string filename = "testdata.h5";
-  std::string groupname = "/testimage";
-  std::string writercompound = filename + ":" + groupname;
+  const floating testdata = 1.0;
+  const integer offset = 5;
+  const intcoord imgshape = {150, 100, 50};
+  const intcoord nodespacing = {30, 30, 30};
+  const intcoord block_shape = {30,30,30};
+  const intcoord block_offset = {10,10,10};
+  std::shared_ptr<Image> image;
+  std::shared_ptr<Mask> mask;
+  std::shared_ptr<MapBase> map;
 };
 
-void write_image_rmaj_indices(Image& image)
+BOOST_FIXTURE_TEST_SUITE(indexing, envobjs)
+
+BOOST_AUTO_TEST_CASE(test_write_hdf)
 {
-  PetscErrorCode perr;
 
-  // Access data via dmda and insert values
-  // in this case insert row major cell index as value
-  auto vtx_lo = image.mpi_get_offset<integer>();
-  auto vtx_hi = image.mpi_get_chunksize<integer>();
-  std::transform(vtx_lo.cbegin(), vtx_lo.cend(), vtx_hi.begin(), vtx_hi.begin(), std::plus<>());
-
-  integer ymult = image.shape()[2];
-  integer xmult = image.shape()[1];
-
-  floating*** ptr;
-  perr = DMDAVecGetArray(*image.dmda(), *image.global_vec(), &ptr);
-  CHKERRXX(perr);
-  for (integer xx = vtx_lo[0]; xx < vtx_hi[0]; xx++)
-  {
-    for (integer yy = vtx_lo[1]; yy < vtx_hi[1]; yy++)
+  // Write dof number to all nodes in dof
+  floating**** map_data;
+  DMDAVecGetArrayDOF(map->dmda(), map->global_vector(), &map_data);
+  intcoord map_local_lo = map->local_offset();
+  intcoord map_local_hi = map_local_lo + map->local_shape();
+  for(integer idof=0; idof<4; idof++)
     {
-      for (integer zz = vtx_lo[2]; zz < vtx_hi[2]; zz++)
+      for(integer zz=map_local_lo[2]; zz<map_local_hi[2]; zz++)
       {
-        ptr[zz][yy][xx] = (xx * xmult + yy) * ymult + zz;
+        for(integer yy=map_local_lo[1]; yy<map_local_hi[1]; yy++)
+        {
+          for(integer xx=map_local_lo[0]; xx<map_local_hi[0]; xx++)
+          {
+            map_data[zz][yy][xx][idof] = idof;
+          }
+        }
       }
     }
-  }
-  perr = DMDAVecRestoreArray(*image.dmda(), *image.global_vec(), &ptr);
-  CHKERRXX(perr);
-}
+  DMDAVecRestoreArrayDOF(map->dmda(), map->global_vector(), &map_data);
 
-BOOST_FIXTURE_TEST_SUITE(hdfwriter, im)
-
-BOOST_AUTO_TEST_CASE(check_image_ordering)
-{
-  // Write row-major indices as image values
-  write_image_rmaj_indices(image);
-
-  { // enclose for 'GC' purposes
-    HDFWriter wtr(writercompound, PETSC_COMM_WORLD);
-    wtr.write_image(image);
-  }
-
-  hid_t file_h, dset_h;
-  herr_t status;
-  std::vector<floating> hdf_data(image.size(), 0.0);
-  std::vector<floating> cmp_data(image.size(), 0.0);
-
-  // Create comparison data using iota
-  std::iota(cmp_data.begin(), cmp_data.end(), 0);
-
-  file_h = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
-  dset_h = H5Dopen(file_h, groupname.c_str(), H5P_DEFAULT);
-
-  status = H5Dread(dset_h, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, hdf_data.data());
-  if(status < 0)
   {
-    throw std::runtime_error("Failed to read dataset");
+    auto wtr = HDFWriter("testdata.h5:/map", MPI_COMM_WORLD); 
+    wtr.write_map(*map);
   }
 
-  H5Dclose(dset_h);
-  H5Fclose(file_h);
+  // Now open and check HDF file, each dof should be all that dof number
+  // No need to MPI this because we are doing read-only access
+  hid_t file_h = H5Fopen("testdata.h5", H5F_ACC_RDONLY, H5P_DEFAULT);
 
-  BOOST_REQUIRE(std::equal(hdf_data.cbegin(), hdf_data.cend(), cmp_data.cbegin(), cmp_data.cend()));
+  for(integer idof=0; idof < 3; idof++)
+  {
+    coord<hsize_t> local_shape = map->local_shape();
+    coord<hsize_t> local_offset = map->local_offset();
+
+    std::string dset_name = "/map/" + BaseWriter::components()[idof];
+    hid_t dset_h = H5Dopen(file_h, dset_name.c_str(), H5P_DEFAULT);
+    hid_t fspace_h = H5Dget_space(dset_h);
+    H5Sselect_hyperslab(fspace_h, H5S_SELECT_SET, local_offset.data(), nullptr, local_shape.data(),
+                        nullptr);
+  
+    hid_t mspace_h = H5Screate_simple(3, local_shape.data(), nullptr);
+
+    auto* dataspace = new floating[map->num_owned_nodes()];
+    H5Dread(dset_h, HDFWriter::get_hdf5_petsc_scalar(), mspace_h, fspace_h, H5P_DEFAULT, dataspace);
+
+    for(integer iidx=0; iidx < map->num_owned_nodes(); iidx++)
+    {
+      BOOST_REQUIRE(fcmp(dataspace[iidx], double(idof+1), 1e-20, 1e-20));
+    }
+
+    delete[] dataspace;
+  }
+
+  H5Fclose(file_h);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

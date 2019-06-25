@@ -19,4 +19,6 @@ endfunction(add_mpi_test)
 #add_mpi_test(Gradients test_gradients 4)
 #add_mpi_test(HDFWriter test_hdfwriter 4)
 #add_mpi_test(ShIRTLoader test_shirtloader 4)
+
 add_mpi_test(warp test_warp 4)
+add_mpi_test(hdfwriter test_hdfwriter 4)
