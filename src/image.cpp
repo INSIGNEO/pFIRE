@@ -16,25 +16,48 @@ std::vector<Vec_unique> calculate_tmatrix_gradients(const Image& fixed, const Im
   for (auto& gradvec : gradients)
   {
     gradvec = create_unique_vec();
-    PetscErrorCode perr = VecDuplicate(fixed.local_vector(), gradvec.get());
+    PetscErrorCode perr = VecDuplicate(fixed.global_vector(), gradvec.get());
     CHKERRXX(perr);
   }
+
+  fixed.update_local_vector();
+  moved.update_local_vector();
 
   // Calculate intensity term
   PetscErrorCode perr = VecSet(*gradients[0], 1.);
   CHKERRXX(perr);
   // Calculate 1-0.5(f+m)
   const floating multiplier = -0.5; // Average contributions from both images
-  perr = VecAXPBYPCZ(*gradients[0], multiplier, multiplier, 1, fixed.local_vector(), moved.local_vector());
+  perr = VecAXPBYPCZ(*gradients[0], multiplier, multiplier, 1, fixed.global_vector(), moved.global_vector());
   CHKERRXX(perr);
+
+  Vec_unique local_diff_vec = create_unique_vec();
+  perr = DMCreateLocalVector(fixed.dmda(), local_diff_vec.get());
+  CHKERRXX(perr);
+  perr = DMGlobalToLocalBegin(fixed.dmda(), *gradients[0], INSERT_VALUES, *local_diff_vec);
+  CHKERRXX(perr);
+  perr = DMGlobalToLocalEnd(fixed.dmda(), *gradients[0], INSERT_VALUES, *local_diff_vec);
+  CHKERRXX(perr);
+
+  floating gradsum, gradmin, gradmax;
+  VecSum(*gradients[0], &gradsum);
+  VecMin(*gradients[0], nullptr, &gradmin);
+  VecMax(*gradients[0], nullptr, &gradmax);
+
+#ifdef VERBOSE_DEBUG
+  PetscPrintf(fixed.comm(), "Gradients [%i] %f, %f, %f, (sum, min, max)\n", 0, gradsum, gradmin, gradmax);
+#endif //VERBOSE_DEBUG
 
   for (integer idx = 0; idx < fixed.ndim(); idx++)
   {
-    gradient_existing(fixed.dmda(), *gradients[0], *gradients[idx + 1], idx);
+    gradient_existing(fixed.dmda(), *local_diff_vec, *gradients[idx + 1], idx);
     floating gradsum, gradmin, gradmax;
     VecSum(*gradients[idx + 1], &gradsum);
     VecMin(*gradients[idx + 1], nullptr, &gradmin);
     VecMax(*gradients[idx + 1], nullptr, &gradmax);
+#ifdef VERBOSE_DEBUG
+    PetscPrintf(fixed.comm(), "Gradients [%i] %f, %f, %f, (sum, min, max)\n", idx+1, gradsum, gradmin, gradmax);
+#endif //VERBOSE_DEBUG
   }
 
   return gradients;

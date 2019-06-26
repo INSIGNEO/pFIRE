@@ -46,4 +46,6 @@ floating get_eigenvalue_by_poweriter(const Mat& matrix, floating conv_thres, int
 
 floating diagonal_sum(const Mat& matrix);
 
+void throw_if_idof_inconsistent(MPI_Comm comm, integer idof);
+
 #endif // TMATRIX_HPP

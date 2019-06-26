@@ -90,6 +90,7 @@ Vec_unique ElasticRegistration::solver_step(floating iternum)
   PetscPrintf(_comm, "lapl_mult = %f, laplsum= %f, tmatsum = %f\n", lapl_premult, lapl2_diag_sum,
               tmat2_diag_sum);
 
+
   if (iternum == 0)
   {
     _lambda = approximate_optimum_lambda(*tmat2, _current_map->laplacian2(), lapl_premult, _lambda,

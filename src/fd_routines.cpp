@@ -84,7 +84,7 @@ void gradient_existing(const DM& dmda, const Vec& srcvec, Vec& tgtvec, integer d
   j_hi += j_lo;
   k_hi += k_lo;
 
-#ifdef GRADIENT_DEBUG
+#ifdef VERBOSE_DEBUG
   MPI_Comm comm;
   int rank, commsize;
   PetscObjectGetComm(reinterpret_cast<PetscObject>(dmda), &comm);
@@ -94,7 +94,7 @@ void gradient_existing(const DM& dmda, const Vec& srcvec, Vec& tgtvec, integer d
   {
     if (irank == rank)
     {
-#endif // GRADIENT_DEBUG
+#endif // VERBOSE_DEBUG
       intcoord ofs = {0, 0, 0};
       ofs[dim] = 1;
       for (integer i = i_lo; i < i_hi; i++)
@@ -103,23 +103,23 @@ void gradient_existing(const DM& dmda, const Vec& srcvec, Vec& tgtvec, integer d
         {
           for (integer k = k_lo; k < k_hi; k++)
           {
-#ifdef GRADIENT_DEBUG
+#ifdef VERBOSE_DEBUG
             // Remember c-indexing is backwards because PETSc is odd
             std::cout << "(" << i << ", " << j << ", " << k << ") +/- " << ofs << ": "
                       << img_array[k + ofs[2]][j + ofs[1]][i + ofs[0]] << " - "
                       << img_array[k - ofs[2]][j - ofs[1]][i - ofs[0]] << std::endl;
-#endif // GRADIENT_DEBUG
+#endif // VERBOSE_DEBUG
             grad_array[k][j][i] = 0.5
                                   * (img_array[k + ofs[2]][j + ofs[1]][i + ofs[0]]
                                      - img_array[k - ofs[2]][j - ofs[1]][i - ofs[0]]);
           }
         }
       }
-#ifdef GRADIENT_DEBUG
+#ifdef VERBOSE_DEBUG
     }
     MPI_Barrier(comm);
   }
-#endif // GRADIENT_DEBUG
+#endif // VERBOSE_DEBUG
 
   // Release pointers and allow petsc to cleanup
   perr = DMDAVecRestoreArray(dmda, srcvec, &img_array);
@@ -127,8 +127,8 @@ void gradient_existing(const DM& dmda, const Vec& srcvec, Vec& tgtvec, integer d
   perr = DMDAVecRestoreArray(dmda, tgtvec, &grad_array);
   CHKERRXX(perr);
 
-  perr = DMLocalToLocalBegin(dmda, tgtvec, INSERT_VALUES, tgtvec);
-  CHKERRXX(perr);
-  perr = DMLocalToLocalEnd(dmda, tgtvec, INSERT_VALUES, tgtvec);
-  CHKERRXX(perr);
+  //perr = DMLocalToLocalBegin(dmda, tgtvec, INSERT_VALUES, tgtvec);
+  //CHKERRXX(perr);
+  //perr = DMLocalToLocalEnd(dmda, tgtvec, INSERT_VALUES, tgtvec);
+  //CHKERRXX(perr);
 }

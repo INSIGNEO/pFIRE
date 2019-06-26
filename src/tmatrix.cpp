@@ -16,9 +16,9 @@
 #include "tmatrix.hpp"
 
 #include <cfenv>
+#include <chrono>
 #include <iostream>
 #include <iterator>
-#include <chrono>
 #include <thread>
 
 #include "fd_routines.hpp"
@@ -86,12 +86,12 @@ std::pair<Mat_unique, Vec_unique> build_tmat2_and_tmatfm(const Image& fixed, con
   // Start from idof=0 to keep all ranks working on same data
   for (integer curr_row = dummy_row_lo; curr_row < row_lo; curr_row++)
   {
-    iter_count++;
-    integer idof = iter_count % map.ndof();
+    integer idof = curr_row % map.ndof();
     for (const auto& col_offset __attribute__((unused)) : col_offsets)
     {
       communicate_entries_only(idof, map, gradient_data, *image_difference, comm);
     }
+    iter_count++;
   }
 
   for (integer curr_row = row_lo; curr_row < row_hi; curr_row++)
@@ -124,12 +124,12 @@ std::pair<Mat_unique, Vec_unique> build_tmat2_and_tmatfm(const Image& fixed, con
 
   while (iter_count < max_iter)
   {
-    iter_count++;
     integer idof = iter_count % map.ndof();
     for (const auto& col_offset __attribute__((unused)) : col_offsets)
     {
       communicate_entries_only(idof, map, gradient_data, *image_difference, comm);
     }
+    iter_count++;
   }
 
   // Insert vector entries
@@ -159,15 +159,19 @@ std::pair<Mat_unique, Vec_unique> build_tmat2_and_tmatfm(const Image& fixed, con
 void communicate_entries_only(integer idof, const MapBase& map, const std::vector<Vec_unique>& gradient_data,
                               const Vec& difference_vec, MPI_Comm comm)
 {
+#ifdef DEBUG_CHECKS
+  throw_if_idof_inconsistent(comm, idof);
+#endif //DEBUG_CHECKS
+
   int commsize;
   MPI_Comm_size(comm, &commsize);
 
-#ifdef TMATRIX_DEBUG
+#ifdef VERBOSE_DEBUG
   for (int irank = 0; irank < commsize; irank++)
   {
     MPI_Barrier(comm);
   }
-#endif // TMATRIX_DEBUG
+#endif // VERBOSE_DEBUG
 
   intcoordvector2d remote_reqs(commsize);
   // scatter as needed
@@ -186,27 +190,39 @@ void communicate_entries_only(integer idof, const MapBase& map, const std::vecto
     remote_vals = p2p_vecscatter(remote_vals, comm);
   }
 
-#ifdef TMATRIX_DEBUG
+#ifdef VERBOSE_DEBUG
   for (int irank = 0; irank < commsize; irank++)
   {
     MPI_Barrier(comm);
   }
-#endif // TMATRIX_DEBUG
+
+  for (int irank = 0; irank < commsize; irank++)
+  {
+    MPI_Barrier(comm);
+  }
+#endif // VERBOSE_DEBUG
 }
 
 std::pair<floating, floating> calculate_entries(integer row, integer col, integer idof, const MapBase& map,
                                                 const std::vector<Vec_unique>& gradient_data,
                                                 const Vec& difference_data, MPI_Comm comm)
 {
+#ifdef DEBUG_CHECKS
+  throw_if_idof_inconsistent(comm, idof)
+#endif //DEBUG_CHECKS;
+
   int commsize, rank;
   MPI_Comm_size(comm, &commsize);
   MPI_Comm_rank(comm, &rank);
 
-  // First calculate appropriate overlaps
+#ifdef DEBUG_CHECKS
   if (idof != row % map.ndof() || idof != col % map.ndof())
   {
     throw InternalError("Wrong dof in calculation");
   }
+#endif //DEBUG_CHECKS;
+
+  // First calculate appropriate overlaps
   auto rloc = unravel(static_cast<integer>(row / map.ndof()), map.shape());
   auto cloc = unravel(static_cast<integer>(col / map.ndof()), map.shape());
 
@@ -226,7 +242,7 @@ std::pair<floating, floating> calculate_entries(integer row, integer col, intege
   floatvector2d col_coeffs(commsize);
   intcoordvector2d remote_reqs(commsize);
 
-#ifdef TMATRIX_DEBUG
+#ifdef VERBOSE_DEBUG
   for (int irank = 0; irank < commsize; irank++)
   {
     if (rank == irank)
@@ -237,7 +253,7 @@ std::pair<floating, floating> calculate_entries(integer row, integer col, intege
     }
     MPI_Barrier(comm);
   }
-#endif // TMATRIX_DEBUG
+#endif // VERBOSE_DEBUG
 
   for (xx = overlap_range.first[0]; xx < overlap_range.second[0]; xx++)
   {
@@ -278,47 +294,60 @@ std::pair<floating, floating> calculate_entries(integer row, integer col, intege
   auto remote_vals = p2p_vecscatter(uncommed_remote_vals, comm);
   //  }
 
-#ifdef TMATRIX_DEBUG
+  floating mat_entry(0);
+  floating vec_entry(0);
+#ifdef VERBOSE_DEBUG
+  integer sumcount(0);
   for (int irank = 0; irank < commsize; irank++)
   {
     if (irank == rank)
     {
+#endif // VERBOSE_DEBUG
       for (int jrank = 0; jrank < commsize; jrank++)
       {
+#ifdef VERBOSE_DEBUG
         auto& rank_reqs = remote_reqs[jrank];
+#endif // VERBOSE_DEBUG
         auto& rank_vals = remote_vals[jrank];
-        auto& rank_rc = row_coeffs[jrank];
-        auto& rank_cc = row_coeffs[jrank];
-        for (size_t iidx = 0; iidx < rank_reqs.size(); iidx++)
+        auto& rank_row_coeffs = row_coeffs[jrank];
+        auto& rank_col_coeffs = col_coeffs[jrank];
+        for (size_t iidx = 0; iidx < rank_vals.size(); iidx++)
         {
-          std::cout << "post " << rank_reqs[iidx] << " [" << idof << "]"
-                    << ", rc = " << rank_rc[iidx] << ", cc = " << rank_cc[iidx]
-                    << ", gd = " << rank_vals[iidx].first << ", dd = " << rank_vals[iidx].second
-                    << std::endl;
-          
+          floating mat_delta = (rank_vals[iidx].first * rank_row_coeffs[iidx])
+                               * (rank_vals[iidx].first * rank_col_coeffs[iidx]);
+          floating vec_delta = 0.5 * rank_vals[iidx].first
+                               * (rank_vals[iidx].second * rank_row_coeffs[iidx]);
+          mat_entry += mat_delta;
+          vec_entry += vec_delta;
+#ifdef VERBOSE_DEBUG
+          sumcount++;
+          std::cout << "Component (" << row << ", " << col << ") " << rank_reqs[iidx] << "[" << idof << "]"
+                    << ", row_coeff = " << rank_row_coeffs[iidx] << ", col_coeff = " << rank_col_coeffs[iidx]
+                    << ", grad = " << rank_vals[iidx].first << ", diff = " << rank_vals[iidx].second
+                    << ", mat_delta = " << mat_delta << ", vec_delta = " << vec_delta << std::endl;
+#endif // VERBOSE_DEBUG
         }
       }
+#ifdef VERBOSE_DEBUG
       std::cout << std::flush;
       std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }
     MPI_Barrier(comm);
   }
-#endif // TMATRIX_DEBUG
+#endif // VERBOSE_DEBUG
 
-  floating mat_entry(0);
-  floating vec_entry(0);
-  for (size_t irank = 0; irank < remote_vals.size(); irank++)
+#ifdef VERBOSE_DEBUG
+  for (int irank = 0; irank < commsize; irank++)
   {
-    floatpairvector& rank_vals = remote_vals[irank];
-    floatvector& rank_row_coeffs = row_coeffs[irank];
-    floatvector& rank_col_coeffs = col_coeffs[irank];
-    for (size_t ival = 0; ival < rank_vals.size(); ival++)
+    if (irank == rank)
     {
-      mat_entry += rank_vals[ival].first * rank_vals[ival].first * rank_row_coeffs[ival]
-                   * rank_col_coeffs[ival];
-      vec_entry += 0.5 * rank_vals[ival].first * rank_vals[ival].second * rank_row_coeffs[ival];
+      std::cout << "Entry (" << row << ", " << col << ") sc: " << sumcount << ", me:" << mat_entry
+                << " ve: " << vec_entry << std::endl;
+      std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }
+    MPI_Barrier(comm);
   }
+#endif // VERBOSE_DEBUG
 
   return std::make_pair(mat_entry, vec_entry);
 }
@@ -337,6 +366,13 @@ floatpairvector2d populate_request_vector(intcoordvector2d remote_locs, const DM
   perr = DMDAVecGetArrayRead(dmda, difference_vec, &difference_data);
   CHKERRXX(perr);
 
+  DMDALocalInfo dminfo;
+  DMDAGetLocalInfo(dmda, &dminfo);
+  intcoord lo = {dminfo.xs, dminfo.ys, dminfo.zs};
+  intcoord hi = {dminfo.xm, dminfo.ym, dminfo.zm};
+  hi = hi + lo;
+  
+
   for (size_t irank = 0; irank < remote_locs.size(); irank++)
   {
     auto& icoeffs = remote_vals[irank];
@@ -345,6 +381,12 @@ floatpairvector2d populate_request_vector(intcoordvector2d remote_locs, const DM
     for (size_t idx = 0; idx < ilocs.size(); idx++)
     {
       auto& iloc = ilocs[idx];
+#ifdef DEBUG_CHECKS;
+      if(iloc < lo || iloc >= hi)
+      {
+        throw InternalError("Loc not on rank");
+      }
+#endif //DEBUG_CHECKS;
       icoeffs[idx] = std::make_pair(gradient_data[iloc[2]][iloc[1]][iloc[0]],
                                     difference_data[iloc[2]][iloc[1]][iloc[0]]);
     }
@@ -375,11 +417,11 @@ void precondition_tmat2(const Mat& tmat2, integer ndof, MPI_Comm _comm)
 
   std::vector<floating> sumdata(2);
   floating& sum1 = sumdata[0];
-  floating& sum2 = sumdata[2];
+  floating& sum2 = sumdata[1];
   floating* diag_data;
   perr = VecGetArray(*diag, &diag_data);
   CHKERRXX(perr);
-  for (integer iidx = row_lo; iidx < (row_hi - row_lo); iidx++)
+  for (integer iidx = 0; iidx < (row_hi - row_lo); iidx++)
   {
     if ((iidx + row_lo) % ndof == 0)
     {
@@ -512,4 +554,23 @@ floating diagonal_sum(const Mat& matrix)
   perr = VecSum(*diag, &diagsum);
 
   return diagsum;
+}
+
+void throw_if_idof_inconsistent(MPI_Comm comm, integer idof)
+{
+  int commsize;
+  MPI_Comm_size(comm, &commsize);
+
+  std::vector<integer> idofs(commsize, idof);
+
+  MPI_Alltoall(MPI_IN_PLACE, 1, MPIU_INT, idofs.data(), 1, MPIU_INT, comm);
+
+  if(std::accumulate(idofs.begin(), idofs.end(), 0) != (idof*commsize))
+  {
+    std::ostringstream errss;
+    errss << "idofs inconsistent: ";
+    std::copy(idofs.begin(), idofs.end(), infix_ostream_iterator<integer>(errss, " "));
+    throw InternalError(errss.str());
+  }
+
 }

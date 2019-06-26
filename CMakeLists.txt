@@ -38,9 +38,14 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -O3 -march=native 
 option(DEBUG_VERBOSE "Verbose debug outputs")
 if(DEBUG_VERBOSE)
   add_definitions(-DDEBUG_VERBOSE)
-  add_definitions(-DTMATRIX_DEBUG)
   message(STATUS "Enabled verbose debugging messages")
 endif(DEBUG_VERBOSE)
+
+option(DEBUG_CHECKS "Enable internal debugging checks (slow)")
+if(DEBUG_CHECKS)
+  add_definitions(-DDEBUG_CHECKS)
+  message(STATUS "Enabled internal debugging checks (will reduce performance)")
+endif(DEBUG_CHECKS)
 
 option(DEBUG_PETSC "Debug PETSc object creation and deletion")
 if(DEBUG_PETSC)
