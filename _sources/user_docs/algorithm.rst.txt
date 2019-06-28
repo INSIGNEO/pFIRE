@@ -298,7 +298,7 @@ applied to rescale the laplacian matrix to make the average of the diagonal elem
 
 .. math::
 
-  \chi = \Sum_i [\mathbf{{T}}^t\mathbf{{T}}]_{i,i} / \Sum_i [\mathbf{{L}}^t\mathbf{{L}}]_{i,i}
+  \chi = \sum_i [\mathbf{{T}}^t\mathbf{{T}}]_{i,i} / \sum_i [\mathbf{{L}}^t\mathbf{{L}}]_{i,i}
 
 The optimal value of :math:`\lambda` is then found by minimising the condition number of the matrix
 
