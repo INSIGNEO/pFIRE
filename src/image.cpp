@@ -67,6 +67,8 @@ std::shared_ptr<Image> Image::warp(const MapBase& map) const
 {
   std::shared_ptr<Image> new_image = GridVariable::duplicate(*this);
 
+  map.update_local_vector();
+
   // No guarantee of where any given source pixel is located, so need to locate rank of each each source and
   // add that plus target pointer to suitable lists
   floatptrvector2d target_ptrs(this->commsize());

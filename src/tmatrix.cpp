@@ -209,7 +209,7 @@ std::pair<floating, floating> calculate_entries(integer row, integer col, intege
 {
 #ifdef DEBUG_CHECKS
   throw_if_idof_inconsistent(comm, idof)
-#endif //DEBUG_CHECKS;
+#endif //DEBUG_CHECKS
 
   int commsize, rank;
   MPI_Comm_size(comm, &commsize);
@@ -220,7 +220,7 @@ std::pair<floating, floating> calculate_entries(integer row, integer col, intege
   {
     throw InternalError("Wrong dof in calculation");
   }
-#endif //DEBUG_CHECKS;
+#endif //DEBUG_CHECKS
 
   // First calculate appropriate overlaps
   auto rloc = unravel(static_cast<integer>(row / map.ndof()), map.shape());
@@ -295,7 +295,9 @@ std::pair<floating, floating> calculate_entries(integer row, integer col, intege
   //  }
 
   floating mat_entry(0);
+  floating mat_err(0);
   floating vec_entry(0);
+  floating vec_err(0);
 #ifdef VERBOSE_DEBUG
   integer sumcount(0);
   for (int irank = 0; irank < commsize; irank++)
@@ -315,10 +317,18 @@ std::pair<floating, floating> calculate_entries(integer row, integer col, intege
         {
           floating mat_delta = (rank_vals[iidx].first * rank_row_coeffs[iidx])
                                * (rank_vals[iidx].first * rank_col_coeffs[iidx]);
+          mat_delta -= mat_err;
+          floating tmp = mat_entry + mat_delta;
+          mat_err = (tmp - mat_entry) - mat_delta;
+          mat_entry = tmp;
+
           floating vec_delta = 0.5 * rank_vals[iidx].first
                                * (rank_vals[iidx].second * rank_row_coeffs[iidx]);
-          mat_entry += mat_delta;
-          vec_entry += vec_delta;
+          vec_delta -= vec_err;
+          tmp = vec_entry + vec_delta;
+          vec_err = (tmp - vec_entry) - vec_delta;
+          vec_entry = tmp;
+
 #ifdef VERBOSE_DEBUG
           sumcount++;
           std::cout << "Component (" << row << ", " << col << ") " << rank_reqs[iidx] << "[" << idof << "]"
@@ -381,12 +391,12 @@ floatpairvector2d populate_request_vector(intcoordvector2d remote_locs, const DM
     for (size_t idx = 0; idx < ilocs.size(); idx++)
     {
       auto& iloc = ilocs[idx];
-#ifdef DEBUG_CHECKS;
+#ifdef DEBUG_CHECKS
       if(iloc < lo || iloc >= hi)
       {
         throw InternalError("Loc not on rank");
       }
-#endif //DEBUG_CHECKS;
+#endif //DEBUG_CHECKS
       icoeffs[idx] = std::make_pair(gradient_data[iloc[2]][iloc[1]][iloc[0]],
                                     difference_data[iloc[2]][iloc[1]][iloc[0]]);
     }

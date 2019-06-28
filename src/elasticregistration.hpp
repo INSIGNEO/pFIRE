@@ -31,7 +31,7 @@ public:
 
 protected:
   void registration_inner_loop(integer max_iterations);
-  Vec_unique solver_step(floating internum);
+  Vec_unique solver_step(floating internum, bool recalculate_lambda);
   bool is_converged(const Vec& map_delta, floating threshold = 0.1);
 
   void save_debug_frame(integer iteration_num);

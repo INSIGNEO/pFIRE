@@ -132,11 +132,19 @@ void mainflow(const std::shared_ptr<ConfigurationBase>& config)
     BaseWriter_unique wtr = BaseWriter::get_writer_for_filename(output_path, fixed->comm());
     output_path = wtr->write_image(*reg.registered());
     PetscPrintf(PETSC_COMM_WORLD, "Saved registered image to %s\n", output_path.c_str());
+  }
+    catch (const pFIREExpectedError &e)
+    {
+      std::cerr << "Error: Failed to save results: " << e.what() << std::endl;
+      return;
+    }
 
-    outfile = config->grab<std::string>("map");
-    h5group = config->grab<std::string>("map_h5_path");
-    output_path = outfile + ":" + h5group;
-    wtr = BaseWriter::get_writer_for_filename(output_path, fixed->comm());
+  try
+  {
+    std::string outfile = config->grab<std::string>("map");
+    std::string h5group = config->grab<std::string>("map_h5_path");
+    std::string output_path = outfile + ":" + h5group;
+    BaseWriter_unique wtr = BaseWriter::get_writer_for_filename(output_path, fixed->comm());
     output_path = wtr->write_map(reg.result_map());
     PetscPrintf(PETSC_COMM_WORLD, "Saved map to %s\n", output_path.c_str());
 

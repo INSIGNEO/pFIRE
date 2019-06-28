@@ -60,12 +60,14 @@ void ElasticRegistration::registration_inner_loop(integer max_iterations)
   integer iteration = 0;
   if (_configuration.grab<bool>("save_intermediate_frames"))
   {
-    save_debug_frame(iteration++);
+    save_debug_frame(iteration);
   }
-  for (; iteration <= max_iterations; iteration++)
+  for (iteration = 1; iteration <= max_iterations; iteration++)
   {
     this->_previous_mis.push_back(this->_fixed->mutual_information(*this->_moved));
-    Vec_unique map_delta = solver_step(iteration);
+
+    // Do solver step, recalculating lambda if it is the first iteration of the loop
+    Vec_unique map_delta = solver_step(iteration, iteration == 1);
 
     if (this->is_converged(*map_delta))
     {
@@ -78,7 +80,7 @@ void ElasticRegistration::registration_inner_loop(integer max_iterations)
   }
 }
 
-Vec_unique ElasticRegistration::solver_step(floating iternum)
+Vec_unique ElasticRegistration::solver_step(floating iternum, bool recalculate_lambda)
 {
   auto tmat2_and_tmatfm = build_tmat2_and_tmatfm(*this->_fixed, *_registered, *this->_current_map);
   Mat_unique tmat2 = std::move(tmat2_and_tmatfm.first);
@@ -91,7 +93,8 @@ Vec_unique ElasticRegistration::solver_step(floating iternum)
               tmat2_diag_sum);
 
 
-  if (iternum == 0)
+  // Recalculate lambda if requested
+  if (recalculate_lambda)
   {
     _lambda = approximate_optimum_lambda(*tmat2, _current_map->laplacian2(), lapl_premult, _lambda,
                                          _initial_search_width, _lambda_search_maxiter, _lambda_min);
@@ -281,34 +284,31 @@ floating ElasticRegistration::approximate_optimum_lambda(const Mat& mat_a, const
                                                          floating search_width, uinteger max_iter,
                                                          floating lambda_min)
 {
-  floating x_lo = initial_guess - search_width > lambda_min ? initial_guess - search_width : lambda_min;
+  floating x_lo = initial_guess - search_width;
+  x_lo = x_lo > lambda_min ? x_lo : lambda_min;
   floating x_mid = initial_guess;
+  x_mid = x_mid > x_lo ? x_mid : x_lo + search_width/2;
   floating x_hi = initial_guess + search_width;
+  x_hi = x_hi > x_mid ? x_hi : x_mid + search_width;
 
   floating y_lo(0), y_mid(0), y_hi(0);
-  bool recalc_first = true;
-
   for (uinteger iter = 0; iter < max_iter; iter++)
   {
     Mat_unique mat_c = create_unique_mat();
     PetscErrorCode perr = MatDuplicate(mat_a, MAT_COPY_VALUES, mat_c.get());
 
     // calculate at lower value
-    if (recalc_first)
-    {
-      perr = MatAXPY(*mat_c, lambda_mult * x_lo, mat_b, DIFFERENT_NONZERO_PATTERN);
-      CHKERRXX(perr);
-      y_lo = get_condnum_by_poweriter(*mat_c, 0.01, 100);
-    }
-    recalc_first = true;
+    perr = MatAXPY(*mat_c, lambda_mult * x_lo, mat_b, DIFFERENT_NONZERO_PATTERN);
+    CHKERRXX(perr);
+    y_lo = get_condnum_by_poweriter(*mat_c, 0.01, 100);
 
     // Calculate at initial guess
-    perr = MatAXPY(*mat_c, lambda_mult * (x_mid - x_lo), mat_b, DIFFERENT_NONZERO_PATTERN);
+    perr = MatAXPY(*mat_c, lambda_mult * x_mid, mat_b, DIFFERENT_NONZERO_PATTERN);
     CHKERRXX(perr);
     y_mid = get_condnum_by_poweriter(*mat_c, 0.01, 100);
 
     // calculate at higher value
-    perr = MatAXPY(*mat_c, lambda_mult * (x_hi - x_mid), mat_b, DIFFERENT_NONZERO_PATTERN);
+    perr = MatAXPY(*mat_c, lambda_mult * x_hi, mat_b, DIFFERENT_NONZERO_PATTERN);
     CHKERRXX(perr);
     y_hi = get_condnum_by_poweriter(*mat_c, 0.01, 100);
 
@@ -323,17 +323,19 @@ floating ElasticRegistration::approximate_optimum_lambda(const Mat& mat_a, const
         // All points are negative gradient: keep searching to higher values of x:
         x_mid *= 2;
         x_hi *= 2;
-        recalc_first = false;
         continue;
       }
-      // Otherwise we have are close to a local minimum and are done
+      // Otherwise we are close to a local minimum and are done
       break;
     }
+
+    // If we already reached lambda_min we need to be done at that
     if (x_lo == lambda_min)
     {
       break;
     }
-    // All negative gradient so keep searching left
+
+    // Otherwise it is a positive gradient so keep searching left
     x_lo = x_lo >= 2.0 * lambda_min ? x_lo / 2 : 1.0 * lambda_min;
     x_mid = x_mid >= 2.0 * x_lo ? x_mid / 2 : x_lo + 1.0;
     x_hi = x_hi >= 2.0 * x_mid ? x_hi / 2 : x_mid + 1.0;
@@ -342,7 +344,7 @@ floating ElasticRegistration::approximate_optimum_lambda(const Mat& mat_a, const
   floating a, b, c;
   quadratic_from_points(x_lo, x_mid, x_hi, y_lo, y_mid, y_hi, a, b, c);
 
-  if (a <= 0)
+  if (a < 0)
   {
     PetscPrintf(_comm, "Warning: convex function in smoothing parameter estimation.\n");
     return lambda_min;
