@@ -23,6 +23,7 @@
 #include "mask.hpp"
 #include "types.hpp"
 #include "test_helpers.hpp"
+#include "xdmfwriter.hpp"
 
 class envobjs {
 public:
@@ -45,7 +46,7 @@ public:
 
 BOOST_FIXTURE_TEST_SUITE(indexing, envobjs)
 
-BOOST_AUTO_TEST_CASE(test_warp_image)
+BOOST_AUTO_TEST_CASE(uniform_warp)
 {
 
   for(integer curr_dof = 0; curr_dof < map->ndof(); curr_dof++)
@@ -121,7 +122,7 @@ BOOST_AUTO_TEST_CASE(test_warp_image)
     DMDAVecRestoreArrayDOF(map->dmda(), map->global_vector(), &map_data);
 
     auto warped = image->warp(*map);
-  
+
     DMDAVecGetArray(warped->dmda(), warped->data_vector(), &image_data);
 
     intcoord warp_offset({0, 0, 0});
@@ -149,5 +150,67 @@ BOOST_AUTO_TEST_CASE(test_warp_image)
     DMDAVecRestoreArray(warped->dmda(), warped->data_vector(), &image_data);
   }
 }
+
+BOOST_AUTO_TEST_CASE(shear_warp)
+{
+
+  for(integer curr_dof = 0; curr_dof < map->ndof(); curr_dof++)
+  {
+    std::cout << "Iteration " << curr_dof << "\n";
+    // reset map
+    map = MapBase::make_map_for_mask(*mask, nodespacing);
+    image = std::make_unique<Image>(imgshape, MPI_COMM_WORLD);
+
+    intcoord image_local_lo = image->local_offset();
+    intcoord image_local_hi = image_local_lo + image->local_shape();
+    // Access data via dmda and insert value
+    floating*** image_data;
+    DMDAVecGetArray(image->dmda(), image->data_vector(), &image_data);
+    intcoord curr_loc;
+    auto& xx = curr_loc[0];
+    auto& yy = curr_loc[1];
+    auto& zz = curr_loc[2];
+    for(zz=image_local_lo[2]; zz < image_local_hi[2]; zz++)
+    {
+      for(yy=image_local_lo[1]; yy < image_local_hi[1]; yy++)
+      {
+        for(xx=image_local_lo[0]; xx < image_local_hi[0]; xx++)
+        {
+          if(curr_loc >= block_offset && curr_loc < (block_offset + block_shape))
+          {
+            image_data[zz][yy][xx] = testdata;
+          }
+        }
+      }
+    }
+    DMDAVecRestoreArray(image->dmda(), image->data_vector(), &image_data);
+    image->update_local_vector();
+
+    // Set one dimension of the map to shear
+    floating**** map_data;
+    DMDAVecGetArrayDOF(map->dmda(), map->global_vector(), &map_data);
+    intcoord map_local_lo = map->local_offset();
+    intcoord map_local_hi = map_local_lo + map->local_shape();
+    for(integer zz=map_local_lo[2]; zz<map_local_hi[2]; zz++)
+    {
+      for(integer yy=map_local_lo[1]; yy<map_local_hi[1]; yy++)
+      {
+        for(integer xx=map_local_lo[0]; xx<map_local_hi[0]; xx++)
+        {
+          map_data[zz][yy][xx][curr_dof] = xx * offset;
+        }
+      }
+    }
+    DMDAVecRestoreArrayDOF(map->dmda(), map->global_vector(), &map_data);
+
+    auto warped = image->warp(*map);
+
+    std::ostringstream fnamess;
+    fnamess << "shear" << curr_dof << ".xdmf:/warped";
+    auto wtr = XDMFWriter(fnamess.str(), MPI_COMM_WORLD);
+    wtr.write_image(*warped);
+  }
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
