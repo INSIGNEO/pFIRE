@@ -6,6 +6,16 @@ The pFIRE Algorithm
 Algorithm Description
 ---------------------
 
+pFIRE operates by iteratively solving a matrix equation to find updates to the deformation map that
+minimizes the difference between the fixed and the moved image. After each iteration the original
+moved image is warped using the updated map to produce a new moved image that is closer to the
+fixed image.  The original moved image is used each time to minimize the accumulation of errors
+from warping the same image multiple times.
+
+Initially the displacement map that is used is coarse, having only 3 nodes per dimension, but as
+the registration converges at each resolution the map is then refined, doubling the number of nodes
+per dimension until the desired resolution is reached.
+
 The Registration Equation
 -------------------------
 
@@ -198,7 +208,21 @@ Implementation Details
 Calculating :math:`\mathbf{{T}}^t\mathbf{{T}}`
 ----------------------------------------------
 
-Implementation of the algorithm can be made more efficient by understanding the structure of the
+The naive implementation of registration equation requires explicitly constructing the matrix
+:math:`\mathbf{{T}}` before calculating the product :math:`\mathbf{{T}}^t\mathbf{{T}}`.  This is
+not an efficient use of memory, however, especially since the matrix :math:`\mathbf{{T}}` is much
+larger than the final product and is only an intermediate value in computing
+:math:`\mathbf{{T}}^t(\bar{F} - \bar{M})` and :math:`\begin{bmatrix}\mathbf{{T}}^t\mathbf{{T}} +
+\lambda\mathbf{{L}}^t\mathbf{{L}}\end{bmatrix}`.
+
+Because of this, pFIRE computes the matrix :math:`\mathbf{{T}}^t\mathbf{{T}}` and the vector
+:math:`\mathbf{{T}}^t(\bar{F} - \bar{M})` directly.  The structure of the final matrix and vector
+are distributed between the various ranks such that each rank computes an equal number of
+components of the final data structure.  For each matrix or vector element, the location of all the
+required image or gradient pixels is determiend and then required values that are not local to the
+rank are communicated using MPI_Alltoall with all ranks communicating at once.
+
+Implementation of the computation can be made more efficient by understanding the structure of the
 :math:`\mathbf{{G}}` and :math:`\mathbf{{\Phi}}` matrices, as prior knowledge of the zero-patterns
 in these matrices can make calculation of the final matrix :math:`\mathbf{{T}}^t\mathbf{{T}}` much
 more efficient.  Further, since the :math:`\mathbf{{G}}` matrix is diagonal we know that the zero
@@ -249,3 +273,60 @@ information need only be exchanged with nearest neighbour ranks, rather than req
 communication. In practice this optimal scheme is not implemented by pFIRE since it requires fixing
 the problem size per processor. Instead dynamic communication patterns are used to communicate only
 the required data regardless of its location.
+
+Improving Matrix Conditioning
+-----------------------------
+
+The matrix as constructed, even with the addition of the laplacian is suboptimally conditioned.  In
+order to improve the conditioning further, a preconditioning step is applied to the calculated
+matrix :math:`\mathbf{{T}}^t\mathbf{{T}}`, predicated on the fact that the matrix is symmetric and
+positive definite, and that the intensity values calculated for the map will not be used to update
+the map, but are relevant purely for the correct calculation of the displacement components.
+
+The average of the diagonal elements is calculated for the displacement components and for the
+intensity components, and the intensity components rescaled by multiplying with a diagonal matrix
+with appropriate values on the diagonal, such that the average of the diagonal intensity elements
+is equal to the average for the displacement elements.
+
+Calculating Lambda
+------------------
+
+Prior to calculating :math:`\lambda` a "premultiplication factor" :math:`\chi` is calculated and
+applied to rescale the laplacian matrix to make the average of the diagonal elements of
+:math:`\mathbf{{L}}^t\mathbf{{L}}` equal to the average of the diagonal elements of
+:math:`\mathbf{{T}}^t\mathbf{{T}}`.
+
+.. math::
+
+  \chi = \Sum_i [\mathbf{{T}}^t\mathbf{{T}}]_{i,i} / \Sum_i [\mathbf{{L}}^t\mathbf{{L}}]_{i,i}
+
+The optimal value of :math:`\lambda` is then found by minimising the condition number of the matrix
+
+.. math::                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                               
+  \mathbf{{T}}^t\mathbf{{T}} + \chi\lambda \mathbf{{L}}^t\mathbf{{L}}].
+
+In general this could be done by various optimisation strategies, however, in pFIRE the approach
+taken is to minimize the required number of condition number calculations as they are
+computationall expensive. It has been empirically observed that the behaviour of the condition
+number with increasing :math:`\lambda` is to initially decrease to a wide minimum region before
+increasing again.  Therefore, a reasonable value for lambda can be found by evaluating the
+condition number at three points, one expected to be to well below the optimum value, one expected
+to be close to it and one expected to be well above. Provided the middle value produces a lower
+condition number than the edges, a quadratic fit to these points will then provide a reasonable
+estimation of the optimum lambda.  In the case that the middle point is not lower, the gradient of
+the fitted line will inform whether to increase or decrease the values of the search points and try
+again.
+
+Solving the Registration Equation
+---------------------------------
+
+The registration equation is solved using the Krylov subspace solver routines provided by PETsC.
+
+Warping the Image
+-----------------
+
+The image is warped by the "pulling method".  For a given pixel in the target image, the map value
+is interpolated to the pixel location and used to determine the location of the source pixel in the
+source image.  The value at this point is then calculated, using MPI_AllToAll to communicate the
+data from other ranks as needed, and inserted into the target image.
