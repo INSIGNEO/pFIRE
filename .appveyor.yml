@@ -13,9 +13,9 @@ configuration:
   - RelWithDebInfo
 
 install:
-  - sh: sudo apt-get update
-  - sh: sudo apt-get install --yes build-essential cmake pkg-config git
-  - sh: sudo apt-get install --yes petsc-dev libboost-all-dev libhdf5-openmpi-dev libdcmtk-dev openmpi-bin
+  - sh: sudo DEBIAN_FRONTEND=noninteractive apt-get -y update
+  - sh: sudo DEBIAN_FRONTEND=noninteractive apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install build-essential cmake pkg-config git
+  - sh: sudo DEBIAN_FRONTEND=noninteractive apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install petsc-dev libboost-all-dev libhdf5-openmpi-dev libdcmtk-dev openmpi-bin
 
 build_script:
   - sh: mkdir build && cd build
@@ -23,6 +23,6 @@ build_script:
   - sh: make -j2
 
 test_script:
-- sh: ctest -VV -L serial
+  - sh: ctest -VV -L serial
 
 deploy: off
