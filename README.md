@@ -87,6 +87,11 @@ user@machine $ cmake ..
 user@machine $ make
 ```
 
+### Acknowledgements
+
+Development of pFIRE is supported by the European Union's [Horizon 2020](https://ec.europa.eu/programmes/horizon2020/en) research and innovation programme
+under grant agreement [675451](https://cordis.europa.eu/project/rcn/204432/factsheet/en) ([CompBioMed](http://www.compbiomed.eu/)).
+
 ### Links
 
 <a name="note1">[1]</a>: DC Barber and DR Hose 2005 (https://doi.org/10.1080/03091900412331289889),
