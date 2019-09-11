@@ -3,7 +3,7 @@ pFIRE
 =====
 
 pFIRE is a parallel framework for the elastic registration of large images by the method of Barber
-and Hose. [1]_ [2]_ It is implemented in C++ using the PETSc scientific toolkit to
+and Hose [1]_ [2]_. It is implemented in C++ using the PETSc scientific toolkit to
 provide parallelised mathematical routines.
 
 
@@ -39,6 +39,9 @@ There are two types of image registration:
 Elastic registration is far more computationally intensive than rigid registration, however, the
 ability to measure and describe nonlinear transformations is potentially extremely useful for e.g
 determination of stress inside a deformed mechanical structure.
+
+We recommend that developers working on pFIRE read the two Barber et al. papers [1]_ [2]_
+so that they are familiar with the algorithms implemented in pFIRE.
 
 
 .. toctree::
