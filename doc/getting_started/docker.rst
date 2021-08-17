@@ -16,7 +16,7 @@ Download a container image ready made from Dockerhub
 On the Dockerhub portal are hosted some versions of pFIRE already packaged in a Docker image.
 Follow the instructions on the web page to download and use: 
 
-
+_PETSc test 
 
 
 Build yourself from dockerfile
@@ -24,7 +24,12 @@ Build yourself from dockerfile
 If you have installed Docker with command line support you can generate the docker image from the source docker container file.
 Instructions and docker files organised by destination platform are available here:
 
-.. _pFIRE docker container source code: https://github.com/insigneo-pfire/docker-pfire
+.. _PETSc: https://www.mcs.anl.gov/petsc/
+
+.. `_pFIRE: docker container source code`: 
+	https://github.com/insigneo-pfire/docker-pfire
+
+
 
 
 

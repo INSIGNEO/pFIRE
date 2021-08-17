@@ -1,7 +1,8 @@
-# pFIRE on Dockerhub #
+# pFIRE on Dockerhub 
 
 Docker is a software that creates a package (called image) containing an application, its library dependencies and a  minimal execution environment (e.g. a minimal Ubuntu distribution). These images can be distributed and run by any Docker software installed on the user machine. 
-In the following are provided the instructions to execute pFIRE on a user machine with Docker. It as been tested on *nix and OsX machines and Windows10 through Windows Linux Subsystem and (Powerwshell).
+In the following are provided the instructions to execute pFIRE on a user machine with Docker. 
+It as been tested on *nix and OsX machines and Windows10 through Windows Linux Subsystem and (PowerShell).
 
 
 ### Installation procedure

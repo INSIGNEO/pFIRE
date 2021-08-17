@@ -80,3 +80,4 @@ MANIFEST
 *.exe
 *.out
 *.app
+/.ptp-sync/
