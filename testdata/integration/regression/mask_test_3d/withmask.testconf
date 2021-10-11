@@ -1,0 +1,5 @@
+name = mask_test_3d_withmask
+type = comparison
+pfire_config = withmask.conf
+accepted_image = accepted_withmask.image   # string: the image to compare with ("regression" mode only)
+accepted_map   = map_withmask.xdmf         # string: the map to compare with ("regression" mode only)
