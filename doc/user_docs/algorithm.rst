@@ -131,7 +131,7 @@ of the gradient information, :math:`\mathbf{{\phi}}` is the same submatrix for e
 map.
 
 The matrix :math:`T` is defined here as the product of the matrices :math:`\mathbf{{G}}` and
-:math:`\mathbf{{\Phi}}`, and it is, in general, non-square.  We therefore create a soluable matrix
+:math:`\mathbf{{\Phi}}`, and it is, in general, non-square.  We therefore create a solvable matrix
 equation from this by multiplying both sides by the transpose :math:`\mathbf{{T}}^t`,
 
 .. math::
@@ -142,7 +142,7 @@ yielding an equation with square matrix :math:`\mathbf{{T}}^t\mathbf{{T}}` which
 standard numerical methods.
 
 Unfortunately :math:`\mathbf{{T}}^t\mathbf{{T}}` is typically singular and so we must apply some
-kind of regularisation to make the problem soluable.  In this case we use the method of Tikhonov
+kind of regularisation to make the problem solvable.  In this case we use the method of Tikhonov
 regularisation, which includes an additional smoothing term in the problem. In this case the
 Laplacian matrix is chosen, adding minimization of the second derivative of the map as the extra
 constraint (:math:`\mathbf{{L}}\bar{A} = 0` and the problem becomes,
@@ -219,7 +219,7 @@ Because of this, pFIRE computes the matrix :math:`\mathbf{{T}}^t\mathbf{{T}}` an
 :math:`\mathbf{{T}}^t(\bar{F} - \bar{M})` directly.  The structure of the final matrix and vector
 are distributed between the various ranks such that each rank computes an equal number of
 components of the final data structure.  For each matrix or vector element, the location of all the
-required image or gradient pixels is determiend and then required values that are not local to the
+required image or gradient pixels is determined and then required values that are not local to the
 rank are communicated using MPI_Alltoall with all ranks communicating at once.
 
 Implementation of the computation can be made more efficient by understanding the structure of the

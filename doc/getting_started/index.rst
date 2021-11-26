@@ -10,3 +10,6 @@ using it to register images.
   install
   cli_quickstart
   tutorial
+  docker
+  docker_hub
+
