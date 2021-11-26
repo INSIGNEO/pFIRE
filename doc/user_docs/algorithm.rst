@@ -219,7 +219,7 @@ Because of this, pFIRE computes the matrix :math:`\mathbf{{T}}^t\mathbf{{T}}` an
 :math:`\mathbf{{T}}^t(\bar{F} - \bar{M})` directly.  The structure of the final matrix and vector
 are distributed between the various ranks such that each rank computes an equal number of
 components of the final data structure.  For each matrix or vector element, the location of all the
-required image or gradient pixels is determiend and then required values that are not local to the
+required image or gradient pixels is determined and then required values that are not local to the
 rank are communicated using MPI_Alltoall with all ranks communicating at once.
 
 Implementation of the computation can be made more efficient by understanding the structure of the
