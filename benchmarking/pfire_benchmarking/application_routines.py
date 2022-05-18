@@ -52,41 +52,49 @@ class pFIRERunnerMixin:
         with open(config_path, 'r') as fh:
             config = ConfigObj(fh)
         print("Running pFIRE on {}".format(pfire_config))
-
+      
         self.pfire_fixed_path = os.path.join(pfire_workdir, config['fixed'])
         self.pfire_moved_path = os.path.join(pfire_workdir, config['moved'])
+             
+        # TODO Check Registered image is in xdmf format
+        # TODO Check registration Map is in xdmf format
+        
+        # Log file name
+        self.pfire_logfile = os.path.join(
+            pfire_workdir,
+            "{}_pfire.log".format(os.path.splitext(pfire_config)[0]))
+        
+        # Run pFIRE
+        with open(self.pfire_logfile, 'w') as logfile:
+            pfire_args = ['pfire', pfire_config]
+            res = sp.run(pfire_args, cwd=pfire_workdir, stdout=logfile,
+                         stderr=logfile)
+        if res.returncode != 0:
+            raise RuntimeError("Failed to run pFIRE, check log for details: {}"
+                               "".format(self.pfire_logfile))
+
+        # Get pFIRE registered image path filename
+        try:
+            self.pfire_reg_path = os.path.join(pfire_workdir, config['registered'])
+            print("self.pfire_reg_path="+ self.pfire_reg_path)
+        except KeyError:
+            pass
+            
+        # Get pFIRE registered map  path filename           
+        try:
+            self.pfire_map_path = os.path.join(pfire_workdir, config['map'])
+            print("self.pfire_map_path="+ self.pfire_map_path)
+        except KeyError:
+            pass
+           
         try:
             self.pfire_mask_path = os.path.join(pfire_workdir, config['mask'])
         except KeyError:
             pass
 
-        self.pfire_logfile = os.path.join(
-            pfire_workdir,
-            "{}_pfire.log".format(os.path.splitext(pfire_config)[0]))
-        with open(self.pfire_logfile, 'w') as logfile:
-            pfire_args = ['pfire', pfire_config]
-            res = sp.run(pfire_args, cwd=pfire_workdir, stdout=logfile,
-                         stderr=logfile)
-
-        if res.returncode != 0:
-            raise RuntimeError("Failed to run pFIRE, check log for details: {}"
-                               "".format(self.pfire_logfile))
-
-        with open(self.pfire_logfile, 'r') as logfile:
-            for line in logfile:
-                if line.startswith("Saved registered image to "):
-                    reg_path = line.replace("Saved registered image to ",
-                                            "").strip()
-                    self.pfire_reg_path = os.path.join(pfire_workdir, reg_path)
-                elif line.startswith("Saved map to "):
-                    map_path = line.replace("Saved map to ", "").strip()
-                    self.pfire_map_path = os.path.join(pfire_workdir, map_path)
-
         if not (self.pfire_reg_path or self.pfire_map_path):
-            raise RuntimeError("Failed to extract result path(s) from log")
-
-
-
+            raise RuntimeError("Failed to find registered image or map named in config file")
+        
 
 class ShIRTRunnerMixin:
     """ Mixin class to provide a ShIRT runner interface accepted a pFIRE config
