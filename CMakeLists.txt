@@ -26,6 +26,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED on)
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 
+cmake_policy(SET CMP0074 NEW)
+
 if( NOT CMAKE_BUILD_TYPE )
     set( CMAKE_BUILD_TYPE Debug CACHE STRING
              "Choose the type of build, options are: None Debug Release"
