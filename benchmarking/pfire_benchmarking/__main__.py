@@ -12,8 +12,9 @@ def _parse_args():
     parser = argparse.ArgumentParser(description="Run pFIRE integration tests")
 
     parser.add_argument('dir', nargs='?', default=os.getcwd(), metavar="datadir",
-                        help="Test data directory, will be inspected recursively")
+                        help="Test data directory will be inspected recursively")
     parser.add_argument('--output', '-o', default='.', metavar="outdir",
+                        dest="output_dir",
                         help="Path at which to output results")
 
     return parser.parse_args()
@@ -23,13 +24,13 @@ def main():
     """ Run the testsuite over a directory tree
     """
     args = _parse_args()
-
-    testsuite = TestDespatcher(output_dir=args.output)
+        
+    testsuite = TestDespatcher(output_dir=args.output_dir)
 
     if not os.path.exists(args.dir):
         print("Error, path {} does not exist".format(args.dir))
         return
-
+    # Add tests or tests in directory tree
     if os.path.isfile(args.dir):
         testsuite.add_test(args.dir)
     else:

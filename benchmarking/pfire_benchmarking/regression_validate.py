@@ -34,7 +34,8 @@ def main():
 
     args = parse_args()
 
-    test = RegressionTest(args.pfire_config, name=args.test_name,
+    test = RegressionTest(args.pfire_config, 
+                          name=args.test_name,
                           accepted_image=args.accepted_image,
                           accepted_map=args.accepted_map)
 
@@ -50,6 +51,7 @@ class RegressionTest(TestInstance, pFIRERunnerMixin):
 
     def __init__(self, pfire_config, name=None, accepted_image=None,
                  accepted_map=None, output_path=None):
+        
         # Check this before we go anywhere else
         if not (accepted_map or accepted_image):
             raise ValueError("At least one of accepted_image or accepted_map "
@@ -58,8 +60,10 @@ class RegressionTest(TestInstance, pFIRERunnerMixin):
 
 
         self.accepted_image_path = accepted_image
-        self.accepted_map_path = accepted_map
+        self.accepted_map_path   = accepted_map
         self.run_errstring = None
+
+        print("\n pFIRE config=" +pfire_config)
 
 
     def run(self):

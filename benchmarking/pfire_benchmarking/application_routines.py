@@ -134,6 +134,9 @@ class ShIRTRunnerMixin:
         """
         config = self._build_shirt_config(config_path)
         work_dir, config_file = os.path.split(config_path)
+        
+        # FIXME workdire is empty if config path is relatove. make it absolute
+        
         print("Running ShIRT on {}".format(config_file))
 
         self.shirt_reg_path = 'shirt_{}_registered.image'.format(self.name)
@@ -167,12 +170,35 @@ class ShIRTRunnerMixin:
                       'Registered', self._strip_imgname(self.shirt_reg_path),
                       'Map', self._strip_imgname(self.shirt_map_path)]
 
+
+
+        # ADd test FIXME
+        #SHIRT_BIN
+        
+        shirt_env = {}
+        SHIRT_DIR="/home/tartarini/LOCAL/app/Shirt/"#~/LOCAL/app/Shirt/bin/ShIRT
+
+        #shirt_env['DATAPATH'] = '/home/tartarini/fixing_bugs_pfire/pFIRE/benchmarking/brain2d/'
+        shirt_env['DATAPATH'] = './'
+        shirt_env['DISPLAYPATH'] = shirt_env['DATAPATH'] +"display/"
+
+        #SHIRT_DIR=/home/tartarini/ShIRT/
+        shirt_env['SYSPATH']= SHIRT_DIR+"bin/"
+        shirt_env['SCRIPTPATH']=SHIRT_DIR+"Scripts/"
+        shirt_env['PATH']= shirt_env['SYSPATH']
+        #export PATH=$PATH:$SHIRT_DIR/1.1/bin/
+
+
         self.shirt_logfile = os.path.join(
             work_dir, "{}_shirt.log".format(os.path.splitext(config_file)[0]))
         with open(self.shirt_logfile, 'w') as logfile:
-            sp.run(['ShIRT', 'setpath', 'DataPath', '.'], cwd=work_dir)
-            res = sp.run(shirt_args, stdout=logfile, stderr=logfile,
-                         cwd=work_dir)
+            print("work_dir=" + work_dir)
+            print(shirt_env)
+            
+            sp.run(['ShIRT', 'setpath', 'DataPath', '.'])#, cwd=work_dir)
+
+            res = sp.run(shirt_args, stdout=logfile, stderr=logfile,  env=shirt_env)
+                         #cwd=work_dir)
 
         if res.returncode != 0:
             raise RuntimeError("Failed to run ShIRT, check log for details: {}"

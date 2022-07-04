@@ -16,4 +16,9 @@ setup(name='pfire_benchmarking',
           'console_scripts':  [
               'pfire-integration-test = pfire_benchmarking.__main__:main'
               ],
-      })
+      },
+    #package_dir={"": "pfire_benchmarking"},
+    #packages=find_packages(where="pfire_benchmarking"),
+    python_requires=">=3.6",
+      
+      )

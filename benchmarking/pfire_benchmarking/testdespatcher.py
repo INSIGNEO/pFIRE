@@ -28,9 +28,10 @@ class TestDespatcher:
 
 
     def add_test(self, testconfig_path):
-        """ Add a new test by parsing configfile
+        """ Add a new test by parsing test config file in INI format
         """
         testdir = os.path.dirname(testconfig_path)
+        
         # opening explicitly causes failure on file nonexistence
         with open(testconfig_path, 'r') as fh:
             testconfig = ConfigObj(fh)
@@ -65,6 +66,7 @@ class TestDespatcher:
 
         testkwargs['output_path'] = self.output_dir
 
+        # Get location of pFIRE configuration file used to generate the outputs to test
         pfire_config_path = os.path.join(testdir, testconfig['pfire_config'])
         try:
             test = testiniter(pfire_config_path, **testkwargs)
@@ -72,6 +74,7 @@ class TestDespatcher:
             raise RuntimeError("A pFIRE configuration file (\"pfire_config\") "
                                "must be specified")
 
+        # Add found test with config and pFire config to the list of tests
         print("Found \"{}\"".format(test.name))
         self.tests.append(test)
 
