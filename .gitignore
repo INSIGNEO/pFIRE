@@ -8,6 +8,7 @@ bin/
 compile_commands.json
 test_data/
 build/
+benchmarking/pyvenv*
 doc/_build/
 doc/_static/pfire_tutorial_files.zip
 gitstate.hpp
@@ -80,3 +81,12 @@ MANIFEST
 *.exe
 *.out
 *.app
+
+# IDEs
+.cproject
+.project
+.pydevproject
+.settings/
+src/.cproject
+src/.project
+
