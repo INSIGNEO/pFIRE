@@ -19,16 +19,16 @@ file(GLOB libpFIRESOURCES
 list(REMOVE_ITEM libpFIRESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/sandbox.cpp")
 list(REMOVE_ITEM libpFIRESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/pfire.cpp")
 
-if(NOT OPENIMAGEIO_FOUND)
+if(NOT OpenImageIO_FOUND)
   list(REMOVE_ITEM libpFIRESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/oiioloader.cpp")
   list(REMOVE_ITEM libpFIRESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/oiiowriter.cpp")
-endif(NOT OPENIMAGEIO_FOUND)
+endif(NOT OpenImageIO_FOUND)
 
 if(NOT DCMTK_FOUND)
   list(REMOVE_ITEM libpFIRESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/dcmloader.cpp")
 endif(NOT DCMTK_FOUND)
 
-add_library(libpfire ${libpFIRESOURCES})
+add_library(libpfire SHARED  ${libpFIRESOURCES} )
 set_target_properties(libpfire PROPERTIES PREFIX "")
 target_link_libraries(libpfire ${EXTRA_LIBS})
 
@@ -36,4 +36,7 @@ add_executable(pfire pfire.cpp)
 set_target_properties(pfire PROPERTIES LINKER_LANGUAGE CXX)
 target_link_libraries(pfire libpfire)
 
+
 install(TARGETS pfire DESTINATION bin)
+
+install(TARGETS libpfire DESTINATION lib)

@@ -15,6 +15,7 @@
 
 cmake_minimum_required(VERSION 3.7.0)
 project(pFIRE)
+include(CMakePrintHelpers)
 
 if("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
   message(FATAL_ERROR "In-source builds are not permitted. Make a separate folder for "
@@ -72,6 +73,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${pFIRE_SOURCE_DIR}/bin)
 # Ensure we can find FindPETSc and friends
 list(APPEND CMAKE_MODULE_PATH ${pFIRE_SOURCE_DIR}/cmake-modules)
 
+# Define flags to enable dependencies
+option(ENABLE_OpenImageIO "Enable Linking OpenImageIO library" [FALSE])
+option(ENABLE_DCMTK       "Enable Linking DCMTK library" [FALSE])
+
 find_package(MPI REQUIRED)
 include_directories(${MPI_INCLUDES})
 set(EXTRA_LIBS ${EXTRA_LIBS} ${MPI_LIBRARIES})
@@ -94,19 +99,53 @@ find_package(Boost REQUIRED COMPONENTS filesystem program_options)
 include_directories(${BOOST_INCLUDE_DIRS})
 set(EXTRA_LIBS ${EXTRA_LIBS} ${Boost_LIBRARIES})
 
+if(ENABLE_DCMTK)
 find_package(DCMTK)
+endif(ENABLE_DCMTK)
+
 if(DCMTK_FOUND)
 include_directories(${DCMTK_INCLUDES})
 set(EXTRA_LIBS ${EXTRA_LIBS} ${DCMTK_LIBRARIES})
   add_definitions(-DUSE_DCMTK)
 endif(DCMTK_FOUND)
 
-find_package(OpenImageIO)
-if(OPENIMAGEIO_FOUND)
-include_directories(${OPENIMAGEIO_INCLUDE_DIR})
-set(EXTRA_LIBS ${EXTRA_LIBS} ${OPENIMAGEIO_LIBRARIES})
-  add_definitions(-DUSE_OIIO)
-endif(OPENIMAGEIO_FOUND)
+#list(APPEND CMAKE_FIND_ROOT_PATH "... insigneo-pfire/docker-pfire/singularity/fix_oiio_dcmtk/oiio/dist/lib64/cmake/OpenImageIO/")
+
+
+if(ENABLE_OpenImageIO)
+find_package(OpenImageIO CONFIG)
+endif(ENABLE_OpenImageIO)
+
+cmake_print_variables(OpenImageIO_FOUND)
+
+
+
+if(OpenImageIO_FOUND AND ENABLE_OpenImageIO)
+	
+	#cmake_print_variables(OpenImageIO_INCLUDE_DIR)
+	#cmake_print_variables(OpenImageIO_LIBRARIES)
+	#cmake_print_variables(OpenImageIO_LIB_DIR)
+	# OpenImageIO cmake config is missing library names so declaring here until they fix it
+	set (OpenImageIO_LIBRARIES "${OpenImageIO_LIB_DIR}/libOpenImageIO_Util.so;${OpenImageIO_LIB_DIR}/libOpenImageIO.so")
+	include_directories(${OpenImageIO_INCLUDE_DIR})
+	set(EXTRA_LIBS ${EXTRA_LIBS} ${OpenImageIO_LIBRARIES} )
+	add_definitions(-DUSE_OIIO)
+	
+			
+else(OpenImageIO_FOUND AND ENABLE_OpenImageIO)
+	message(STATUS "OPENIMAGEIO_FOUND ELSE branch")
+	
+	include_directories(${OpenImageIO_INCLUDE_DIR})
+	set(EXTRA_LIBS ${EXTRA_LIBS} ${OpenImageIO_LIBRARIES} ) #/usr/local/oiio/lib64/libOpenImageIO.a /usr/local/oiio/lib64/libOpenImageIO_Util.a)
+	
+	add_definitions(-DUSE_OIIO)
+
+endif(OpenImageIO_FOUND AND ENABLE_OpenImageIO)
+
+#find_library(JPEG_LIBRARY NAMES jpeg jpg libjpeg  REQUIRED NO_SYSTEM_ENVIRONMENT_PATH PATHS /usr/local/oiio/lib64)
+#cmake_print_variables(JPEG_LIBRARY)
+
+set(EXTRA_LIBS ${EXTRA_LIBS} ${OpenImageIO_LIBRARIES})
 
 add_subdirectory(${pFIRE_SOURCE_DIR}/src)
 
