@@ -47,8 +47,8 @@ def load_map(mappath):
     """ Attempt to load map with known loaders
     """
     data = None
-    #shirtloader = lambda path: fio.load_map(path)[0][0:3]
-    maploaders = [load_pfire_map] #, shirtloader]
+    shirtloader = lambda path: fio.load_map(path)[0][0:3]
+    maploaders = [load_pfire_map, shirtloader]
 
     print("Loop over map loaders")
     print("mappath={}", mappath)
