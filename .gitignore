@@ -90,3 +90,9 @@ MANIFEST
 src/.cproject
 src/.project
 
+
+external_libs/
+
+testdata/integration/regression/brain_2d/xdmf
+
+benchmarking/brain2d/brain2d.html

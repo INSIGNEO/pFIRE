@@ -1,0 +1,6 @@
+name = brain2d_regression
+type = regression
+pfire_config = brain2d_large.conf
+accepted_image = registered_shirt.png # string: the image to compare with ("regression" mode only)
+#accepted_map   = map.xdmf.h5  # string: the map to compare with ("regression" mode only)
+

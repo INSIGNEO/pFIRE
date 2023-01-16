@@ -1,5 +1,5 @@
 name = brain2d
 type = comparison
 pfire_config = brain_2d.conf
-accepted_image = # string: the image to compare with ("regression" mode only)
-accepted_map = # string: the map to compare with ("regression" mode only)
+#accepted_image = # string: the image to compare with ("regression" mode only)
+#accepted_map = # string: the map to compare with ("regression" mode only)
