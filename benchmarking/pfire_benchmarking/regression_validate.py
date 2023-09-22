@@ -50,7 +50,8 @@ class RegressionTest(TestInstance, pFIRERunnerMixin):
     """
 
     def __init__(self, pfire_config, name=None, accepted_image=None,
-                 accepted_map=None, output_path=None):
+                 accepted_map=None, output_path=None,
+                 pfire_exec_filename='pfire'):
         
         # Check this before we go anywhere else
         if not (accepted_map or accepted_image):
@@ -58,7 +59,9 @@ class RegressionTest(TestInstance, pFIRERunnerMixin):
                              "must be provided")
         super().__init__(pfire_config, name=name, output_path=output_path)
 
-
+        self.pfire_exec_filename=pfire_exec_filename
+        
+        
         self.accepted_image_path = accepted_image
         self.accepted_map_path   = accepted_map
         self.run_errstring = None

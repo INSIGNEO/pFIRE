@@ -37,7 +37,7 @@ class pFIRERunnerMixin:
         self.pfire_mask_path = None
         self.pfire_reg_path = None
         self.pfire_map_path = None
-
+        self.pfire_exec_filename=None
 
     def run_pfire(self, config_path, comm_size=1):
         """ Run pFIRE using provided config file
@@ -65,8 +65,11 @@ class pFIRERunnerMixin:
             "{}_pfire.log".format(os.path.splitext(pfire_config)[0]))
         
         # Run pFIRE
-        with open(self.pfire_logfile, 'w') as logfile:
-            pfire_args = ['pfire', pfire_config]
+        print("pFIRERunnerMixin.run_pfire:", self.pfire_exec_filename)
+        with open(self.pfire_logfile, 'w') as logfile:            
+            
+            #pfire_args = ['pfire', pfire_config]
+            pfire_args = [self.pfire_exec_filename, pfire_config]
             res = sp.run(pfire_args, cwd=pfire_workdir, stdout=logfile,
                          stderr=logfile)
         if res.returncode != 0:

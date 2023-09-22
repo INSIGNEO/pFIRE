@@ -37,7 +37,7 @@ We recommend to use virtual environments as below:
 	export PYTHONPATH=`pwd`/:$PYTHONPATH
 	
 	
-	../..//pFIRE/testdata/integration/regression
+	../../pFIRE/testdata/integration/regression
 	
 	# When not needed any more deactivate the virtual environment
 	
@@ -46,16 +46,24 @@ We recommend to use virtual environments as below:
 
 ```
 
-TODO
+
 add pfire binary to PATH
 
-export PATH=/home/tartarini/DEVELOP/INSIGNEO/insigneo-pfire/pFIRE/bin/:$PATH
+export PATH=/<path-to-pfire-binary>/:$PATH
 
 # Usage
 
+```
+pfire-integration-test --pfire-executable=</path-to-pfire>/<pfire-executable>  <base directory containing test configuration file> 
+```
 
+It is optional to provide the pFIRE executable filename. Apptainer allows to use the container as an executable (a wrapper around a container binary configured un the Runscript section)
+ 
+ 
 *  create a testconf file in each test folder
 *  pfire_benchmark  <path_to_>/mytest.testconf
+
+
 
 
 TODO add testconf syntax and use cases
