@@ -19,18 +19,21 @@ class TestDespatcher:
     test_types = {"regression": RegressionTest,
                   "comparison": ComparisonTest}
 
-    def __init__(self, output_dir=None):
+    def __init__(self, output_dir=None, pfire_exec_filename='pfire'):
         self.tests = []
         if output_dir:
             self.output_dir = os.path.normpath(output_dir)
         else:
             self.output_dir = os.path.normpath('.')
+        
+        self.pfire_exec_filename=pfire_exec_filename
 
 
     def add_test(self, testconfig_path):
-        """ Add a new test by parsing configfile
+        """ Add a new test by parsing test config file in INI format
         """
         testdir = os.path.dirname(testconfig_path)
+        
         # opening explicitly causes failure on file nonexistence
         with open(testconfig_path, 'r') as fh:
             testconfig = ConfigObj(fh)
@@ -64,7 +67,9 @@ class TestDespatcher:
             testkwargs['name'] = None
 
         testkwargs['output_path'] = self.output_dir
+        testkwargs['pfire_exec_filename'] =self.pfire_exec_filename
 
+        # Get location of pFIRE configuration file used to generate the outputs to test
         pfire_config_path = os.path.join(testdir, testconfig['pfire_config'])
         try:
             test = testiniter(pfire_config_path, **testkwargs)
@@ -72,6 +77,7 @@ class TestDespatcher:
             raise RuntimeError("A pFIRE configuration file (\"pfire_config\") "
                                "must be specified")
 
+        # Add found test with config and pFire config to the list of tests
         print("Found \"{}\"".format(test.name))
         self.tests.append(test)
 

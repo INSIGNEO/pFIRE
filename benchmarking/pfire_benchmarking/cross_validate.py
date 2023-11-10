@@ -49,6 +49,9 @@ class ComparisonTest(TestInstance, pFIRERunnerMixin, ShIRTRunnerMixin):
         super().__init__(pfire_config, name=name, output_path=output_path)
         self.run_errstring = None
         print("output_path: {}".format(self.output_path))
+        
+        print("\n pFIRE config=" +pfire_config)
+        exit
 
     def run(self):
         """ Run pfire against provided config

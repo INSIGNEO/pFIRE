@@ -96,7 +96,7 @@ BOOST_AUTO_TEST_CASE(test_write_hdf)
 
     for(integer iidx=0; iidx < map->num_owned_nodes(); iidx++)
     {
-      BOOST_REQUIRE(fcmp(dataspace[iidx], double(idof+1), 1e-20, 1e-20));
+      BOOST_REQUIRE(fcmp((double) dataspace[iidx], double(idof+1), 1e-20, 1e-20));
     }
 
     delete[] dataspace;

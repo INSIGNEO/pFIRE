@@ -13,27 +13,45 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-file(GLOB libpFIRESOURCES
+file(GLOB pfire_libSOURCES
   "*.cpp")
 
-list(REMOVE_ITEM libpFIRESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/sandbox.cpp")
-list(REMOVE_ITEM libpFIRESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/pfire.cpp")
+list(REMOVE_ITEM pfire_libSOURCES "${CMAKE_CURRENT_SOURCE_DIR}/sandbox.cpp")
+list(REMOVE_ITEM pfire_libSOURCES "${CMAKE_CURRENT_SOURCE_DIR}/pfire.cpp")
 
-if(NOT OPENIMAGEIO_FOUND)
-  list(REMOVE_ITEM libpFIRESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/oiioloader.cpp")
-  list(REMOVE_ITEM libpFIRESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/oiiowriter.cpp")
-endif(NOT OPENIMAGEIO_FOUND)
+if(NOT OpenImageIO_FOUND)
+  list(REMOVE_ITEM pfire_libSOURCES "${CMAKE_CURRENT_SOURCE_DIR}/oiioloader.cpp")
+  list(REMOVE_ITEM pfire_libSOURCES "${CMAKE_CURRENT_SOURCE_DIR}/oiiowriter.cpp")
+endif(NOT OpenImageIO_FOUND)
 
 if(NOT DCMTK_FOUND)
-  list(REMOVE_ITEM libpFIRESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/dcmloader.cpp")
+  list(REMOVE_ITEM pfire_libSOURCES "${CMAKE_CURRENT_SOURCE_DIR}/dcmloader.cpp")
 endif(NOT DCMTK_FOUND)
 
-add_library(libpfire ${libpFIRESOURCES})
-set_target_properties(libpfire PROPERTIES PREFIX "")
-target_link_libraries(libpfire ${EXTRA_LIBS})
+cmake_print_variables(${pfire_libSOURCES})
+cmake_print_variables(${EXTRA_LIBS} )
+cmake_print_variables(${DCMTK_LIBRARIES})
+
+
+#set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+add_library(pfire_lib SHARED  ${pfire_libSOURCES} )
+
+#set_target_properties(pfire_lib PROPERTIES PREFIX "")
+#target_link_libraries(pfire_lib ${EXTRA_LIBS} ) # ${DCMTK_LIBRARIES})
+target_link_libraries(pfire_lib PUBLIC ${EXTRA_LIBS})
+target_link_libraries(pfire_lib PUBLIC OpenImageIO::OpenImageIO )#${OpenImageIO_LIBRARIES})
+target_link_libraries(pfire_lib PUBLIC DCMTK::dcmtk)
+# alternative approach based on modern CMAKE
+#target_link_libraries(pfire_lib ${DCMTK_LIBRARIES})
+
+
 
 add_executable(pfire pfire.cpp)
 set_target_properties(pfire PROPERTIES LINKER_LANGUAGE CXX)
-target_link_libraries(pfire libpfire)
+target_link_libraries(pfire  PUBLIC pfire_lib)
+
 
 install(TARGETS pfire DESTINATION bin)
+
+install(TARGETS pfire_lib DESTINATION lib)

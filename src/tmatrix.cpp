@@ -207,9 +207,10 @@ std::pair<floating, floating> calculate_entries(integer row, integer col, intege
                                                 const std::vector<Vec_unique>& gradient_data,
                                                 const Vec& difference_data, MPI_Comm comm)
 {
-#ifdef DEBUG_CHECKS
-  throw_if_idof_inconsistent(comm, idof)
-#endif //DEBUG_CHECKS
+
+// danielta #ifdef DEBUG_CHECKS
+	// danielta   throw_if_idof_inconsistent(comm, idof)
+	// danielta #endif //DEBUG_CHECKS
 
   int commsize, rank;
   MPI_Comm_size(comm, &commsize);

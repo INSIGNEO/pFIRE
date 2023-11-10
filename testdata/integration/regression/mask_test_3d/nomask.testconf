@@ -1,0 +1,5 @@
+name = mask_test_3d_nomask
+type = comparison
+pfire_config = nomask.conf
+accepted_image = accepted_nomask.image  # string: the image to compare with ("regression" mode only)
+accepted_map   = map_nomask.xdmf         # string: the map to compare with ("regression" mode only)

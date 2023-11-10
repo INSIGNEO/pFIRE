@@ -1,0 +1,7 @@
+name = brain2d_regression
+type = regression
+#/home/tartarini/DEVELOP/INSIGNEO/insigneo-pfire/pFIRE/testdata/integration/regression/brain_2d/brain_2d.conf
+
+pfire_config   = brain_2d.conf
+accepted_image = accepted.png # string: the image to compare with ("regression" mode only)
+accepted_map   = map.xdmf.h5  # string: the map to compare with ("regression" mode only)
