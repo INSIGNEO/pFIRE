@@ -15,6 +15,7 @@
 
 #include "baseconfiguration.hpp"
 #include "types.hpp"
+#include <deque>
 
 class ElasticRegistration {
 public:

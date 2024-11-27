@@ -11,9 +11,14 @@ setup(name='pfire_benchmarking',
       packages=find_packages(''),
       include_package_data=True,
       install_requires=['numpy', 'scipy', 'h5py', 'matplotlib', 'flannel',
-                        'configObj'],
+                        'configObj', 'docutils', 'tabulate', 'scikit-image'],
       entry_points={
           'console_scripts':  [
               'pfire-integration-test = pfire_benchmarking.__main__:main'
               ],
-      })
+      },
+    #package_dir={"": "pfire_benchmarking"},
+    #packages=find_packages(where="pfire_benchmarking"),
+    python_requires=">=3.6",
+      
+      )

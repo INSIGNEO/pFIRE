@@ -16,6 +16,7 @@
 #ifndef SHIRTLOADER_HPP
 #define SHIRTLOADER_HPP
 
+#include<algorithm>
 #include "baseloader.hpp"
 #include "types.hpp"
 
@@ -39,12 +40,12 @@ private:
   using shirt_header_dtype = int32_t;
 
   using image_data_dtype = float;
-  static constexpr MPI_Datatype image_data_mpi_type = MPI_FLOAT;
+  MPI_Datatype image_data_mpi_type = MPI_FLOAT;
   static constexpr integer image_header_length = 4;
   static constexpr integer image_header_bytes = image_header_length * sizeof(shirt_header_dtype);
 
   using mask_data_dtype = int16_t;
-  static constexpr MPI_Datatype mask_data_mpi_type = MPI_SHORT;
+  MPI_Datatype mask_data_mpi_type = MPI_SHORT;
   static constexpr integer mask_header_length = 3;
   static constexpr integer mask_header_bytes = mask_header_length * sizeof(shirt_header_dtype);
 

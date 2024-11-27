@@ -37,7 +37,7 @@ class pFIRERunnerMixin:
         self.pfire_mask_path = None
         self.pfire_reg_path = None
         self.pfire_map_path = None
-
+        self.pfire_exec_filename=None
 
     def run_pfire(self, config_path, comm_size=1):
         """ Run pFIRE using provided config file
@@ -52,41 +52,52 @@ class pFIRERunnerMixin:
         with open(config_path, 'r') as fh:
             config = ConfigObj(fh)
         print("Running pFIRE on {}".format(pfire_config))
-
+      
         self.pfire_fixed_path = os.path.join(pfire_workdir, config['fixed'])
         self.pfire_moved_path = os.path.join(pfire_workdir, config['moved'])
+             
+        # TODO Check Registered image is in xdmf format
+        # TODO Check registration Map is in xdmf format
+        
+        # Log file name
+        self.pfire_logfile = os.path.join(
+            pfire_workdir,
+            "{}_pfire.log".format(os.path.splitext(pfire_config)[0]))
+        
+        # Run pFIRE
+        print("pFIRERunnerMixin.run_pfire:", self.pfire_exec_filename)
+        with open(self.pfire_logfile, 'w') as logfile:            
+            
+            #pfire_args = ['pfire', pfire_config]
+            pfire_args = [self.pfire_exec_filename, pfire_config]
+            res = sp.run(pfire_args, cwd=pfire_workdir, stdout=logfile,
+                         stderr=logfile)
+        if res.returncode != 0:
+            raise RuntimeError("Failed to run pFIRE, check log for details: {}"
+                               "".format(self.pfire_logfile))
+
+        # Get pFIRE registered image path filename
+        try:
+            self.pfire_reg_path = os.path.join(pfire_workdir, config['registered'])
+            print("self.pfire_reg_path="+ self.pfire_reg_path)
+        except KeyError:
+            pass
+            
+        # Get pFIRE registered map  path filename           
+        try:
+            self.pfire_map_path = os.path.join(pfire_workdir, config['map'])
+            print("self.pfire_map_path="+ self.pfire_map_path)
+        except KeyError:
+            pass
+           
         try:
             self.pfire_mask_path = os.path.join(pfire_workdir, config['mask'])
         except KeyError:
             pass
 
-        self.pfire_logfile = os.path.join(
-            pfire_workdir,
-            "{}_pfire.log".format(os.path.splitext(pfire_config)[0]))
-        with open(self.pfire_logfile, 'w') as logfile:
-            pfire_args = ['pfire', pfire_config]
-            res = sp.run(pfire_args, cwd=pfire_workdir, stdout=logfile,
-                         stderr=logfile)
-
-        if res.returncode != 0:
-            raise RuntimeError("Failed to run pFIRE, check log for details: {}"
-                               "".format(self.pfire_logfile))
-
-        with open(self.pfire_logfile, 'r') as logfile:
-            for line in logfile:
-                if line.startswith("Saved registered image to "):
-                    reg_path = line.replace("Saved registered image to ",
-                                            "").strip()
-                    self.pfire_reg_path = os.path.join(pfire_workdir, reg_path)
-                elif line.startswith("Saved map to "):
-                    map_path = line.replace("Saved map to ", "").strip()
-                    self.pfire_map_path = os.path.join(pfire_workdir, map_path)
-
         if not (self.pfire_reg_path or self.pfire_map_path):
-            raise RuntimeError("Failed to extract result path(s) from log")
-
-
-
+            raise RuntimeError("Failed to find registered image or map named in config file")
+        
 
 class ShIRTRunnerMixin:
     """ Mixin class to provide a ShIRT runner interface accepted a pFIRE config
@@ -126,6 +137,9 @@ class ShIRTRunnerMixin:
         """
         config = self._build_shirt_config(config_path)
         work_dir, config_file = os.path.split(config_path)
+        
+        # FIXME workdire is empty if config path is relatove. make it absolute
+        
         print("Running ShIRT on {}".format(config_file))
 
         self.shirt_reg_path = 'shirt_{}_registered.image'.format(self.name)
@@ -159,12 +173,35 @@ class ShIRTRunnerMixin:
                       'Registered', self._strip_imgname(self.shirt_reg_path),
                       'Map', self._strip_imgname(self.shirt_map_path)]
 
+
+
+        # ADd test FIXME
+        #SHIRT_BIN
+        
+        shirt_env = {}
+        SHIRT_DIR="/home/tartarini/LOCAL/app/Shirt/"#~/LOCAL/app/Shirt/bin/ShIRT
+
+        #shirt_env['DATAPATH'] = '/home/tartarini/fixing_bugs_pfire/pFIRE/benchmarking/brain2d/'
+        shirt_env['DATAPATH'] = './'
+        shirt_env['DISPLAYPATH'] = shirt_env['DATAPATH'] +"display/"
+
+        #SHIRT_DIR=/home/tartarini/ShIRT/
+        shirt_env['SYSPATH']= SHIRT_DIR+"bin/"
+        shirt_env['SCRIPTPATH']=SHIRT_DIR+"Scripts/"
+        shirt_env['PATH']= shirt_env['SYSPATH']
+        #export PATH=$PATH:$SHIRT_DIR/1.1/bin/
+
+
         self.shirt_logfile = os.path.join(
             work_dir, "{}_shirt.log".format(os.path.splitext(config_file)[0]))
         with open(self.shirt_logfile, 'w') as logfile:
-            sp.run(['ShIRT', 'setpath', 'DataPath', '.'], cwd=work_dir)
-            res = sp.run(shirt_args, stdout=logfile, stderr=logfile,
-                         cwd=work_dir)
+            print("work_dir=" + work_dir)
+            print(shirt_env)
+            
+            sp.run(['ShIRT', 'setpath', 'DataPath', '.'])#, cwd=work_dir)
+
+            res = sp.run(shirt_args, stdout=logfile, stderr=logfile,  env=shirt_env)
+                         #cwd=work_dir)
 
         if res.returncode != 0:
             raise RuntimeError("Failed to run ShIRT, check log for details: {}"

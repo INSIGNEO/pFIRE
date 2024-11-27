@@ -45,7 +45,7 @@ class BaseLoader;
 class BaseWriter;
 class ConfigurationBase;
 
-constexpr MPI_Comm COMM = MPI_COMM_WORLD;
+static MPI_Comm COMM = MPI_COMM_WORLD;
 
 // Useful typedefs
 using integer = PetscInt;

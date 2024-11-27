@@ -48,8 +48,21 @@ def calculate_mutual_information(data1, data2, resolution=50,
     Returns a tuple of MI(X,Y), H(X), H(Y), H(X,Y)
     """
     jointmax = max(data1.max(), data2.max())
+    
+
     # First calculate probability density
-    bin_edges = np.linspace(0, 1, num=resolution)
+    bin_edges = np.linspace(0, 1, num=resolution)#, dtype=object)
+    
+    print ("shape(data1.flatten())=" + str(np.shape(data1.flatten())))
+    print ("shape(data2.flatten())=" + str(np.shape(data2.flatten())))
+    
+    print ("shape(data1)=" + str(np.shape(data1)))
+    print ("shape(data2)=" + str(np.shape(data2)))
+    
+    print ("shape(bin_edges)=" + str(np.shape(bin_edges)))
+     
+    
+    
     prob1_2, _, _ = np.histogram2d(data1.flatten()/jointmax,
                                    data2.flatten()/jointmax,
                                    bins=bin_edges, density=True)
@@ -101,11 +114,25 @@ def compare_image_results(fixed_path, moved_path, accepted_path,
     else:
         fig_dir = os.path.normpath('.')
 
-    mi_start = calculate_proficiency(fixed_path, moved_path)
-    mi_accepted = calculate_proficiency(fixed_path, accepted_path)
-    mi_pfire = calculate_proficiency(fixed_path, pfire_path)
+
+    print("fixed_path="+ fixed_path)
+    print("moved_path="+ moved_path)
+    print("pfire_path="+ pfire_path)
+    print("accepted path="+ accepted_path)
+    
+    print("MI fixed_path vs moved_path=\n"+ fixed_path + "\n" + moved_path)    
+    mi_start      = calculate_proficiency(fixed_path, moved_path)
+    
+    print("MI fixed_path vs accepted_path=\n"+ fixed_path + "\n" + accepted_path)
+    mi_accepted   = calculate_proficiency(fixed_path, accepted_path)
+    
+    print("MI fixed_path vs pfire_path=\n"+ fixed_path + "\n" +pfire_path)    
+    mi_pfire      = calculate_proficiency(fixed_path, pfire_path)
+    
+    print("MI accepted_path vs pfire_path=\n"+ accepted_path + "\n" +pfire_path)    
     mi_comparison = calculate_proficiency(accepted_path, pfire_path)
 
+    
     res_table = [("Normalized mutual information (proficiency):", ""),
                  ("Fixed vs. Moved:", "{:.3f}".format(mi_start.mi)),
                  ("{} vs. Fixed:".format(cmpname), "{:.3f}".format(mi_accepted.mi)),

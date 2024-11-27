@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE(uniform_warp)
           {
             for(integer xx=map_local_lo[0]; xx<map_local_hi[0]; xx++)
             {
-              BOOST_REQUIRE(fcmp(map_data[zz][yy][xx][idof], cmp, 1e-10, 1e-10));
+              BOOST_REQUIRE(fcmp((double) map_data[zz][yy][xx][idof],(double) cmp, 1e-10, 1e-10));
             }
           }
         }
@@ -140,10 +140,10 @@ BOOST_AUTO_TEST_CASE(uniform_warp)
         {
           if((curr_loc-warp_offset) >= block_offset && (curr_loc-warp_offset) < (block_offset + block_shape))
           {
-            BOOST_REQUIRE(fcmp(image_data[zz][yy][xx], testdata, 1e-20, 1e-10));
+            BOOST_REQUIRE(fcmp((double) image_data[zz][yy][xx], (double) testdata, 1e-20, 1e-10));
             continue;
           }
-          BOOST_REQUIRE(fcmp(image_data[zz][yy][xx], 0., 1e-20, 1e-10));
+          BOOST_REQUIRE(fcmp((double) image_data[zz][yy][xx], 0., 1e-20, 1e-10));
         }
       }
     }

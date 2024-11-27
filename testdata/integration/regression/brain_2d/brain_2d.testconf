@@ -1,0 +1,5 @@
+name = brain2d
+type = regression
+pfire_config = brain_2d.conf
+accepted_image = moved.png # string: the image to compare with ("regression" mode only)
+accepted_map   = map.xdmf  # string: the map to compare with ("regression" mode only)
